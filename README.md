@@ -1,7 +1,10 @@
 # redis-client-cache-tracking
 Redis module for client cache tracking
 
-h1. Objectives
+## Objectives
 
-h1. Uses Cases
+## Uses Cases
 
+### Unique index
+
+### Non-unique index
