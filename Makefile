@@ -21,3 +21,6 @@ $(TARGET): $(OBJECTS)
 
 clean:
 	rm -rf  $(SRCDIR)/*.o $(BINDIR)/*.so
+
+load: 
+	redis-server --loadmodule $(BINDIR)/cct.so
