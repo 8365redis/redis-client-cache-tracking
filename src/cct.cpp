@@ -25,12 +25,49 @@ void Log_Command(RedisModuleString **argv, int argc){
     RedisModule_Log(ctx, REDISMODULE_LOGLEVEL_DEBUG , command_name + " command called with arguments " + argument_stream.str());
 }
 
+int NotifyCallback(RedisModuleCtx *ctx, int type, const char *event, RedisModuleString *key) {
+    std::string event_str = event;
+    std::string key_str = RedisModule_StringPtrLen(key, NULL);
+    RedisModule_Log(ctx, REDISMODULE_LOGLEVEL_WARNING , "NotifyCallback event : " + event_str  + " , key " + key_str);
+    if (strcasecmp(event, "del") == 0 ||  strcasecmp(event, "set") == 0 ||
+        strcasecmp(event, "expired") == 0 || strcasecmp(event, "evict") == 0 ||
+        strcasecmp(event, "evicted") == 0 || strcasecmp(event, "trimmed") == 0 
+    ) {
+        
+        return REDISMODULE_OK;
+    }
+
+    if (strcasecmp(event, "restore") == 0) {
+        
+        return REDISMODULE_OK;
+    }
+
+    if (strcasecmp(event, "rename_from") == 0) { // include also renamenx
+        
+        return REDISMODULE_OK;
+    }
+
+    if (strcasecmp(event, "rename_to") == 0) { // include also renamenx
+        
+        return REDISMODULE_OK;
+    }
+
+    if (strcasecmp(event, "loaded") == 0) {
+        
+        return REDISMODULE_OK;
+    }
+
+    return REDISMODULE_OK;
+}
+
+
 int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    
+    RedisModule_AutoMemory(ctx);
+    
     if (argc != 2 ) {
         return RedisModule_WrongArity(ctx);
     }
-
-    RedisModule_AutoMemory(ctx);
 
     Log_Command(argv,argc);
 
@@ -55,25 +92,32 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         }
     }
     
-    RedisModule_Call(ctx, "XADD", "sccc", argv[1], "*", "key", "val");
-
+    RedisModuleCallReply *xadd_reply =  RedisModule_Call(ctx, "XADD", "sccc", argv[1], "*", "key", "val");
+    if (RedisModule_CallReplyType(xadd_reply) != REDISMODULE_REPLY_STRING) {
+            RedisModule_Log(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to create the stream." );
+            return RedisModule_ReplyWithError(ctx, strerror(errno));
+    }
     //RedisModuleCallReply *reply = RedisModule_Call(ctx, "SET", "sl", argv[1], client_id);
 
-    RedisModuleCallReply *tracking_reply = RedisModule_Call(ctx, "CLIENT", "cc", "TRACKING", "ON");
-    if (RedisModule_CallReplyType(tracking_reply) != REDISMODULE_REPLY_STRING) {
-        RedisModule_Log(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to enable tracking." );
-        return RedisModule_ReplyWithError(ctx, strerror(errno));
-    }    
-   
+    if ( RedisModule_SubscribeToKeyspaceEvents(ctx,REDISMODULE_NOTIFY_GENERIC | REDISMODULE_NOTIFY_SET | REDISMODULE_NOTIFY_STRING |
+            REDISMODULE_NOTIFY_EVICTED | REDISMODULE_NOTIFY_EXPIRED | REDISMODULE_NOTIFY_LOADED ,
+             NotifyCallback) != REDISMODULE_OK ) {
+        RedisModule_Log(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to SubscribeToKeyspaceEvents." );
+        return RedisModule_ReplyWithError(ctx, strerror(errno));   
+    }
+
     RedisModule_ReplyWithSimpleString(ctx, "Done");
     return REDISMODULE_OK;
 }
 
 int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    
+    RedisModule_AutoMemory(ctx);
+    
     if (argc < 3) {
         return RedisModule_WrongArity(ctx);
     }
-    RedisModule_AutoMemory(ctx);
+    
     
     Log_Command(argv,argc);
     
