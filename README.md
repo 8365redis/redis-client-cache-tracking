@@ -27,7 +27,7 @@ redis-server --loadmodule ./bin/cct.so
 or 
 
 ```
-redis-server --loadmodule ./bin/cct.so
+make load
 ```
 
 ## Commands
