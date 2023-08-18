@@ -20,7 +20,8 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(CPPFLAGS) $(DEBUGFLAGS) -shared -o  $(TARGET) $(OBJECTS)
 
 clean:
-	rm -rf  $(SRCDIR)/*.o $(BINDIR)/*.so
+	rm -rf  $(SRCDIR)/*.o $(BINDIR)/*.so 
+	rm dump.rdb
 
 load: 
 	redis-stack-server --loadmodule $(BINDIR)/cct.so

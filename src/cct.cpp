@@ -140,17 +140,26 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     }
 
     size_t reply_length = RedisModule_CallReplyLength(reply);
-    RedisModule_ReplyWithArray(ctx , reply_length);
-    RedisModule_ReplyWithLongLong(ctx, reply_length-1); // Minus 1 because we don't count the size just the results
+    RedisModule_ReplyWithArray(ctx , REDISMODULE_POSTPONED_LEN);
     std::vector<std::string> keys;
     // Startin from 1 as first one count
-    for (size_t i = 1; i < RedisModule_CallReplyLength(reply); i++) {
+    for (size_t i = 1; i < reply_length; i++) {
         RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(reply, i);
         RedisModuleString *response = RedisModule_CreateStringFromCallReply(key_reply);
-        const char *response_str = RedisModule_StringPtrLen(response, NULL);
-        RedisModule_ReplyWithStringBuffer(ctx, response_str, strlen(response_str));
-        keys.push_back(RedisModule_StringPtrLen(response, NULL));
+        if (response != NULL){
+            const char *response_str = RedisModule_StringPtrLen(response, NULL);
+            keys.push_back(response_str);
+        }else {
+            reply_length--; // Dont return null results
+        }
+
     }
+
+    RedisModule_ReplyWithLongLong(ctx, reply_length-1); // Minus 1 because we don't count the size just the results
+    for (const auto& it : keys) {
+        RedisModule_ReplyWithStringBuffer(ctx, it.c_str(), strlen(it.c_str()));
+    }
+    RedisModule_ReplySetArrayLength(ctx,reply_length);
 
     std::stringstream  s;
     copy(keys.begin(),keys .end(), std::ostream_iterator<std::string>(s," "));
@@ -160,12 +169,12 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     RedisModuleString *client_name = RedisModule_GetClientNameById(ctx, client_id); 
     if ( client_name == NULL){
         RedisModule_Log(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to get client name." );
-        return RedisModule_ReplyWithError(ctx, strerror(errno));
+        return REDISMODULE_ERR;
     }
     std::string client_name_str = RedisModule_StringPtrLen(client_name, NULL);
     if ( client_name_str.empty()){
         RedisModule_Log(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed because client name is not set." );
-        return RedisModule_ReplyWithError(ctx, "Client name is not set or set to empty");
+        return REDISMODULE_ERR;
     }
 
     for (const auto& it : keys) {
@@ -173,11 +182,10 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         RedisModuleCallReply *set_reply = RedisModule_Call(ctx, "SET", "cc", key_with_prefix.c_str()  , client_name_str.c_str());
         if (RedisModule_CallReplyType(set_reply) != REDISMODULE_REPLY_STRING) {
             RedisModule_Log(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to add tracked key." );
-            return RedisModule_ReplyWithError(ctx, strerror(errno));
+            return REDISMODULE_ERR;
         }
     }
     
-
     return REDISMODULE_OK;
 }
 
