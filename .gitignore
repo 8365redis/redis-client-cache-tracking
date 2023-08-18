@@ -60,4 +60,7 @@ Mkfile.old
 dkms.conf
 
 # Python binaries
-.python/__pycache__/*
+*/__pycache__/*
+
+# Redis dump file
+dump.rdb
