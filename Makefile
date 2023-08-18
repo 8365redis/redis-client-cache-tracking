@@ -25,3 +25,6 @@ clean:
 
 load: 
 	redis-stack-server --loadmodule $(BINDIR)/cct.so
+
+test:
+	python3 python/client.py -r
