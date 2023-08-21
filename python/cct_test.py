@@ -48,13 +48,15 @@ def test_unique_id_tracking_test_1():
     print(resp)
     
     # SEARCH
-    print(data[0].name)
-    resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @name:(" + data[0].name + ")")
+    print(data[0])
+    resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "}")
     print(resp)
 
     # CHANGE first item
     id = resp[0]
-    resp = r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(id), Path.root_path(), cct_prepare.User(12,"changed_n","changed_l").__dict__)
+    new_d = {}
+    cct_prepare.generate_object(new_d,12,22)
+    resp = r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(id), Path.root_path(), new_d)
     print(resp)
 
     # CHECK STREAM

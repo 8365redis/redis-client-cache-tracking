@@ -1,42 +1,50 @@
 import random
-import names
+import string
 import json
+from json import JSONEncoder
 from redis.commands.json.path import Path
-from redis.commands.search.field import TextField, NumericField
+from redis.commands.search.field import TextField, NumericField, TagField
 from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 
 TEST_APP_NAME_1 = "app1"
 
-TEST_INDEX_NAME = "user"
-TEST_INDEX_PREFIX = "user:"
+TEST_INDEX_NAME = "usersJsonIdx"
+TEST_INDEX_PREFIX = "users."
 
-TEST_FIELD_NAME = "name"
-TEST_FIELD_LAST_NAME = "lastName"
-TEST_FIELD_AGE = "age"
-
-class User:
-    def __init__(self, age, name, lastName):
-        self.age = age
-        self.name = name
-        self.lastName = lastName
 
 def flush_db(r):
     r.flushall()
 
+def generate_object(d, id, addr_id):
+    d["User"] = {}
+    d["User"]["ID"] = str(id)
+    first = "".join( random.choices(string.ascii_uppercase + string.digits, k=3))
+    second = "".join( random.choices(string.ascii_uppercase + string.digits, k=2))
+    third = "".join( random.choices(string.ascii_uppercase + string.digits, k=2))
+    d["User"]["PASSPORT"] = first + "-" + second + "-" + third
+    d["User"]["Address"] = {}
+    d["User"]["Address"]["ID"] = str(addr_id)
+
 def generate_input(count):
     data = []
+    id = 1000
+    addr_id = 2000
     for x in range(count):
-        d = User (random.randint(20, 90),names.get_first_name(),names.get_last_name())
+        d = {}
+        generate_object(d , id , addr_id)
         data.append(d)
+        id = id + 1
+        addr_id = addr_id + 1
     return data
 
 def add_list(r, data):
     count = 1
     for d in data:
-        r.json().set(TEST_INDEX_PREFIX + str(count), Path.root_path(), d.__dict__)
+        r.json().set(TEST_INDEX_PREFIX + str(count), Path.root_path(), d)
         count = count + 1
 
 def create_index(r):
-    schema = (NumericField("$.age", as_name="age"),TextField("$.name", as_name="name"), TextField("$.lastName", as_name="lastName"))
+    schema = (TagField("$.User.ID", as_name="User.ID"), TagField("$.User.PASSPORT", as_name="User.PASSPORT"),  \
+              TagField("$.User.Address.ID", as_name="User.Address.ID"))
     r.ft(TEST_INDEX_NAME).create_index(schema, definition=IndexDefinition(prefix=[TEST_INDEX_PREFIX], index_type=IndexType.JSON))
 

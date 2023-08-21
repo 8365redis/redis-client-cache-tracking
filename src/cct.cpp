@@ -14,6 +14,7 @@
 
 #define MAX_KEY_SIZE 1000
 #define CCT_MODULE_PREFIX "CCT:"
+#define CCT_MODULE_CLIENT_PREFIX "CLIENT:"
 #define LOG(ctx, level, log) Log_Std_Output(ctx, level, log)
 
 #ifdef __cplusplus
