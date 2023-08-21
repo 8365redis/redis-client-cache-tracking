@@ -14,7 +14,7 @@
 
 #define MAX_KEY_SIZE 1000
 #define CCT_MODULE_PREFIX "CCT:"
-#define CCT_MODULE_CLIENT_PREFIX "CLIENT:"
+#define CCT_MODULE_CLIENT_PREFIX "CCT:CLIENT:"
 #define LOG(ctx, level, log) Log_Std_Output(ctx, level, log)
 
 #ifdef __cplusplus
@@ -105,6 +105,17 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     }
 
     unsigned long long client_id = RedisModule_GetClientId(ctx);
+    std::string client_id_key_str = CCT_MODULE_CLIENT_PREFIX + std::to_string(client_id);
+    RedisModuleKey *client_id_key = RedisModule_OpenKey(ctx, RedisModule_CreateString(ctx, client_id_key_str.c_str() , client_id_key_str.length()) ,REDISMODULE_READ | REDISMODULE_WRITE );
+    if(RedisModule_KeyType(client_id_key) == REDISMODULE_KEYTYPE_STRING){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand ignored with duplicate call. Client ID : " +  std::to_string(client_id));
+        return RedisModule_ReplyWithError(ctx, "Duplicate Register");
+    }else { 
+        if (RedisModule_StringSet(client_id_key, argv[1] ) != REDISMODULE_OK ){
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed while registering the client id : " +  std::to_string(client_id));
+            return RedisModule_ReplyWithError(ctx, "Register Failed");
+        }
+    }
     
     if (RedisModule_SetClientNameById(client_id, argv[1]) != REDISMODULE_OK){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set client name." );

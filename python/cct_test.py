@@ -64,7 +64,31 @@ def test_unique_id_tracking_test_1():
     print(resp)   
 
 
-@pytest.mark.skip()
-def test_unique_id_tracking_test_2():
-    print("test_unique_id_tracking_test_2")
+def test_multi_register_handle_1():
+    r = connect_redis()
+    cct_prepare.flush_db(r) # clean all db first
+
+    # REGISTER
+    resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    assert cct_prepare.OK in str(resp)
+
+    # REGISTER 2. Attempt 
+    try:
+        resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    except redis.exceptions.ResponseError as e:
+        assert cct_prepare.DUPLICATE in str(e)
+
+    # REGISTER 3. Attempt
+    try:
+        resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    except redis.exceptions.ResponseError as e:
+        assert cct_prepare.DUPLICATE in str(e) 
+
+    # REGISTER with different app name from same client
+    try:
+        resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    except redis.exceptions.ResponseError as e:
+        assert cct_prepare.DUPLICATE in str(e) 
+
+
 

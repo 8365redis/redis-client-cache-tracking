@@ -7,6 +7,10 @@ from redis.commands.search.field import TextField, NumericField, TagField
 from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 
 TEST_APP_NAME_1 = "app1"
+TEST_APP_NAME_2 = "app2"
+
+DUPLICATE = "Duplicate"
+OK = "OK"
 
 TEST_INDEX_NAME = "usersJsonIdx"
 TEST_INDEX_PREFIX = "users."
