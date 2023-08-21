@@ -18,6 +18,7 @@ all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(CPPFLAGS) $(DEBUGFLAGS) -shared -o  $(TARGET) $(OBJECTS)
+	rm -rf  $(SRCDIR)/*.o
 
 clean:
 	rm -rf  $(SRCDIR)/*.o $(BINDIR)/*.so 

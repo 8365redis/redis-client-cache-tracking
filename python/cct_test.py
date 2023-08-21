@@ -59,7 +59,7 @@ def test_unique_id_tracking_test_1():
 
     # CHECK STREAM
     resp = r.xread( count=1, streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(resp)
+    print(resp)   
 
 
 @pytest.mark.skip()
