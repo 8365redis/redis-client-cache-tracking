@@ -29,3 +29,6 @@ load:
 
 test:
 	pytest -rP
+
+perf_test:
+	pytest -rP python/cct_perf_test.py

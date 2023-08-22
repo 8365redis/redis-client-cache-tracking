@@ -1,39 +1,15 @@
-import subprocess
 import redis
-import time
 import pytest
 from redis.commands.json.path import Path
 import cct_prepare
-
-def kill_redis():
-    bashCommand = "redis-cli shutdown"
-    process = subprocess.Popen(bashCommand.split(), 
-                                stdin=subprocess.DEVNULL,
-                                stdout=subprocess.DEVNULL,
-                                stderr=subprocess.DEVNULL,
-                                start_new_session=True)    
-    time.sleep(1)
-
-def start_redis():
-    bashCommand = "redis-stack-server --loadmodule ./bin/cct.so"
-    subprocess.Popen(bashCommand.split(), 
-                    stdin=subprocess.DEVNULL,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    start_new_session=True)
-    time.sleep(2)
-
+from manage_redis import connect_redis, kill_redis
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    connect_redis()
+    print("Start")
     yield
     kill_redis()
-
-def connect_redis():
-    start_redis()
-    r = redis.Redis(host='localhost', port=6379, decode_responses=True)
-    return r
+    print("End")
 
 def test_unique_id_tracking_test_1():
     r = connect_redis()
@@ -89,6 +65,34 @@ def test_multi_register_handle_1():
         resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
     except redis.exceptions.ResponseError as e:
         assert cct_prepare.DUPLICATE in str(e) 
+
+def test_ft_search_result_comparison_1():
+    r = connect_redis()
+    cct_prepare.flush_db(r) # clean all db first
+    cct_prepare.create_index(r)
+    data = cct_prepare.generate_input(10)
+    cct_prepare.add_list(r, data)
+
+    # REGISTER
+    resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    print(resp)
+    
+    # SEARCH WITH CCT
+    cct_resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "}")
+    # SEARCH WITH DEFAULT
+    default_resp = r.execute_command("FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "}")
+    assert cct_resp == default_resp
+
+    # SEARCH WITH CCT MULTI
+    cct_resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "\\|" + data[1]["User"]["ID"]  + "}")
+    print(cct_resp)
+    # SEARCH WITH DEFAULT MULTI
+    default_resp = r.execute_command("FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "\\|" + data[1]["User"]["ID"]  + "}")
+    print(default_resp)
+    assert cct_resp == default_resp    
+
+ 
+
 
 
 
