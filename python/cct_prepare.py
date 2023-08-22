@@ -13,7 +13,7 @@ DUPLICATE = "Duplicate"
 OK = "OK"
 
 TEST_INDEX_NAME = "usersJsonIdx"
-TEST_INDEX_PREFIX = "users."
+TEST_INDEX_PREFIX = "users:"
 
 
 def flush_db(r):
