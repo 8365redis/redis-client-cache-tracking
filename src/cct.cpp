@@ -1,48 +1,44 @@
 #include "redismodule.h"
+#include "constants.h"
+#include "query_parser.h"
+#include "json_handler.h"
+#include "logger.h"
 #include <stdlib.h>
 #include <string.h>
-#include <string>
-#include <iostream>
-#include <sstream>
 #include <errno.h>
-#include <vector>
 #include <iterator>
 #include <algorithm> 
-#include <chrono>
-#include <iomanip>
 
-
-#define MAX_KEY_SIZE 1000
-#define CCT_MODULE_PREFIX "CCT:"
-#define CCT_MODULE_CLIENT_PREFIX "CCT:CLIENT:"
-#define LOG(ctx, level, log) Log_Std_Output(ctx, level, log)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void Log_Std_Output(RedisModuleCtx *ctx, const char *levelstr, std::string fmt ) {
-    auto t = std::time(nullptr);
-    auto tm = *std::localtime(&t);
-    
-    auto now = std::chrono::system_clock::now();
-    auto ms  = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch() % std::chrono::seconds{1});
+int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString* r_key){
+    RedisModule_AutoMemory(ctx);
 
-    auto time = std::put_time(&tm, "%d %b %Y %H:%M:%S");
-    std::cout<<"XXXXX:X "<<time<<"."<<std::to_string(ms.count())<<" * <CCT_MODULE> "<< fmt << std::endl;
-}
-
-void Log_Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc){
-    std::stringstream argument_stream;
-    std::string command_name = RedisModule_StringPtrLen(argv[0], NULL);
-    for ( int i = 1; i < argc; i++) {
-        argument_stream<<RedisModule_StringPtrLen(argv[i], NULL)<< " ";
+    std::string key = RedisModule_StringPtrLen(r_key, NULL);
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check : " + event  + " , key " + key);
+    if (strcasecmp(event.c_str(), "json.set") == 0) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check , it is json.set event: " + event  + " , key " + key);
+        RedisModuleString *value = Get_JSON_Value(ctx, event , r_key);
+        std::string json_str = RedisModule_StringPtrLen(value, NULL);
+        /*
+        json json_obj = json::parse(json_str);
+        std::cout<<json_obj<<std::endl;
+        for (auto it = json_obj.begin(); it != json_obj.end(); ++it)
+        {
+            std::cout << "key: " << it.key() << ", value:" << it.value() << '\n';
+        }
+        */
+        return REDISMODULE_OK;
+    }else {
+        return REDISMODULE_OK;
     }
-    Log_Std_Output(ctx, REDISMODULE_LOGLEVEL_DEBUG , command_name + " command called with arguments " + argument_stream.str());
 }
 
 int NotifyCallback(RedisModuleCtx *ctx, int type, const char *event, RedisModuleString *key) {
-    //RedisModule_AutoMemory(ctx);
+    RedisModule_AutoMemory(ctx);
 
     std::string event_str = event;
     std::string key_str = RedisModule_StringPtrLen(key, NULL);
@@ -63,6 +59,7 @@ int NotifyCallback(RedisModuleCtx *ctx, int type, const char *event, RedisModule
     RedisModuleCallReply *get_reply = RedisModule_Call(ctx, "GET", "c", key_with_prefix.c_str());
     if (RedisModule_CallReplyType(get_reply) == REDISMODULE_REPLY_NULL){
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "NotifyCallback event : " + event_str  + " , key " + key_str + " is not tracked : " + key_with_prefix);
+        Query_Track_Check(ctx, event_str, key);
         return REDISMODULE_OK;
     } else if (RedisModule_CallReplyType(get_reply) != REDISMODULE_REPLY_STRING) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "NotifyCallback event : " + event_str  + " , key " + key_str + " getting the stream key failed.");
@@ -71,20 +68,9 @@ int NotifyCallback(RedisModuleCtx *ctx, int type, const char *event, RedisModule
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "NotifyCallback event : " + event_str  + " , key " + key_str + " is tracked.");
     RedisModuleString *stream_name = RedisModule_CreateStringFromCallReply(get_reply);
     
-    RedisModuleString *value;
-    RedisModuleCallReply *json_get_reply = RedisModule_Call(ctx, "JSON.GET", "s", key);
-    if (RedisModule_CallReplyType(json_get_reply) == REDISMODULE_REPLY_NULL){
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "NotifyCallback event : " + event_str  + " , key " + key_str + " getting the value which is gone.");
-        value = RedisModule_CreateString( ctx, "" , 0 );
-    } else if (RedisModule_CallReplyType(json_get_reply) != REDISMODULE_REPLY_STRING) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "NotifyCallback event : " + event_str  + " , key " + key_str + " getting the value failed.");
-        return REDISMODULE_ERR;
-    } else {
-        value = RedisModule_CreateStringFromCallReply(json_get_reply);
-    }
+    RedisModuleString *value = Get_JSON_Value(ctx, event_str , key);
 
     // Write to stream
-    
     RedisModuleCallReply *xadd_reply =  RedisModule_Call(ctx, "XADD", "sccs", stream_name , "*", key_str.c_str() , value);
     if (RedisModule_CallReplyType(xadd_reply) != REDISMODULE_REPLY_STRING) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to create the stream." );
@@ -95,15 +81,14 @@ int NotifyCallback(RedisModuleCtx *ctx, int type, const char *event, RedisModule
 }
 
 int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-    
     RedisModule_AutoMemory(ctx);
-
     Log_Command(ctx,argv,argc);
     
     if (argc != 2 ) {
         return RedisModule_WrongArity(ctx);
     }
 
+    // Register client
     unsigned long long client_id = RedisModule_GetClientId(ctx);
     std::string client_id_key_str = CCT_MODULE_CLIENT_PREFIX + std::to_string(client_id);
     RedisModuleKey *client_id_key = RedisModule_OpenKey(ctx, RedisModule_CreateString(ctx, client_id_key_str.c_str() , client_id_key_str.length()) ,REDISMODULE_READ | REDISMODULE_WRITE );
@@ -117,11 +102,13 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         }
     }
     
+    // Set client name
     if (RedisModule_SetClientNameById(client_id, argv[1]) != REDISMODULE_OK){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set client name." );
         return RedisModule_ReplyWithError(ctx, strerror(errno));
     }
 
+    // Check if the stream exists
     RedisModuleCallReply *exists_reply = RedisModule_Call(ctx, "EXISTS", "s", argv[1]);
     if (RedisModule_CallReplyType(exists_reply) != REDISMODULE_REPLY_INTEGER) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to detect the stream." );
@@ -129,6 +116,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     }
     int stream_count = RedisModule_CallReplyInteger(exists_reply);
 
+    // If it exists delete it
     if ( stream_count > 0 ){
         RedisModuleCallReply *del_reply = RedisModule_Call(ctx, "DEL", "s", argv[1]);
         if (RedisModule_CallReplyType(del_reply) != REDISMODULE_REPLY_INTEGER) {
@@ -137,6 +125,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         }
     }
     
+    // Subscribe to key space events
     if ( RedisModule_SubscribeToKeyspaceEvents(ctx, REDISMODULE_NOTIFY_GENERIC | REDISMODULE_NOTIFY_SET | REDISMODULE_NOTIFY_STRING |
             REDISMODULE_NOTIFY_EVICTED | REDISMODULE_NOTIFY_EXPIRED | REDISMODULE_NOTIFY_LOADED | REDISMODULE_NOTIFY_NEW | REDISMODULE_NOTIFY_MODULE ,
              NotifyCallback) != REDISMODULE_OK ) {
@@ -149,9 +138,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
 }
 
 int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-    
     RedisModule_AutoMemory(ctx);
-
     Log_Command(ctx,argv,argc);
     
     if (argc < 3) {
@@ -164,6 +151,7 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         return RedisModule_ReplyWithError(ctx, strerror(errno));
     }
 
+    // Parse Search Result
     const size_t reply_length = RedisModule_CallReplyLength(reply);
     RedisModule_ReplyWithArray(ctx , reply_length);
 
@@ -178,8 +166,7 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
 
     std::vector<std::string> key_ids;
     std::vector<std::vector<std::string>> keys;
-    // Startin from 1 as first one count
-    for (size_t i = 1; i < reply_length; i++) {
+    for (size_t i = 1; i < reply_length; i++) {   // Starting from 1 as first one count
         RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(reply, i);
         if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING){
             RedisModuleString *response = RedisModule_CreateStringFromCallReply(key_reply);
@@ -200,10 +187,6 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
             }
             keys.push_back(inner_keys);
         }
-        else
-        {
-            std::cout<<"Null"<<std::endl;
-        }
     }
 
     for (const auto& it : keys) {
@@ -217,6 +200,7 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         }
     }
 
+    // Get client name
     unsigned long long client_id = RedisModule_GetClientId(ctx);
     RedisModuleString *client_name = RedisModule_GetClientNameById(ctx, client_id); 
     if ( client_name == NULL){
@@ -229,6 +213,7 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         return REDISMODULE_ERR;
     }
     
+    // Add tracked keys
     for (const auto& it : key_ids) {
         std::string key_with_prefix = CCT_MODULE_PREFIX + it; 
         RedisModuleCallReply *set_reply = RedisModule_Call(ctx, "SET", "cc", key_with_prefix.c_str()  , client_name_str.c_str());
@@ -237,7 +222,22 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
             return REDISMODULE_ERR;
         }
     }
-    
+
+    // Save the Query for Tracking
+    if(argv[2] == NULL){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to add query because query is NULL." );
+        return REDISMODULE_ERR;
+    }
+    std::string query_str = RedisModule_StringPtrLen(argv[2], NULL);
+    std::string query_term = Get_Query_Term(query_str);
+    std::string query_attribute = Get_Query_Attribute(query_str);
+    std::string query_tracking_key_str = CCT_MODULE_QUERY_PREFIX + client_name_str + CCT_MODULE_KEY_SEPERATOR + query_term + CCT_MODULE_KEY_SEPERATOR + query_attribute;
+
+    RedisModuleKey *query_tracking_key = RedisModule_OpenKey(ctx, RedisModule_CreateString(ctx, query_tracking_key_str.c_str() , query_tracking_key_str.length()) , REDISMODULE_WRITE );
+    if (RedisModule_StringSet(query_tracking_key, RedisModule_CreateString(ctx, "" , 1) ) != REDISMODULE_OK ){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed while registering query tracking key: " +  query_tracking_key_str);
+        return REDISMODULE_ERR;
+    }
     return REDISMODULE_OK;
 }
 

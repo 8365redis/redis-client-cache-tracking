@@ -7,11 +7,9 @@ RELEASEFLAGS = -O2 -D NDEBUG -combine -fwhole-program
 BINDIR = bin
 SRCDIR = src
 
-SOURCES = $(shell echo src/*.c)
+SOURCES = $(shell echo src/*.cpp)
 HEADERS = $(shell echo src/*.h)
 OBJECTS = $(SOURCES:.c=.o)
-
-
 
 TARGET  = $(BINDIR)/cct.so
 all: $(TARGET)
