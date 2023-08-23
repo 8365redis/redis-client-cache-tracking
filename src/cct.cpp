@@ -7,12 +7,29 @@
 #include <string.h>
 #include <errno.h>
 #include <iterator>
-#include <algorithm> 
+#include <algorithm>
+#include <regex>
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+std::string Get_Client_Name(RedisModuleCtx *ctx){
+
+    unsigned long long client_id = RedisModule_GetClientId(ctx);
+    RedisModuleString *client_name = RedisModule_GetClientNameById(ctx, client_id); 
+    if ( client_name == NULL){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to get client name." );
+        return "";
+    }
+    std::string client_name_str = RedisModule_StringPtrLen(client_name, NULL);
+    if ( client_name_str.empty()){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed because client name is not set." );
+        return "";
+    }
+    return client_name_str;
+}
 
 int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString* r_key){
     RedisModule_AutoMemory(ctx);
@@ -23,16 +40,18 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check , it is json.set event: " + event  + " , key " + key);
         RedisModuleString *value = Get_JSON_Value(ctx, event , r_key);
         std::string json_str = RedisModule_StringPtrLen(value, NULL);
-        /*
-        json json_obj = json::parse(json_str);
-        std::cout<<json_obj<<std::endl;
-        for (auto it = json_obj.begin(); it != json_obj.end(); ++it)
-        {
-            std::cout << "key: " << it.key() << ", value:" << it.value() << '\n';
+        std::vector<std::string> keys;
+        Recursive_JSON_Iterate(Get_JSON_Object(json_str) , "", keys);
+        std::string client_name_str = Get_Client_Name(ctx);
+        for (auto & k : keys) {
+            std::string new_key = CCT_MODULE_QUERY_PREFIX + client_name_str + CCT_MODULE_KEY_SEPERATOR + k + CCT_MODULE_KEY_SEPERATOR;
+            std::cout<<new_key<<std::endl;
+            RedisModuleString *q_value = Get_JSON_Value(ctx, event , RedisModule_CreateString(ctx , k.c_str(), k.length()));
+            std::string q_json_str = RedisModule_StringPtrLen(q_value, NULL);
+            std::cout<<"Q_Value: " << q_json_str << std::endl;
         }
-        */
         return REDISMODULE_OK;
-    }else {
+    } else {
         return REDISMODULE_OK;
     }
 }
@@ -200,16 +219,8 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         }
     }
 
-    // Get client name
-    unsigned long long client_id = RedisModule_GetClientId(ctx);
-    RedisModuleString *client_name = RedisModule_GetClientNameById(ctx, client_id); 
-    if ( client_name == NULL){
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to get client name." );
-        return REDISMODULE_ERR;
-    }
-    std::string client_name_str = RedisModule_StringPtrLen(client_name, NULL);
+    std::string client_name_str = Get_Client_Name(ctx);
     if ( client_name_str.empty()){
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed because client name is not set." );
         return REDISMODULE_ERR;
     }
     

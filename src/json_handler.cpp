@@ -17,20 +17,31 @@ RedisModuleString * Get_JSON_Value(RedisModuleCtx *ctx , std::string event_str, 
     } else {
         value = RedisModule_CreateStringFromCallReply(json_get_reply);
         return value;
-    }    
+    }
 }
 
-void Recursive_JSON_Iterate(const json& j, std::string prefix , std::vector<std::string> &keys)
-{
+json Get_JSON_Object(std::string str){
+    //TODO handle exceptions
+    return json::parse(str);
+}
+
+void Recursive_JSON_Iterate(const json& j, std::string prefix , std::vector<std::string> &keys){
     for(auto it = j.begin(); it != j.end(); ++it)
     {
         if (it->is_structured())
         {
-            Recursive_JSON_Iterate(*it, it.key(), keys);
+            std::string new_prefix;
+            if( prefix.empty() == false ){
+                new_prefix = prefix + CCT_MODULE_KEY_LEVEL_WITH_ESCAPE + it.key();
+            } else{
+                new_prefix = it.key();
+            }
+            Recursive_JSON_Iterate(*it, new_prefix, keys);
         }
         else
         {
-            keys.push_back(it.key());
+            std::string new_prefix = prefix + CCT_MODULE_KEY_LEVEL_WITH_ESCAPE + it.key();
+            keys.push_back(new_prefix);
         }
     }
 }
