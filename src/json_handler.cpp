@@ -8,14 +8,15 @@ RedisModuleString * Get_JSON_Value(RedisModuleCtx *ctx , std::string event_str, 
     std::string key = RedisModule_StringPtrLen(r_key, NULL);
     RedisModuleCallReply *json_get_reply = RedisModule_Call(ctx, "JSON.GET", "s", r_key);
     if (RedisModule_CallReplyType(json_get_reply) == REDISMODULE_REPLY_NULL){
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Get_JSON_Value : " + event_str  + " , key " + key + " getting the value which is gone.");
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_JSON_Value : " + event_str  + " , key " + key + " getting the value which is gone.");
         value = RedisModule_CreateString( ctx, "" , 0 );
         return value;
     } else if (RedisModule_CallReplyType(json_get_reply) != REDISMODULE_REPLY_STRING) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Get_JSON_Value : " + event_str  + " , key " + key + " getting the value failed.");
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_JSON_Value : " + event_str  + " , key " + key + " getting the value failed. Type : " + std::to_string(RedisModule_CallReplyType(json_get_reply)));
         return NULL;
     } else {
         value = RedisModule_CreateStringFromCallReply(json_get_reply);
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_JSON_Value : " + event_str  + " , key " + key + " is success");
         return value;
     }
 }
@@ -40,7 +41,7 @@ void Recursive_JSON_Iterate(const json& j, std::string prefix , std::vector<std:
         }
         else
         {
-            std::string new_prefix = prefix + CCT_MODULE_KEY_LEVEL_WITH_ESCAPE + it.key();
+            std::string new_prefix = prefix + CCT_MODULE_KEY_LEVEL_WITH_ESCAPE + it.key() + CCT_MODULE_KEY_SEPERATOR + ((std::string)it.value());
             keys.push_back(new_prefix);
         }
     }

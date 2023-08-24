@@ -8,6 +8,7 @@ from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 
 TEST_APP_NAME_1 = "app1"
 TEST_APP_NAME_2 = "app2"
+TEST_APP_NAME_3 = "app3"
 
 DUPLICATE = "Duplicate"
 OK = "OK"
@@ -28,6 +29,15 @@ def generate_object(d, id, addr_id):
     d["User"]["PASSPORT"] = first + "-" + second + "-" + third
     d["User"]["Address"] = {}
     d["User"]["Address"]["ID"] = str(addr_id)
+
+def generate_single_object(id, addr_id, passport):
+    d = {}
+    d["User"] = {}
+    d["User"]["ID"] = str(id)
+    d["User"]["PASSPORT"] = passport
+    d["User"]["Address"] = {}
+    d["User"]["Address"]["ID"] = str(addr_id)
+    return d
 
 def generate_input(count):
     data = []

@@ -20,12 +20,12 @@ std::string Get_Client_Name(RedisModuleCtx *ctx){
     unsigned long long client_id = RedisModule_GetClientId(ctx);
     RedisModuleString *client_name = RedisModule_GetClientNameById(ctx, client_id); 
     if ( client_name == NULL){
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to get client name." );
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Failed to get client name." );
         return "";
     }
     std::string client_name_str = RedisModule_StringPtrLen(client_name, NULL);
     if ( client_name_str.empty()){
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed because client name is not set." );
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Failed to get client name because client name is not set." );
         return "";
     }
     return client_name_str;
@@ -39,17 +39,44 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
     if (strcasecmp(event.c_str(), "json.set") == 0) {
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check , it is json.set event: " + event  + " , key " + key);
         RedisModuleString *value = Get_JSON_Value(ctx, event , r_key);
+        if (value == NULL){
+            return REDISMODULE_ERR;
+        }
         std::string json_str = RedisModule_StringPtrLen(value, NULL);
         std::vector<std::string> keys;
         Recursive_JSON_Iterate(Get_JSON_Object(json_str) , "", keys);
-        std::string client_name_str = Get_Client_Name(ctx);
+        std::vector<std::string> clients_to_update;
+        
         for (auto & k : keys) {
-            std::string new_key = CCT_MODULE_QUERY_PREFIX + client_name_str + CCT_MODULE_KEY_SEPERATOR + k + CCT_MODULE_KEY_SEPERATOR;
-            std::cout<<new_key<<std::endl;
-            RedisModuleString *q_value = Get_JSON_Value(ctx, event , RedisModule_CreateString(ctx , k.c_str(), k.length()));
-            std::string q_json_str = RedisModule_StringPtrLen(q_value, NULL);
-            std::cout<<"Q_Value: " << q_json_str << std::endl;
+            std::string new_key = CCT_MODULE_QUERY_PREFIX + k;
+            std::cout<<"New key: " <<new_key<<std::endl;
+            RedisModuleCallReply *smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", new_key.c_str());
+            if (RedisModule_CallReplyType(smembers_reply) != REDISMODULE_REPLY_ARRAY ){
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed while getting client names for query: " +  new_key);
+                return REDISMODULE_ERR;
+            } else {
+                const size_t reply_length = RedisModule_CallReplyLength(smembers_reply);
+                for (size_t i = 0; i < reply_length; i++) {
+                    RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(smembers_reply, i);
+                    if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING){
+                        RedisModuleString *response = RedisModule_CreateStringFromCallReply(key_reply);
+                        const char *response_str = RedisModule_StringPtrLen(response, NULL);
+                        clients_to_update.push_back(response_str);
+                        std::cout<<"Client to Update:"<< response_str << std::endl;
+                    }
+                }
+            }
         }
+
+        // Write to stream
+        for (auto & client_name : clients_to_update) {
+            RedisModuleCallReply *xadd_reply =  RedisModule_Call(ctx, "XADD", "ccsc", client_name.c_str() , "*", r_key , json_str.c_str());
+            if (RedisModule_CallReplyType(xadd_reply) != REDISMODULE_REPLY_STRING) {
+                    LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to create the stream." );
+                    return RedisModule_ReplyWithError(ctx, strerror(errno));
+            }
+        }
+
         return REDISMODULE_OK;
     } else {
         return REDISMODULE_OK;
@@ -71,11 +98,24 @@ int NotifyCallback(RedisModuleCtx *ctx, int type, const char *event, RedisModule
 
     // Add prefix
     std::stringstream prefix_stream;
-    prefix_stream<<CCT_MODULE_PREFIX<<key_str;
-    std::string key_with_prefix = prefix_stream.str(); 
+    prefix_stream<<CCT_MODULE_TRACKING_PREFIX<<key_str;
+    std::string key_with_prefix = prefix_stream.str();
 
     // Check if the key is tracked
-    RedisModuleCallReply *get_reply = RedisModule_Call(ctx, "GET", "c", key_with_prefix.c_str());
+    RedisModuleCallReply *scard_reply = RedisModule_Call(ctx, "SCARD", "c", key_with_prefix.c_str());
+    if (RedisModule_CallReplyType(scard_reply) != REDISMODULE_REPLY_INTEGER) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "NotifyCallback event : " + event_str  + " , key " + key_str + " checking the key has failed.");
+        return REDISMODULE_ERR;            
+    } else {
+        long long tracked_count = RedisModule_CallReplyInteger(scard_reply);
+        if (tracked_count == 0) {
+            Query_Track_Check(ctx, event_str, key);
+            return REDISMODULE_OK;
+        }
+    }
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "NotifyCallback event : " + event_str  + " , key " + key_str + " is tracked.");
+
+    /*
     if (RedisModule_CallReplyType(get_reply) == REDISMODULE_REPLY_NULL){
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "NotifyCallback event : " + event_str  + " , key " + key_str + " is not tracked : " + key_with_prefix);
         Query_Track_Check(ctx, event_str, key);
@@ -84,17 +124,34 @@ int NotifyCallback(RedisModuleCtx *ctx, int type, const char *event, RedisModule
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "NotifyCallback event : " + event_str  + " , key " + key_str + " getting the stream key failed.");
         return REDISMODULE_ERR;
     }
-    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "NotifyCallback event : " + event_str  + " , key " + key_str + " is tracked.");
-    RedisModuleString *stream_name = RedisModule_CreateStringFromCallReply(get_reply);
-    
-    RedisModuleString *value = Get_JSON_Value(ctx, event_str , key);
+    */
 
+    RedisModuleCallReply *smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", key_with_prefix.c_str());
+    const size_t reply_length = RedisModule_CallReplyLength(smembers_reply);
+    for (size_t i = 0; i < reply_length; i++) {
+        RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(smembers_reply, i);
+        if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING){
+            RedisModuleString *stream_name = RedisModule_CreateStringFromCallReply(key_reply);
+            RedisModuleString *value = Get_JSON_Value(ctx, event_str , key);
+            // Write to stream
+            RedisModuleCallReply *xadd_reply =  RedisModule_Call(ctx, "XADD", "sccs", stream_name , "*", key_str.c_str() , value);
+            if (RedisModule_CallReplyType(xadd_reply) != REDISMODULE_REPLY_STRING) {
+                    LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to create the stream." );
+                    return RedisModule_ReplyWithError(ctx, strerror(errno));
+            }            
+        }
+    }
+
+    /*
+    RedisModuleString *stream_name = RedisModule_CreateStringFromCallReply(get_reply);
+    RedisModuleString *value = Get_JSON_Value(ctx, event_str , key);
     // Write to stream
     RedisModuleCallReply *xadd_reply =  RedisModule_Call(ctx, "XADD", "sccs", stream_name , "*", key_str.c_str() , value);
     if (RedisModule_CallReplyType(xadd_reply) != REDISMODULE_REPLY_STRING) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to create the stream." );
             return RedisModule_ReplyWithError(ctx, strerror(errno));
     }
+    */
 
     return REDISMODULE_OK;
 }
@@ -226,29 +283,34 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     
     // Add tracked keys
     for (const auto& it : key_ids) {
-        std::string key_with_prefix = CCT_MODULE_PREFIX + it; 
-        RedisModuleCallReply *set_reply = RedisModule_Call(ctx, "SET", "cc", key_with_prefix.c_str()  , client_name_str.c_str());
-        if (RedisModule_CallReplyType(set_reply) != REDISMODULE_REPLY_STRING) {
-            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to add tracked key." );
+        std::string key_with_prefix = CCT_MODULE_TRACKING_PREFIX + it;
+        std::cout<<"Tracked Keys:"<<key_with_prefix<<std::endl;
+        
+        RedisModuleCallReply *sadd_key_reply = RedisModule_Call(ctx, "SADD", "cc", key_with_prefix.c_str()  , client_name_str.c_str());
+        if (RedisModule_CallReplyType(sadd_key_reply) != REDISMODULE_REPLY_INTEGER ){
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed while registering query tracking key: " +  key_with_prefix);
             return REDISMODULE_ERR;
         }
+        
     }
 
     // Save the Query for Tracking
     if(argv[2] == NULL){
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to add query because query is NULL." );
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to add query because query is NULL.");
         return REDISMODULE_ERR;
     }
     std::string query_str = RedisModule_StringPtrLen(argv[2], NULL);
     std::string query_term = Get_Query_Term(query_str);
     std::string query_attribute = Get_Query_Attribute(query_str);
-    std::string query_tracking_key_str = CCT_MODULE_QUERY_PREFIX + client_name_str + CCT_MODULE_KEY_SEPERATOR + query_term + CCT_MODULE_KEY_SEPERATOR + query_attribute;
-
-    RedisModuleKey *query_tracking_key = RedisModule_OpenKey(ctx, RedisModule_CreateString(ctx, query_tracking_key_str.c_str() , query_tracking_key_str.length()) , REDISMODULE_WRITE );
-    if (RedisModule_StringSet(query_tracking_key, RedisModule_CreateString(ctx, "" , 1) ) != REDISMODULE_OK ){
+    std::string query_tracking_key_str = CCT_MODULE_QUERY_PREFIX + query_term + CCT_MODULE_KEY_SEPERATOR + query_attribute ;
+    RedisModuleString *client_name = RedisModule_CreateString(ctx, client_name_str.c_str() , client_name_str.length());
+    
+    RedisModuleCallReply *sadd_reply = RedisModule_Call(ctx, "SADD", "cs", query_tracking_key_str.c_str()  , client_name);
+    if (RedisModule_CallReplyType(sadd_reply) != REDISMODULE_REPLY_INTEGER ){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed while registering query tracking key: " +  query_tracking_key_str);
         return REDISMODULE_ERR;
     }
+
     return REDISMODULE_OK;
 }
 

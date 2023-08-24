@@ -20,7 +20,11 @@ def start_redis():
                     start_new_session=True)
     time.sleep(2)
 
-def connect_redis():
+def connect_redis_with_start():
     start_redis()
+    r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+    return r
+
+def connect_redis():
     r = redis.Redis(host='localhost', port=6379, decode_responses=True)
     return r

@@ -2,7 +2,7 @@ import time
 import pytest
 import cct_prepare
 from statistics import mean
-from manage_redis import connect_redis, kill_redis
+from manage_redis import connect_redis_with_start, kill_redis
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -12,7 +12,7 @@ def before_and_after_test():
     print("End")
 
 def test_cct_search_latency_single_tag_search():
-    r = connect_redis()
+    r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
     data = cct_prepare.generate_input(10)
@@ -40,7 +40,7 @@ def test_cct_search_latency_single_tag_search():
     print("DIFF : " + str(diff_micron))
 
 def test_cct_search_latency_multi_tag_search():
-    r = connect_redis()
+    r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
     data = cct_prepare.generate_input(10)
@@ -69,7 +69,7 @@ def test_cct_search_latency_multi_tag_search():
 
 
 def test_cct_search_latency_single_tag_search_multiple():
-    r = connect_redis()
+    r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
     data = cct_prepare.generate_input(10)
@@ -98,7 +98,7 @@ def test_cct_search_latency_single_tag_search_multiple():
     print("Latency diff average : " + str(mean(latencies)))
 
 def test_cct_search_latency_multiple_tag_search_multiple():
-    r = connect_redis()
+    r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
     data = cct_prepare.generate_input(10)

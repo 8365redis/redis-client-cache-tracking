@@ -2,7 +2,7 @@ import redis
 import pytest
 from redis.commands.json.path import Path
 import cct_prepare
-from manage_redis import connect_redis, kill_redis
+from manage_redis import connect_redis_with_start, kill_redis
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -12,7 +12,7 @@ def before_and_after_test():
     print("End")
 
 def test_unique_id_tracking_test_1():
-    r = connect_redis()
+    r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
     data = cct_prepare.generate_input(10)
@@ -41,7 +41,7 @@ def test_unique_id_tracking_test_1():
 
 
 def test_multi_register_handle_1():
-    r = connect_redis()
+    r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
 
     # REGISTER
@@ -67,7 +67,7 @@ def test_multi_register_handle_1():
         assert cct_prepare.DUPLICATE in str(e) 
 
 def test_ft_search_result_comparison_1():
-    r = connect_redis()
+    r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
     data = cct_prepare.generate_input(10)
@@ -75,7 +75,7 @@ def test_ft_search_result_comparison_1():
 
     # REGISTER
     resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    print(resp)
+    assert cct_prepare.OK in str(resp)
     
     # SEARCH WITH CCT
     cct_resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "}")
