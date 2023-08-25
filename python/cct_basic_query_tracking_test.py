@@ -57,6 +57,10 @@ def test_basic_query_tracking_test_1():
     from_stream = r.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert new_key in str(from_stream[0][1])
     print("From Stream :" + str(from_stream[0][1]))
+
+    #CHECK NEW TRACKED KEY
+    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(2), cct_prepare.TEST_APP_NAME_1)
+    assert tracked_key 
     
 
 
@@ -65,60 +69,85 @@ def test_basic_query_tracking_test_2():
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
 
-    # ADD INITIAL DATA
+    ####### FIRST CLIENT
     passport_value = "aaa"
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
-    r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(1), Path.root_path(), d)
-
-    # REGISTER
-    resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    assert cct_prepare.OK in str(resp)
-    print(resp)
-
-    # CHECK REGISTER 
-    client_id = r.client_id()
-    print("Client ID : " + str(client_id))
-    app_name = r.get(CCT_MODULE_CLIENT_PREFIX + str(client_id))
-    assert app_name == cct_prepare.TEST_APP_NAME_1
-
-    # SEARCH
-    resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
-    assert resp
-    print(resp)
+    first_key = cct_prepare.TEST_INDEX_PREFIX + str(1)
+    r.json().set(first_key, Path.root_path(), d)
+    r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
 
     ####### SECOND CLIENT
-
-    # REGISTER
     r2 = connect_redis()
-    resp = r2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
-    assert cct_prepare.OK in str(resp)
-    print(resp)
-
-    # CHECK REGISTER 
-    client_id = r2.client_id()
-    print("Client ID : " + str(client_id))
-    app_name = r2.get(CCT_MODULE_CLIENT_PREFIX + str(client_id))
-    assert app_name == cct_prepare.TEST_APP_NAME_2
-
-    # SEARCH
-    resp = r2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
-    assert resp
-    print(resp)
-
+    r2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    r2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
+    
     ####### THIRD CLIENT
-
-    # REGISTER
     r3 = connect_redis()
-    resp = r3.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_3)
-    assert cct_prepare.OK in str(resp)
-    print(resp)
+    d = cct_prepare.generate_single_object(1001 , 2002, passport_value)
+    new_added_key = cct_prepare.TEST_INDEX_PREFIX + str(2)
+    r3.json().set(new_added_key, Path.root_path(), d)
 
-    # CHECK REGISTER 
-    client_id = r3.client_id()
-    print("Client ID : " + str(client_id))
-    app_name = r3.get(CCT_MODULE_CLIENT_PREFIX + str(client_id))
-    assert app_name == cct_prepare.TEST_APP_NAME_3
+    # TESTS
 
-    # CLIENT ADDS A NEW DATA THAT MATCHES TO QUERY
-    #d = cct_prepare.generate_single_object(1000 , 2000, "aaa")
-    #r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(2), Path.root_path(), d)
+    # CHECK THE STREAMS
+    from_stream = r.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
+    assert new_added_key in str(from_stream[0][1])
+    from_stream = r.xread( count=2, streams={cct_prepare.TEST_APP_NAME_2:0} )
+    assert new_added_key in str(from_stream[0][1])    
+
+    #CHECK NEW TRACKED KEY
+    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + first_key, cct_prepare.TEST_APP_NAME_1)
+    assert tracked_key 
+    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + new_added_key, cct_prepare.TEST_APP_NAME_1)
+    assert tracked_key 
+    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + first_key, cct_prepare.TEST_APP_NAME_2)
+    assert tracked_key 
+    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + new_added_key, cct_prepare.TEST_APP_NAME_2)
+    assert tracked_key     
+
+def test_basic_query_tracking_test_3():
+    r = connect_redis_with_start()
+    cct_prepare.flush_db(r) # clean all db first
+    cct_prepare.create_index(r)
+
+    ####### FIRST CLIENT
+    passport_value = "aaa"
+    d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
+    first_key = cct_prepare.TEST_INDEX_PREFIX + str(1)
+    r.json().set(first_key, Path.root_path(), d)
+    r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
+
+    ####### SECOND CLIENT
+    r2 = connect_redis()
+    r2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    r2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
+    
+    ####### THIRD CLIENT
+    r3 = connect_redis()
+    d = cct_prepare.generate_single_object(1001 , 2001, passport_value)
+    new_added_key = cct_prepare.TEST_INDEX_PREFIX + str(2)
+    r3.json().set(new_added_key, Path.root_path(), d)
+
+    r3.delete(new_added_key)
+
+    # TESTS
+
+    # CHECK THE STREAMS
+    from_stream = r.xread( count=3, streams={cct_prepare.TEST_APP_NAME_1:0} )
+    assert new_added_key in str(from_stream[0][1][-1][1])
+    assert from_stream[0][1][-1][1][new_added_key] == ''
+    from_stream = r.xread( count=2, streams={cct_prepare.TEST_APP_NAME_2:0} )
+    assert new_added_key in str(from_stream[0][1][-1][1])
+    assert from_stream[0][1][-1][1][new_added_key] == '' 
+
+    #CHECK NEW TRACKED KEY
+    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + first_key, cct_prepare.TEST_APP_NAME_1)
+    assert tracked_key 
+    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + new_added_key, cct_prepare.TEST_APP_NAME_1)
+    assert tracked_key 
+    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + first_key, cct_prepare.TEST_APP_NAME_2)
+    assert tracked_key 
+    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + new_added_key, cct_prepare.TEST_APP_NAME_2)
+    assert tracked_key     

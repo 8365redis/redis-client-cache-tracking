@@ -49,7 +49,7 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
 
         for (auto & k : keys) {
             std::string new_key = CCT_MODULE_QUERY_PREFIX + k;
-            std::cout<<"New key: " <<new_key<<std::endl;
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check check this query for tracking: " + new_key);
             RedisModuleCallReply *smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", new_key.c_str());
             if (RedisModule_CallReplyType(smembers_reply) != REDISMODULE_REPLY_ARRAY ){
                 LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed while getting client names for query: " +  new_key);
@@ -62,14 +62,16 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
                         RedisModuleString *response = RedisModule_CreateStringFromCallReply(key_reply);
                         const char *response_str = RedisModule_StringPtrLen(response, NULL);
                         clients_to_update.push_back(response_str);
-                        std::cout<<"Client to Update:"<< response_str << std::endl;
+                        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check query matched to this client(app): " + (std::string)response_str);
                         
                         std::string key_with_prefix = CCT_MODULE_TRACKING_PREFIX + key;
                         RedisModuleCallReply *sadd_key_reply = RedisModule_Call(ctx, "SADD", "cc", key_with_prefix.c_str()  , response_str);
                         if (RedisModule_CallReplyType(sadd_key_reply) != REDISMODULE_REPLY_INTEGER ){
                             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed while registering tracking key: " +  key_with_prefix);
                             return REDISMODULE_ERR;
-                        }    
+                        } else {
+                            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check added to stream: " + key_with_prefix);
+                        }
                     }
                 }
             }
@@ -93,8 +95,16 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
 int NotifyCallback(RedisModuleCtx *ctx, int type, const char *event, RedisModuleString *key) {
     RedisModule_AutoMemory(ctx);
 
+
+
     std::string event_str = event;
     std::string key_str = RedisModule_StringPtrLen(key, NULL);
+
+    if (strcasecmp(event, "loaded") == 0) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "NotifyCallback event : " + event_str  + " , key " + key_str + " : Loaded is IGNORED");
+        return REDISMODULE_OK;
+    }
+
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "NotifyCallback event : " + event_str  + " , key " + key_str);
 
     // Ignore our self events
@@ -186,14 +196,6 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         }
     }
     
-    // Subscribe to key space events
-    if ( RedisModule_SubscribeToKeyspaceEvents(ctx, REDISMODULE_NOTIFY_GENERIC | REDISMODULE_NOTIFY_SET | REDISMODULE_NOTIFY_STRING |
-            REDISMODULE_NOTIFY_EVICTED | REDISMODULE_NOTIFY_EXPIRED | REDISMODULE_NOTIFY_LOADED | REDISMODULE_NOTIFY_NEW | REDISMODULE_NOTIFY_MODULE ,
-             NotifyCallback) != REDISMODULE_OK ) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to SubscribeToKeyspaceEvents." );
-        return RedisModule_ReplyWithError(ctx, strerror(errno));   
-    }
-
     RedisModule_ReplyWithSimpleString(ctx, "OK");
     return REDISMODULE_OK;
 }
@@ -315,6 +317,14 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         return REDISMODULE_ERR;
     } else {
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT.FT.SEARCH command created successfully.");
+    }
+
+    // Subscribe to key space events
+    if ( RedisModule_SubscribeToKeyspaceEvents(ctx, REDISMODULE_NOTIFY_GENERIC | REDISMODULE_NOTIFY_SET | REDISMODULE_NOTIFY_STRING |
+            REDISMODULE_NOTIFY_EVICTED | REDISMODULE_NOTIFY_EXPIRED | REDISMODULE_NOTIFY_LOADED | REDISMODULE_NOTIFY_NEW | REDISMODULE_NOTIFY_MODULE ,
+             NotifyCallback) != REDISMODULE_OK ) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to SubscribeToKeyspaceEvents." );
+        return RedisModule_ReplyWithError(ctx, strerror(errno));   
     }
     
     return REDISMODULE_OK;
