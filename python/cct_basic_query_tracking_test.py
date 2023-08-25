@@ -66,7 +66,8 @@ def test_basic_query_tracking_test_2():
     cct_prepare.create_index(r)
 
     # ADD INITIAL DATA
-    d = cct_prepare.generate_single_object(1000 , 2000, "aaa")
+    passport_value = "aaa"
+    d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
     r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(1), Path.root_path(), d)
 
     # REGISTER
@@ -81,7 +82,7 @@ def test_basic_query_tracking_test_2():
     assert app_name == cct_prepare.TEST_APP_NAME_1
 
     # SEARCH
-    resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + d["User"]["PASSPORT"] + "}")
+    resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
     assert resp
     print(resp)
 
@@ -100,7 +101,7 @@ def test_basic_query_tracking_test_2():
     assert app_name == cct_prepare.TEST_APP_NAME_2
 
     # SEARCH
-    resp = r2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + d["User"]["PASSPORT"] + "}")
+    resp = r2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
     assert resp
     print(resp)
 
