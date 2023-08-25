@@ -51,6 +51,14 @@ def generate_input(count):
         addr_id = addr_id + 1
     return data
 
+def generate_input_for_chaos(count , max_id , max_addr_id , max_pass):
+    data = []
+    for x in range(count):
+        d = {}
+        d = generate_single_object(random.randint(0,max_id), random.randint(0,max_addr_id) , str(random.randint(0,max_pass)))
+        data.append(d)
+    return data
+
 def add_list(r, data):
     count = 1
     for d in data:
