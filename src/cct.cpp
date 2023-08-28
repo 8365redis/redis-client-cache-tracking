@@ -34,71 +34,66 @@ std::string Get_Client_Name(RedisModuleCtx *ctx){
     return client_name_str;
 }
 
-int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString* r_key){
+int Query_Check_Not_Tracked(RedisModuleCtx *ctx, std::string event, RedisModuleString* r_key){
     RedisModule_AutoMemory(ctx);
 
-    std::string key = RedisModule_StringPtrLen(r_key, NULL);
-    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check : " + event  + " , key " + key);
-    if (strcasecmp(event.c_str(), "json.set") == 0) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check , it is json.set event: " + event  + " , key " + key);
-        RedisModuleString *value = Get_JSON_Value(ctx, event , r_key);
-        if (value == NULL){
-            return REDISMODULE_ERR;
-        }
-        std::string json_str = RedisModule_StringPtrLen(value, NULL);
-        std::vector<std::string> keys;
-        Recursive_JSON_Iterate(Get_JSON_Object(json_str) , "", keys);
-        std::vector<std::string> clients_to_update;
+    std::string key_str = RedisModule_StringPtrLen(r_key, NULL);
 
-        for (auto & k : keys) {
-            std::string new_key = CCT_MODULE_QUERY_PREFIX + k;
-            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check check this query for tracking: " + new_key);
-            RedisModuleCallReply *smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", new_key.c_str());
-            if (RedisModule_CallReplyType(smembers_reply) != REDISMODULE_REPLY_ARRAY ){
-                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed while getting client names for query: " +  new_key);
-                return REDISMODULE_ERR;
-            } else {
-                const size_t reply_length = RedisModule_CallReplyLength(smembers_reply);
-                for (size_t i = 0; i < reply_length; i++) {
-                    RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(smembers_reply, i);
-                    if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING){
-                        RedisModuleString *response = RedisModule_CreateStringFromCallReply(key_reply);
-                        const char *response_str = RedisModule_StringPtrLen(response, NULL);
-                        clients_to_update.push_back(response_str);
-                        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check query matched to this client(app): " + (std::string)response_str);
-                        
-                        std::string key_with_prefix = CCT_MODULE_TRACKING_PREFIX + key;
-                        RedisModuleCallReply *sadd_key_reply = RedisModule_Call(ctx, "SADD", "cc", key_with_prefix.c_str()  , response_str);
-                        if (RedisModule_CallReplyType(sadd_key_reply) != REDISMODULE_REPLY_INTEGER ){
-                            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed while registering tracking key: " +  key_with_prefix);
-                            return REDISMODULE_ERR;
-                        } else {
-                            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check added to stream: " + key_with_prefix);
-                        }
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Check_Not_Tracked , it is json.set event: " + event  + " , key " + key_str);
+    RedisModuleString *value = Get_JSON_Value(ctx, event , r_key);
+    if (value == NULL){
+        return REDISMODULE_ERR;
+    }
+    std::string json_str = RedisModule_StringPtrLen(value, NULL);
+    std::vector<std::string> queries;
+    Recursive_JSON_Iterate(Get_JSON_Object(json_str) , "", queries);
+    std::vector<std::string> clients_to_update;
+
+    for (auto & q : queries) {
+        std::string query_with_prefix = CCT_MODULE_QUERY_PREFIX + q;
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Check_Not_Tracked check this query for tracking: " + query_with_prefix);
+        RedisModuleCallReply *smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", query_with_prefix.c_str());
+        if (RedisModule_CallReplyType(smembers_reply) != REDISMODULE_REPLY_ARRAY ){
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Check_Not_Tracked failed while getting client names for query: " +  query_with_prefix);
+            return REDISMODULE_ERR;
+        } else {
+            const size_t reply_length = RedisModule_CallReplyLength(smembers_reply);
+            for (size_t i = 0; i < reply_length; i++) {
+                RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(smembers_reply, i);
+                if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING){
+                    RedisModuleString *client = RedisModule_CreateStringFromCallReply(key_reply);
+                    const char *client_str = RedisModule_StringPtrLen(client, NULL);
+                    clients_to_update.push_back(client_str);
+                    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Check_Not_Tracked query matched to this client(app): " + (std::string)client_str);
+                    
+                    std::string key_with_prefix = CCT_MODULE_TRACKING_PREFIX + key_str;
+                    RedisModuleCallReply *sadd_key_reply = RedisModule_Call(ctx, "SADD", "cc", key_with_prefix.c_str()  , client_str);
+                    if (RedisModule_CallReplyType(sadd_key_reply) != REDISMODULE_REPLY_INTEGER ){
+                        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Check_Not_Tracked failed while registering tracking key: " +  key_with_prefix);
+                        return REDISMODULE_ERR;
+                    } else {
+                        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Check_Not_Tracked added to stream: " + key_with_prefix);
                     }
                 }
             }
         }
-        
-        // Write to stream
-        for (auto & client_name : clients_to_update) {
-            RedisModuleCallReply *xadd_reply =  RedisModule_Call(ctx, "XADD", "ccsc", client_name.c_str() , "*", r_key , json_str.c_str());
-            if (RedisModule_CallReplyType(xadd_reply) != REDISMODULE_REPLY_STRING) {
-                    LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to create the stream." );
-                    return RedisModule_ReplyWithError(ctx, strerror(errno));
-            }
-        }
-
-        return REDISMODULE_OK;
-    } else {
-        return REDISMODULE_OK;
     }
+    
+    // Write to stream
+    for (auto & client_name : clients_to_update) {
+        RedisModuleCallReply *xadd_reply =  RedisModule_Call(ctx, "XADD", "ccsc", client_name.c_str() , "*", r_key , json_str.c_str());
+        if (RedisModule_CallReplyType(xadd_reply) != REDISMODULE_REPLY_STRING) {
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to create the stream." );
+                return RedisModule_ReplyWithError(ctx, strerror(errno));
+        }
+    }
+
+    return REDISMODULE_OK;
+
 }
 
 int NotifyCallback(RedisModuleCtx *ctx, int type, const char *event, RedisModuleString *key) {
     RedisModule_AutoMemory(ctx);
-
-
 
     std::string event_str = event;
     std::string key_str = RedisModule_StringPtrLen(key, NULL);
@@ -125,11 +120,12 @@ int NotifyCallback(RedisModuleCtx *ctx, int type, const char *event, RedisModule
     RedisModuleCallReply *scard_reply = RedisModule_Call(ctx, "SCARD", "c", key_with_prefix.c_str());
     if (RedisModule_CallReplyType(scard_reply) != REDISMODULE_REPLY_INTEGER) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "NotifyCallback event : " + event_str  + " , key " + key_str + " checking the key has failed.");
-        return REDISMODULE_ERR;            
+        return REDISMODULE_ERR;
     } else {
         long long tracked_count = RedisModule_CallReplyInteger(scard_reply);
-        if (tracked_count == 0) {
-            Query_Track_Check(ctx, event_str, key);
+        // Check if the new set is matching a new 
+        if ( tracked_count == 0 && (strcasecmp(event, "json.set") == 0) ) {
+            Query_Check_Not_Tracked(ctx, event_str, key);
             return REDISMODULE_OK;
         }
     }
