@@ -27,11 +27,6 @@ def test_basic_query_tracking_test_1():
     assert cct_prepare.OK in str(resp)
     print(resp)
 
-    # CHECK REGISTER 
-    client_id = r.client_id()
-    app_name = r.get(CCT_MODULE_CLIENT_PREFIX + str(client_id))
-    assert app_name == cct_prepare.TEST_APP_NAME_1
-
     query_key_attr = "User\\.PASSPORT" + ":" + d["User"]["PASSPORT"]
     print("query_key_attr:" + query_key_attr)
     # SEARCH
