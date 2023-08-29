@@ -79,57 +79,36 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
             }
         }
     }
-    std::cout<<"test2"<<std::endl;
+
+    std::set<std::string> tracking_clients_set(tracking_clients.begin(), tracking_clients.end());
+    std::set<std::string> clients_to_update_set(clients_to_update.begin(), clients_to_update.end());
+
+    std::set<std::string> total_clients;
+    std::set_union(std::begin(tracking_clients_set), std::end(tracking_clients_set), std::begin(clients_to_update_set), std::end(clients_to_update_set), std::inserter(total_clients, std::begin(total_clients)));    
     // Write to stream
-    for (auto & client_name : clients_to_update) {
+    for (auto & client_name : total_clients) {
         RedisModuleCallReply *xadd_reply =  RedisModule_Call(ctx, "XADD", "ccsc", client_name.c_str() , "*", r_key , json_str.c_str());
         if (RedisModule_CallReplyType(xadd_reply) != REDISMODULE_REPLY_STRING) {
                 LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to create the stream." );
                 return RedisModule_ReplyWithError(ctx, strerror(errno));
         }
     }
-    std::cout<<"test3"<<std::endl;
     // Now delete the tracked keys which are not matching to our queries anymore
-    std::vector<std::string> result;
-    std::set<std::string> tracking_clients_set(tracking_clients.begin(), tracking_clients.end());
-    for (auto const& t : tracking_clients_set)
-    {
-        std::cout << t << ' ';
-    }
-    std::cout << std::endl;    
-
-    std::set<std::string> clients_to_update_set(clients_to_update.begin(), clients_to_update.end());
-    for (auto const& c : clients_to_update_set)
-    {
-        std::cout << c << ' ';
-    }
-    std::cout << std::endl;
-
+    std::set<std::string> diff_clients;
     // tracking_clients_set - clients_to_update_set
-    std::cout<<"test4"<<std::endl;
-    if(!tracking_clients_set.empty() && !clients_to_update_set.empty()) {
-        std::set_difference (tracking_clients_set.begin(), tracking_clients_set.end(), clients_to_update_set.begin(), clients_to_update_set.end(), result.begin());
-    }
-    if (result.size() > 0) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check will delete no more interested keys from tracked" );
-    }
+    std::set_difference (tracking_clients_set.begin(), tracking_clients_set.end(), clients_to_update_set.begin(), clients_to_update_set.end(), inserter(diff_clients, diff_clients.begin()));
 
-    std::cout<<"test5"<<std::endl;
     // Delete no more tracked keys
-    for (const auto& it : result) {
-        std::string key_with_prefix = CCT_MODULE_TRACKING_PREFIX + it;
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check will delete no more interested this key from tracked : " +  key_with_prefix );
+    for (const auto& it : diff_clients) {
+        std::string key_with_prefix = CCT_MODULE_TRACKING_PREFIX + key_str;
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check will delete no more interested client: " + it + " from tracked key : " +  key_with_prefix);
         RedisModuleCallReply *sadd_key_reply = RedisModule_Call(ctx, "SREM", "cc", key_with_prefix.c_str()  , it.c_str());
         if (RedisModule_CallReplyType(sadd_key_reply) != REDISMODULE_REPLY_INTEGER ){
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed while deleting tracking key: " +  key_with_prefix);
             return REDISMODULE_ERR;
         }
     }
-
-
-
     return REDISMODULE_OK;
-
 }
 
 int NotifyCallback(RedisModuleCtx *ctx, int type, const char *event, RedisModuleString *key) {
