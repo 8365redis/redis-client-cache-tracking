@@ -68,7 +68,7 @@ def test_key_affects_query():
     client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
 
     # DELETE DATA
-    producer.json().delete(key, Path.root_path())
+    producer.delete(key)
 
     # Check deleted key is not tracked anymore   
     tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + key, cct_prepare.TEST_APP_NAME_1)

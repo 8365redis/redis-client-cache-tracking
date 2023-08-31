@@ -141,8 +141,8 @@ def test_basic_query_tracking_test_3():
     tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + first_key, cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
     tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + new_added_key, cct_prepare.TEST_APP_NAME_1)
-    assert tracked_key 
+    assert not tracked_key 
     tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + first_key, cct_prepare.TEST_APP_NAME_2)
     assert tracked_key 
     tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + new_added_key, cct_prepare.TEST_APP_NAME_2)
-    assert tracked_key     
+    assert not tracked_key     
