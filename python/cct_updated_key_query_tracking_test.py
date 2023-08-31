@@ -97,4 +97,43 @@ def test_updated_key_doesnt_match_any_query():
 
     # Check new key is not tracked anymore   
     tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + key, cct_prepare.TEST_APP_NAME_1)
-    assert not tracked_key  
+    assert not tracked_key
+
+
+def test_updated_key_doesnt_match_old_query_but_match_new_query():
+    producer = connect_redis_with_start()
+    cct_prepare.flush_db(producer) # clean all db first
+    cct_prepare.create_index(producer)
+
+    # ADD INITIAL DATA
+    key = cct_prepare.TEST_INDEX_PREFIX + str(1)
+    passport_value = "aaa"
+    d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
+    producer.json().set(key, Path.root_path(), d)
+
+    # FIRST CLIENT
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    query_value = "aaa"
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+
+    # SECOND CLIENT
+    client2 = connect_redis()
+    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    new_value = "bbb"
+    client2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + new_value + "}")   
+
+    # UPDATE DATA
+    d = cct_prepare.generate_single_object(1000 , 2000, new_value)
+    producer.json().set(key, Path.root_path(), d)
+
+    # Check key is in streams 
+    from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
+    assert key in str(from_stream[0][1])
+    from_stream = client2.xread( count=2, streams={cct_prepare.TEST_APP_NAME_2:0} )
+    assert key in str(from_stream[0][1])
+
+    # Check new key is tracked
+    tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + key, cct_prepare.TEST_APP_NAME_2)
+    assert tracked_key 
+
