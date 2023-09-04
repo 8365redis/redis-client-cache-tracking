@@ -136,4 +136,7 @@ def test_updated_key_doesnt_match_old_query_but_match_new_query():
     # Check new key is tracked
     tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + key, cct_prepare.TEST_APP_NAME_2)
     assert tracked_key 
+    
+    d = cct_prepare.generate_single_object(1001 , 2001, new_value)
+    producer.json().set(key, Path.root_path(), d)
 
