@@ -2,6 +2,7 @@
 #include "constants.h"
 #include "query_parser.h"
 #include "json_handler.h"
+#include "client_tracker.h"
 #include "logger.h"
 #include <stdlib.h>
 #include <string.h>
@@ -10,29 +11,13 @@
 #include <algorithm>
 #include <regex>
 #include <set>
+#include <unordered_map>
 
+std::unordered_map<std::string, unsigned long long> CCT_REGISTERED_CLIENTS;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-static std::set<unsigned long long> CCT_REGISTERED_CLIENTS;
-
-std::string Get_Client_Name(RedisModuleCtx *ctx){
-
-    unsigned long long client_id = RedisModule_GetClientId(ctx);
-    RedisModuleString *client_name = RedisModule_GetClientNameById(ctx, client_id); 
-    if ( client_name == NULL){
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Failed to get client name." );
-        return "";
-    }
-    std::string client_name_str = RedisModule_StringPtrLen(client_name, NULL);
-    if ( client_name_str.empty()){
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Failed to get client name because client name is not set." );
-        return "";
-    }
-    return client_name_str;
-}
 
 int Get_Traking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string event, RedisModuleString* r_key, std::vector<std::string> &clients_to_update, std::string &json_str ) {
     RedisModule_AutoMemory(ctx);
@@ -197,19 +182,21 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         return RedisModule_WrongArity(ctx);
     }
 
-    // Register client
     unsigned long long client_id = RedisModule_GetClientId(ctx);
-    if(CCT_REGISTERED_CLIENTS.count(client_id) != 0) {
+    // Register client
+
+    if (CCT_REGISTERED_CLIENTS[RedisModule_StringPtrLen(argv[1], NULL)] != CLIENT_OFFLINE) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand ignored with duplicate call. Client ID : " +  std::to_string(client_id));
-        return RedisModule_ReplyWithError(ctx, "Duplicate Register");
+        return RedisModule_ReplyWithError(ctx, "Duplicate Register");        
     }
-    CCT_REGISTERED_CLIENTS.insert(client_id);
-    
+   
     // Set client name
     if (RedisModule_SetClientNameById(client_id, argv[1]) != REDISMODULE_OK){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set client name." );
         return RedisModule_ReplyWithError(ctx, strerror(errno));
     }
+
+    CCT_REGISTERED_CLIENTS[RedisModule_StringPtrLen(argv[1], NULL)] = client_id;
 
     // Check if the stream exists
     RedisModuleCallReply *exists_reply = RedisModule_Call(ctx, "EXISTS", "s", argv[1]);
@@ -355,8 +342,14 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     if ( RedisModule_SubscribeToKeyspaceEvents(ctx, REDISMODULE_NOTIFY_GENERIC | REDISMODULE_NOTIFY_SET | REDISMODULE_NOTIFY_STRING |
             REDISMODULE_NOTIFY_EVICTED | REDISMODULE_NOTIFY_EXPIRED | REDISMODULE_NOTIFY_LOADED | REDISMODULE_NOTIFY_NEW | REDISMODULE_NOTIFY_MODULE ,
              NotifyCallback) != REDISMODULE_OK ) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to SubscribeToKeyspaceEvents." );
-        return RedisModule_ReplyWithError(ctx, strerror(errno));   
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "RedisModule_OnLoad failed to SubscribeToKeyspaceEvents." );
+        return RedisModule_ReplyWithError(ctx, strerror(errno));
+    }
+
+    if (RedisModule_SubscribeToServerEvent(ctx, RedisModuleEvent_ClientChange,
+                                             handleClientEvent) != REDISMODULE_OK) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "RedisModule_OnLoad failed to SubscribeToServerEvent." );
+        return RedisModule_ReplyWithError(ctx, strerror(errno));
     }
     
     return REDISMODULE_OK;

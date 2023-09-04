@@ -7,5 +7,6 @@
 #define CCT_MODULE_KEY_SEPERATOR ":"
 #define CCT_MODULE_KEY_LEVEL "."
 #define CCT_MODULE_KEY_LEVEL_WITH_ESCAPE "\\."
+#define CLIENT_OFFLINE 0
 
 #endif /* CONSTANTS_H */
