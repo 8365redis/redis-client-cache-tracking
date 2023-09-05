@@ -137,6 +137,48 @@ def test_updated_key_doesnt_match_old_query_but_match_new_query():
     tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + key, cct_prepare.TEST_APP_NAME_2)
     assert tracked_key 
     
+    # Add More data to stream
     d = cct_prepare.generate_single_object(1001 , 2001, new_value)
     producer.json().set(key, Path.root_path(), d)
 
+def test_updated_key_match_new_query_while_not_mathing_old_matching_query():
+    producer = connect_redis_with_start()
+    cct_prepare.flush_db(producer) # clean all db first
+    cct_prepare.create_index(producer)
+
+    # ADD INITIAL DATA
+    key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1)
+    passport_value_1 = "aaa"
+    d = cct_prepare.generate_single_object(1000 , 2000, passport_value_1)
+    producer.json().set(key_1, Path.root_path(), d)
+    
+    key_2 = cct_prepare.TEST_INDEX_PREFIX + str(2)
+    passport_value_2 = "bbb"
+    d = cct_prepare.generate_single_object(1001 , 2001, passport_value_2)
+    producer.json().set(key_2, Path.root_path(), d)
+
+    # FIRST CLIENT
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+
+    query_value = "1000"
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + query_value + "}") # match first
+
+    query_value = "bbb"
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # match second
+
+    # UPDATE DATA
+    new_value = "bbb"
+    d = cct_prepare.generate_single_object(1002 , 2002, new_value)
+    producer.json().set(key_1, Path.root_path(), d)
+
+    # Check key is in streams 
+    from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
+    assert key_1 in str(from_stream[0][1])
+
+    # Check both keya are tracked
+    tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + key_1, cct_prepare.TEST_APP_NAME_1)
+    assert tracked_key 
+    tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + key_2, cct_prepare.TEST_APP_NAME_1)
+    assert tracked_key 
+   

@@ -83,11 +83,11 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
 
     std::string key_str = RedisModule_StringPtrLen(r_key, NULL);
 
-    std::set<std::string> tracking_clients_set(already_tracking_clients.begin(), already_tracking_clients.end());
+    std::set<std::string> already_tracking_clients_set(already_tracking_clients.begin(), already_tracking_clients.end());
     std::set<std::string> clients_to_update_set(clients_to_update.begin(), clients_to_update.end());
 
     std::set<std::string> total_clients;
-    std::set_union(std::begin(tracking_clients_set), std::end(tracking_clients_set), std::begin(clients_to_update_set), std::end(clients_to_update_set), std::inserter(total_clients, std::begin(total_clients)));    
+    std::set_union(std::begin(already_tracking_clients_set), std::end(already_tracking_clients_set), std::begin(clients_to_update_set), std::end(clients_to_update_set), std::inserter(total_clients, std::begin(total_clients)));    
     // Write to stream
     for (auto & client_name : total_clients) {
         RedisModuleCallReply *xadd_reply =  RedisModule_Call(ctx, "XADD", "ccsc", client_name.c_str() , "*", r_key , json_str.c_str());
@@ -98,8 +98,8 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
     }
     // Now delete the tracked keys which are not matching to our queries anymore
     std::set<std::string> diff_clients;
-    // tracking_clients_set - clients_to_update_set
-    std::set_difference (tracking_clients_set.begin(), tracking_clients_set.end(), clients_to_update_set.begin(), clients_to_update_set.end(), inserter(diff_clients, diff_clients.begin()));
+    // already_tracking_clients_set - clients_to_update_set
+    std::set_difference (already_tracking_clients_set.begin(), already_tracking_clients_set.end(), clients_to_update_set.begin(), clients_to_update_set.end(), inserter(diff_clients, diff_clients.begin()));
     // Delete no more tracked keys
     for (const auto& it : diff_clients) {
         std::string key_with_prefix = CCT_MODULE_TRACKING_PREFIX + key_str;
