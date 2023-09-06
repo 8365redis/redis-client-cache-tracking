@@ -41,8 +41,12 @@ int Get_Traking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string event
     }
 
     std::vector<std::string> queries;
-    Recursive_JSON_Iterate(Get_JSON_Object(json_str) , "", queries);
 
+    nlohmann::json json_object = Get_JSON_Object(ctx, json_str);
+    if(json_object == NULL){
+        return REDISMODULE_ERR;
+    }
+    Recursive_JSON_Iterate(json_object , "", queries);
     for (auto & q : queries) {
         std::string query_with_prefix = CCT_MODULE_QUERY_PREFIX + q;
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Traking_Clients_From_Changed_JSON check this query for tracking: " + query_with_prefix);
@@ -73,7 +77,6 @@ int Get_Traking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string event
             }
         }
     }
-
     return REDISMODULE_OK;
 }
 
