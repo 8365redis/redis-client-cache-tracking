@@ -1,7 +1,7 @@
 import pytest
 import redis
 from redis.commands.json.path import Path
-from manage_redis import kill_redis, connect_redis_with_start_with_start, connect_redis_with_start
+from manage_redis import kill_redis, connect_redis_with_start, connect_redis_with_start
 import cct_prepare
 from constants import CCT_MODULE_TRACKING_PREFIX, CCT_MODULE_QUERY_PREFIX
 

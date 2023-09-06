@@ -76,6 +76,7 @@ def test_key_affects_query():
 
     # Check key is in streams 
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
+    print(from_stream)
     assert key in str(from_stream[0][1])    
 
     # Check query is tracked    

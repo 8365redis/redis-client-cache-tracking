@@ -19,7 +19,9 @@ std::unordered_map<std::string, unsigned long long> CCT_REGISTERED_CLIENTS;
 extern "C" {
 #endif
 
-int Get_Traking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string event, RedisModuleString* r_key, std::vector<std::string> &clients_to_update, std::string &json_str ) {
+int Get_Traking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string event, RedisModuleString* r_key,
+                                             std::vector<std::string> &clients_to_update, std::string &json_str, 
+                                             std::unordered_map<std::string, std::vector<std::string>> &client_to_queries_map ) {
     RedisModule_AutoMemory(ctx);
 
     std::string key_str = RedisModule_StringPtrLen(r_key, NULL);
@@ -56,6 +58,7 @@ int Get_Traking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string event
                     RedisModuleString *client = RedisModule_CreateStringFromCallReply(key_reply);
                     const char *client_str = RedisModule_StringPtrLen(client, NULL);
                     clients_to_update.push_back(std::string(client_str));
+                    client_to_queries_map[std::string(client_str)].push_back(q);
                     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Traking_Clients_From_Changed_JSON query matched to this client(app): " + (std::string)client_str);
                     
                     std::string key_with_prefix = CCT_MODULE_TRACKING_PREFIX + key_str;
@@ -79,7 +82,8 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
 
     std::vector<std::string> clients_to_update;
     std::string json_str;
-    Get_Traking_Clients_From_Changed_JSON(ctx , event,  r_key , clients_to_update , json_str);
+    std::unordered_map<std::string, std::vector<std::string>> client_to_queries_map;
+    Get_Traking_Clients_From_Changed_JSON(ctx , event,  r_key , clients_to_update , json_str, client_to_queries_map);
 
     std::string key_str = RedisModule_StringPtrLen(r_key, NULL);
 
@@ -90,7 +94,14 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
     std::set_union(std::begin(already_tracking_clients_set), std::end(already_tracking_clients_set), std::begin(clients_to_update_set), std::end(clients_to_update_set), std::inserter(total_clients, std::begin(total_clients)));    
     // Write to stream
     for (auto & client_name : total_clients) {
-        RedisModuleCallReply *xadd_reply =  RedisModule_Call(ctx, "XADD", "ccsc", client_name.c_str() , "*", r_key , json_str.c_str());
+        auto client_queries = client_to_queries_map[client_name];
+        std::string client_queries_str;
+        std::ostringstream imploded;
+        std::copy(client_queries.begin(), client_queries.end(), std::ostream_iterator<std::string>(imploded, " "));
+        client_queries_str = imploded.str();
+
+        RedisModuleCallReply *xadd_reply =  RedisModule_Call(ctx, "XADD", "cccccscccc", client_name.c_str() , "*", "operation" , event.c_str() , 
+                                                                "key" , r_key , "value", json_str.c_str(), "queries" , client_queries_str.c_str() );
         if (RedisModule_CallReplyType(xadd_reply) != REDISMODULE_REPLY_STRING) {
                 LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to create the stream." );
                 return RedisModule_ReplyWithError(ctx, strerror(errno));
