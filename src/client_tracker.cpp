@@ -3,8 +3,7 @@
 #include "constants.h"
 
 void handleClientEvent(RedisModuleCtx *ctx, RedisModuleEvent eid,
-                       uint64_t subevent, void *data)
-{
+                       uint64_t subevent, void *data) {
 
     if (data == NULL) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "handleClientEvent failed with NULL data." );

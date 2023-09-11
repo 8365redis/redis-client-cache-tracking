@@ -1,12 +1,18 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#define CCT_MODULE_PREFIX "CCT:"
-#define CCT_MODULE_TRACKING_PREFIX CCT_MODULE_PREFIX "TRACKED_KEYS:"
-#define CCT_MODULE_QUERY_PREFIX CCT_MODULE_PREFIX "TRACKED_QUERIES:"
-#define CCT_MODULE_KEY_SEPERATOR ":"
-#define CCT_MODULE_KEY_LEVEL "."
-#define CCT_MODULE_KEY_LEVEL_WITH_ESCAPE "\\."
-#define CLIENT_OFFLINE 0
+#include <string>
+
+const std::string CCT_MODULE_PREFIX  = "CCT:" ;
+const std::string CCT_MODULE_TRACKING_PREFIX = CCT_MODULE_PREFIX + "TRACKED_KEYS:" ;
+const std::string CCT_MODULE_QUERY_PREFIX = CCT_MODULE_PREFIX + "TRACKED_QUERIES:" ;
+const std::string CCT_MODULE_CLIENT_QUERY_PREFIX =  CCT_MODULE_PREFIX + "TRACKED_CLIENT_QUERIES:" ;
+const std::string CCT_MODULE_KEY_SEPERATOR  = ":" ;
+const std::string CCT_MODULE_KEY_LEVEL = "." ;
+const std::string CCT_MODULE_KEY_LEVEL_WITH_ESCAPE = "\\." ;
+const int CLIENT_OFFLINE = 0 ;
+
+const int MS_MULT = 1000 ; 
+const int CCT_TTL = 10 * MS_MULT ; // Seconds
 
 #endif /* CONSTANTS_H */

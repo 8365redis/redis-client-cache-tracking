@@ -9,7 +9,7 @@ void Log_Std_Output(RedisModuleCtx *ctx, const char *levelstr, std::string fmt )
     std::cout<<"XXXXX:X "<<time<<"."<<std::to_string(ms.count())<<" * <CCT_MODULE> "<< fmt << std::endl;
 }
 
-void Log_Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc){
+void Log_Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     std::stringstream argument_stream;
     std::string command_name = RedisModule_StringPtrLen(argv[0], NULL);
     for ( int i = 1; i < argc; i++) {

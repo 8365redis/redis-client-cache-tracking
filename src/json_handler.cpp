@@ -1,7 +1,7 @@
 #include "json_handler.h"
 #include "logger.h"
 
-RedisModuleString * Get_JSON_Value(RedisModuleCtx *ctx, std::string event_str, RedisModuleString* r_key){
+RedisModuleString * Get_JSON_Value(RedisModuleCtx *ctx, std::string event_str, RedisModuleString* r_key) {
     RedisModule_AutoMemory(ctx);
 
     RedisModuleString *value;
@@ -30,12 +30,15 @@ json Get_JSON_Object(RedisModuleCtx *ctx, std::string str){
     return json::parse(str);
 }
 
-void Recursive_JSON_Iterate(const json& j, std::string prefix , std::vector<std::string> &keys){
+void Recursive_JSON_Iterate(const json& j, std::string prefix , std::vector<std::string> &keys) {
 
     for(auto it = j.begin(); it != j.end(); ++it)
     {
-        if (it->is_structured())
-        {
+        std::cout<<"Recursive_JSON_Iterate prefix:"<<prefix<<" key:"<<it.key()<<" value:"<<it.value()<<std::endl;
+        if( it->is_array()) {
+            continue;
+        }
+        else if (it->is_structured()) {
             std::string new_prefix;
             if( prefix.empty() == false ){
                 new_prefix = prefix + CCT_MODULE_KEY_LEVEL_WITH_ESCAPE + it.key();
@@ -43,19 +46,21 @@ void Recursive_JSON_Iterate(const json& j, std::string prefix , std::vector<std:
                 new_prefix = std::string(it.key());
             }
             Recursive_JSON_Iterate(*it, new_prefix, keys);
-        }
-        else
-        {
+        } else {
             std::string value_str;
             const json::value_t val_type = it.value().type();
             if (val_type == json::value_t::number_integer || val_type == json::value_t::number_unsigned){
                 value_str = std::to_string(it.value().get<int>());
             } else if (val_type == json::value_t::number_float ) {
                 value_str = std::to_string(it.value().get<float>());
+            } else if (val_type == json::value_t::null ){
+                value_str = "null";
             } else {
                 value_str = it.value().get<std::string>();
             }
+            // TODO FIX prefix
             std::string new_prefix = prefix + CCT_MODULE_KEY_LEVEL_WITH_ESCAPE + it.key() + CCT_MODULE_KEY_SEPERATOR + value_str;
+            std::cout<<"Recursive_JSON_Iterate new_prefix:"<<new_prefix<<std::endl;
             keys.push_back(new_prefix);
         }
     }
