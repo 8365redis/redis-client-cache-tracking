@@ -67,12 +67,24 @@ int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string even
                     
                     std::string key_with_prefix = CCT_MODULE_TRACKING_PREFIX + key_str;
                     RedisModuleCallReply *sadd_key_reply = RedisModule_Call(ctx, "SADD", "cc", key_with_prefix.c_str()  , client_str);
-                    if (RedisModule_CallReplyType(sadd_key_reply) != REDISMODULE_REPLY_INTEGER ){
+                    if (RedisModule_CallReplyType(sadd_key_reply) != REDISMODULE_REPLY_INTEGER ) {
                         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Get_Tracking_Clients_From_Changed_JSON failed while registering tracking key: " +  key_with_prefix);
                         return REDISMODULE_ERR;
                     } else {
                         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON added to stream: " + key_with_prefix);
                     }
+                    
+                    
+                    RedisModuleString *key_tracking_set_key_str = RedisModule_CreateString(ctx, key_with_prefix.c_str() , key_with_prefix.length());
+                    RedisModuleKey *key_tracking_set_key = RedisModule_OpenKey(ctx, key_tracking_set_key_str, REDISMODULE_WRITE);
+                    if(RedisModule_KeyType(key_tracking_set_key) == REDISMODULE_KEYTYPE_EMPTY) {
+                        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed set expire for client tracking set (key null): " +  key_with_prefix);
+                    }
+                    if(RedisModule_SetExpire(key_tracking_set_key, CCT_TTL) != REDISMODULE_OK) {
+                        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed set expire for client tracking set: " +  key_with_prefix);
+                    }
+                    
+                                      
                 }
             }
         }
@@ -137,6 +149,8 @@ int Handle_Expire_Query(RedisModuleCtx *ctx , std::string key) {
     std::string client_name(key.substr(key.rfind(CCT_MODULE_KEY_SEPERATOR) + 1));
     std::string query(key.substr(0, key.rfind(CCT_MODULE_KEY_SEPERATOR)));
     LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Expire_Query parsed  client_name :" + client_name  + " , query :" + query);
+    // FIX HERE : what():  std::out_of_range -> basic_string::substr: __pos (which is 27) > this->size() (which is 22)
+    // Handle_Expire_Query parsed  client_name :1 , query :CCT:TRACKED_KEYS:users
     std::string new_query(query.substr(CCT_MODULE_CLIENT_QUERY_PREFIX.length()));
     new_query = CCT_MODULE_QUERY_PREFIX  + new_query;
     LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Expire_Query parsed  client_name :" + client_name  + " , new_query :" + new_query);
@@ -172,8 +186,13 @@ int Notify_Callback(RedisModuleCtx *ctx, int type, const char *event, RedisModul
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " ignore our own events to prevent loops." );
         return REDISMODULE_OK;
     }
+    
+    if (key_str.rfind(CCT_MODULE_TRACKING_PREFIX, 0) == 0) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " ignore our own events to prevent loops." );
+        return REDISMODULE_OK;        
+    }
 
-    if (strcasecmp(event, "expired") == 0) {
+    if (strcasecmp(event, "expired") == 0 ) {
         return Handle_Expire_Query(ctx, key_str);
     }
     
@@ -324,6 +343,18 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed while registering query tracking key: " +  key_with_prefix);
             return REDISMODULE_ERR;
         }
+
+        
+        
+        RedisModuleString *key_tracking_set_key_str = RedisModule_CreateString(ctx, key_with_prefix.c_str() , key_with_prefix.length());
+        RedisModuleKey *key_tracking_set_key = RedisModule_OpenKey(ctx, key_tracking_set_key_str, REDISMODULE_WRITE);
+        if(RedisModule_KeyType(key_tracking_set_key) == REDISMODULE_KEYTYPE_EMPTY) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed set expire for client tracking set (key null): " +  key_with_prefix);
+        }
+        if(RedisModule_SetExpire(key_tracking_set_key, CCT_TTL) != REDISMODULE_OK){
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed set expire for client tracking set: " +  key_with_prefix);
+        }
+        
         
     }
 
@@ -354,7 +385,7 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     }
     if(RedisModule_SetExpire(query_client_key, CCT_TTL) != REDISMODULE_OK){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed set expire for client query tracking key: " +  query_client_key_name_str);
-    }    
+    }
     
 
     return REDISMODULE_OK;
