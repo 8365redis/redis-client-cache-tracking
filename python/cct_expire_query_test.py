@@ -93,6 +93,13 @@ def test_query_expired():
     result = producer.sismember(CCT_MODULE_QUERY_PREFIX +"User\\.ID:1001" , cct_prepare.TEST_APP_NAME_2)
     assert result
 
+    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(1))
+    assert not result
+    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(2))
+    assert result
+    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(3))
+    assert result
+
 
     # UPDATE DATA (K2)
     d = cct_prepare.generate_single_object(1001 , 2000, "ccc")
@@ -132,6 +139,13 @@ def test_query_expired():
     result = producer.sismember(CCT_MODULE_QUERY_PREFIX +"User\\.ID:1001" , cct_prepare.TEST_APP_NAME_2)
     assert not result  
 
+    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(1))
+    assert not result
+    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(2)) # this will not expire because its key is updated so we are keep tracking
+    assert result
+    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(3))
+    assert not result    
+
     # UPDATE DATA (K2)
     d = cct_prepare.generate_single_object(1001 , 2000, "eee")
     producer.json().set(cct_prepare.TEST_INDEX_PREFIX + str(2), Path.root_path(), d)
@@ -155,3 +169,13 @@ def test_query_expired():
     print(from_stream)
     from_stream = client2.xread( streams={cct_prepare.TEST_APP_NAME_2:0} )
     print(from_stream)        
+
+
+    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(1))
+    assert not result
+    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(2)) # this will expire this time because even the related query is deleted and second one will delete this
+    assert not result
+    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(3))
+    assert not result
+
+    
