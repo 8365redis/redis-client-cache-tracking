@@ -16,14 +16,12 @@ void handleClientEvent(RedisModuleCtx *ctx, RedisModuleEvent eid,
     if (eid.id == REDISMODULE_EVENT_CLIENT_CHANGE) {
         switch (subevent) {
             case REDISMODULE_SUBEVENT_CLIENT_CHANGE_DISCONNECTED: {
-                CCT_REGISTERED_CLIENTS[client_name] = CLIENT_OFFLINE;
                 LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "handleClientEvent client disconnected : " +  client_name );
             } 
             break;
 
             case REDISMODULE_SUBEVENT_CLIENT_CHANGE_CONNECTED: {
                 LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "handleClientEvent client connected : " +  client_name );
-                //For now we are skipping
             } 
             break;
         }

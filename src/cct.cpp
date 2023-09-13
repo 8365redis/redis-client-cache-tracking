@@ -13,8 +13,6 @@
 #include <set>
 #include <unordered_map>
 
-std::unordered_map<std::string, unsigned long long> CCT_REGISTERED_CLIENTS;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -251,39 +249,38 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         return RedisModule_WrongArity(ctx);
     }
 
+    RedisModuleString *client_name = argv[1];
     unsigned long long client_id = RedisModule_GetClientId(ctx);
-    // Register client
-
-    if (CCT_REGISTERED_CLIENTS[RedisModule_StringPtrLen(argv[1], NULL)] != CLIENT_OFFLINE) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand ignored with duplicate call. Client ID : " +  std::to_string(client_id));
-        return RedisModule_ReplyWithError(ctx, "Duplicate Register");        
-    }
-   
+    
     // Set client name
-    if (RedisModule_SetClientNameById(client_id, argv[1]) != REDISMODULE_OK){
+    if (RedisModule_SetClientNameById(client_id, client_name) != REDISMODULE_OK){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set client name." );
         return RedisModule_ReplyWithError(ctx, strerror(errno));
     }
 
-    CCT_REGISTERED_CLIENTS[RedisModule_StringPtrLen(argv[1], NULL)] = client_id;
+    // Check if the stream exists and delete if it
+    if( RedisModule_KeyExists(ctx, client_name) ) { // NOT checking if it is stream
+        RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
+        if (RedisModule_DeleteKey(stream_key) != REDISMODULE_OK ) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to delete the stream." );
+            return RedisModule_ReplyWithError(ctx, strerror(errno));    
+        }
 
-    // Check if the stream exists
-    RedisModuleCallReply *exists_reply = RedisModule_Call(ctx, "EXISTS", "s", argv[1]);
-    if (RedisModule_CallReplyType(exists_reply) != REDISMODULE_REPLY_INTEGER) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to detect the stream." );
+    } 
+
+    // Create a new stream
+    RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
+    RedisModuleString **xadd_params = (RedisModuleString **) RedisModule_Alloc(sizeof(RedisModuleString *) * 2);
+    const char *dummy = "d";
+    xadd_params[0] = RedisModule_CreateString(ctx, dummy, strlen(dummy));
+    xadd_params[1] = RedisModule_CreateString(ctx, dummy, strlen(dummy));
+    int stream_add_resp = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params, 1);
+    if (stream_add_resp != REDISMODULE_OK) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to create the stream." );
         return RedisModule_ReplyWithError(ctx, strerror(errno));
     }
-    int stream_count = RedisModule_CallReplyInteger(exists_reply);
-
-    // If it exists delete it
-    if ( stream_count > 0 ){
-        RedisModuleCallReply *del_reply = RedisModule_Call(ctx, "DEL", "s", argv[1]);
-        if (RedisModule_CallReplyType(del_reply) != REDISMODULE_REPLY_INTEGER) {
-            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to delete the stream." );
-            return RedisModule_ReplyWithError(ctx, strerror(errno));
-        }
-    }
-    
+    RedisModule_StreamTrimByLength(stream_key, 0, 0);  
+ 
     RedisModule_ReplyWithSimpleString(ctx, "OK");
     return REDISMODULE_OK;
 }
