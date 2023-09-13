@@ -60,6 +60,27 @@ void Add_Tracking_Key(RedisModuleCtx *ctx, std::string key, std::string client) 
     }
 }
 
+int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std::string event, RedisModuleString * key, const std::string value, const std::string queries) { 
+
+    RedisModuleString *client_name = RedisModule_CreateString(ctx, client.c_str(), client.length());
+    RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
+    RedisModuleString **xadd_params = (RedisModuleString **) RedisModule_Alloc(sizeof(RedisModuleString *) * 8);
+    xadd_params[0] = RedisModule_CreateString(ctx, "operation", strlen("operation"));
+    xadd_params[1] = RedisModule_CreateString(ctx, event.c_str(), event.length());
+    xadd_params[2] = RedisModule_CreateString(ctx, "key", strlen("key"));
+    xadd_params[3] = key;
+    xadd_params[4] = RedisModule_CreateString(ctx, "value", strlen("value"));
+    xadd_params[5] = RedisModule_CreateString(ctx, value.c_str(), event.length());
+    xadd_params[6] = RedisModule_CreateString(ctx, "queries", strlen("queries"));
+    xadd_params[7] = RedisModule_CreateString(ctx, queries.c_str(), queries.length());
+    int stream_add_resp = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params, 4);
+    if (stream_add_resp != REDISMODULE_OK) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Event_To_Stream failed to add the stream." );
+        return REDISMODULE_ERR;
+    }
+    return REDISMODULE_OK;
+}
+
 int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string event, RedisModuleString* r_key,
                                              std::vector<std::string> &clients_to_update, std::string &json_str, 
                                              std::unordered_map<std::string, std::vector<std::string>> &client_to_queries_map ) {
@@ -136,10 +157,8 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
         std::copy(client_queries.begin(), client_queries.end(), std::ostream_iterator<std::string>(imploded, " "));
         client_queries_str = imploded.str();
 
-        RedisModuleCallReply *xadd_reply =  RedisModule_Call(ctx, "XADD", "cccccscccc", client_name.c_str() , "*", "operation" , event.c_str() , 
-                                                                "key" , r_key , "value", json_str.c_str(), "queries" , client_queries_str.c_str() );
-        if (RedisModule_CallReplyType(xadd_reply) != REDISMODULE_REPLY_STRING) {
-                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to create the stream." );
+        if (Add_Event_To_Stream(ctx, client_name, event, r_key, json_str, client_queries_str) != REDISMODULE_OK) {
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to adding to the stream." );
                 return RedisModule_ReplyWithError(ctx, strerror(errno));
         }
     }
@@ -213,6 +232,7 @@ int Notify_Callback(RedisModuleCtx *ctx, int type, const char *event, RedisModul
         return REDISMODULE_OK;        
     }
 
+    // TODO HANDLE KEY EXPIRE EVENT
     if (strcasecmp(event, "expired") == 0 ) {
         return Handle_Expire_Query(ctx, key_str);
     }
