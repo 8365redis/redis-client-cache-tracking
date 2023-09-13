@@ -68,9 +68,13 @@ int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std
     xadd_params[0] = RedisModule_CreateString(ctx, "operation", strlen("operation"));
     xadd_params[1] = RedisModule_CreateString(ctx, event.c_str(), event.length());
     xadd_params[2] = RedisModule_CreateString(ctx, "key", strlen("key"));
-    xadd_params[3] = key;
+    if(key != NULL) {
+        xadd_params[3] = key;
+    } else {
+        xadd_params[3] = RedisModule_CreateString(ctx, "", strlen(""));
+    }
     xadd_params[4] = RedisModule_CreateString(ctx, "value", strlen("value"));
-    xadd_params[5] = RedisModule_CreateString(ctx, value.c_str(), event.length());
+    xadd_params[5] = RedisModule_CreateString(ctx, value.c_str(), value.length());
     xadd_params[6] = RedisModule_CreateString(ctx, "queries", strlen("queries"));
     xadd_params[7] = RedisModule_CreateString(ctx, queries.c_str(), queries.length());
     int stream_add_resp = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params, 4);
@@ -158,8 +162,8 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
         client_queries_str = imploded.str();
 
         if (Add_Event_To_Stream(ctx, client_name, event, r_key, json_str, client_queries_str) != REDISMODULE_OK) {
-                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to adding to the stream." );
-                return RedisModule_ReplyWithError(ctx, strerror(errno));
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to adding to the stream." );
+            return RedisModule_ReplyWithError(ctx, strerror(errno));
         }
     }
     // Now delete the tracked keys which are not matching to our queries anymore
@@ -179,21 +183,21 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
     return REDISMODULE_OK;
 }
 
-int Handle_Expire_Query(RedisModuleCtx *ctx , std::string key) {
+int Handle_Query_Expire(RedisModuleCtx *ctx , std::string key) {
     RedisModule_AutoMemory(ctx);
     
     if (key.rfind(CCT_MODULE_KEY_SEPERATOR) == std::string::npos) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Expire_Query key : " + key  + " is invalid.");
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Query_Expire key : " + key  + " is invalid.");
         return REDISMODULE_ERR;
     }
     std::string client_name(key.substr(key.rfind(CCT_MODULE_KEY_SEPERATOR) + 1));
     std::string query(key.substr(0, key.rfind(CCT_MODULE_KEY_SEPERATOR)));
-    LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Expire_Query parsed  client_name :" + client_name  + " , query :" + query);
+    LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Query_Expire parsed  client_name :" + client_name  + " , query :" + query);
     // FIX HERE : what():  std::out_of_range -> basic_string::substr: __pos (which is 27) > this->size() (which is 22)
-    // Handle_Expire_Query parsed  client_name :1 , query :CCT:TRACKED_KEYS:users
+    // Handle_Query_Expire parsed  client_name :1 , query :CCT:TRACKED_KEYS:users
     std::string new_query(query.substr(CCT_MODULE_CLIENT_QUERY_PREFIX.length()));
     new_query = CCT_MODULE_QUERY_PREFIX  + new_query;
-    LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Expire_Query parsed  client_name :" + client_name  + " , new_query :" + new_query);
+    LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Query_Expire parsed  client_name :" + client_name  + " , new_query :" + new_query);
 
     RedisModuleCallReply *srem_key_reply = RedisModule_Call(ctx, "SREM", "cc", new_query.c_str()  , client_name.c_str());
     if (RedisModule_CallReplyType(srem_key_reply) != REDISMODULE_REPLY_INTEGER){
@@ -201,6 +205,12 @@ int Handle_Expire_Query(RedisModuleCtx *ctx , std::string key) {
         return REDISMODULE_ERR;
     } else if ( RedisModule_CallReplyInteger(srem_key_reply) == 0 ) { 
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed while deleting client (non existing key): " +  client_name);
+        return REDISMODULE_ERR;
+    }
+
+    // Add event to stream
+    if (Add_Event_To_Stream(ctx, client_name, "expire", NULL , "", query) != REDISMODULE_OK) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to adding to the stream." );
         return REDISMODULE_ERR;
     }
     
@@ -232,9 +242,9 @@ int Notify_Callback(RedisModuleCtx *ctx, int type, const char *event, RedisModul
         return REDISMODULE_OK;        
     }
 
-    // TODO HANDLE KEY EXPIRE EVENT
+    // TODO HANDLE KEY EXPIRE EVENT SEPERATELY
     if (strcasecmp(event, "expired") == 0 ) {
-        return Handle_Expire_Query(ctx, key_str);
+        return Handle_Query_Expire(ctx, key_str);
     }
     
     // Add prefix
