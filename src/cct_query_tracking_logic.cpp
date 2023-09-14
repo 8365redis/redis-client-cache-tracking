@@ -141,28 +141,25 @@ int Notify_Callback(RedisModuleCtx *ctx, int type, const char *event, RedisModul
 
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str);
 
-    if( strcasecmp(event, "expired") != 0 && strcasecmp(event, "json.set") != 0  && strcasecmp(event, "del") != 0 )
+    if( CCT_KEY_EVENTS.count(event) == 0 )
     {
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " not interested event." );
         return REDISMODULE_OK;        
     }
 
     // Ignore our self events
-    if (key_str.rfind(CCT_MODULE_PREFIX, 0) == 0 && strcasecmp(event, "expired") != 0){
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " ignore our own events to prevent loops." );
-        return REDISMODULE_OK;
+    if (key_str.rfind(CCT_MODULE_PREFIX, 0) == 0){
+        if(strcasecmp(event, "expired") != 0) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " ignore our own events to prevent loops." );
+            return REDISMODULE_OK;
+        } else if(key_str.rfind(CCT_MODULE_CLIENT_QUERY_PREFIX, 0) == 0) {
+            return Handle_Query_Expire(ctx, key_str);           
+        } else {
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " ignore our own events to prevent loops." );
+            return REDISMODULE_OK;
+        }
     }
-    
-    if (key_str.rfind(CCT_MODULE_TRACKING_PREFIX, 0) == 0) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " ignore our own events to prevent loops." );
-        return REDISMODULE_OK;        
-    }
-
-    // TODO HANDLE KEY EXPIRE EVENT SEPERATELY
-    if (strcasecmp(event, "expired") == 0 ) {
-        return Handle_Query_Expire(ctx, key_str);
-    }
-    
+   
     // Add prefix
     std::stringstream prefix_stream;
     prefix_stream<<CCT_MODULE_TRACKING_PREFIX<<key_str;

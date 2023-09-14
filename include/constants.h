@@ -17,7 +17,7 @@ const std::unordered_map<std::string, std::string> CCT_KEY_EVENTS =
                                                                     {
                                                                         {"json.set", "UPDATE"},
                                                                         {"del", "DELETE"},
-                                                                        {"expire", "EXPIRE"}
+                                                                        {"expired", "EXPIRE"}
                                                                     };
 
 const int MS_MULT = 1000 ; 
