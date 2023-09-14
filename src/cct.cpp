@@ -1,20 +1,7 @@
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <iterator>
-#include <algorithm>
-#include <regex>
-#include <set>
-#include <unordered_map>
-
 #include "redismodule.h"
-#include "constants.h"
-#include "query_parser.h"
-#include "json_handler.h"
-#include "client_tracker.h"
 #include "logger.h"
-#include "cct_query_tracking_logic.h"
 
+#include "cct_query_tracking_logic.h"
 #include "cct_command_register.h"
 #include "cct_command_search.h"
 
