@@ -125,7 +125,7 @@ int Handle_Query_Expire(RedisModuleCtx *ctx , std::string key) {
     }
 
     // Add event to stream
-    if (Add_Event_To_Stream(ctx, client_name, "expire", NULL , "", query) != REDISMODULE_OK) {
+    if (Add_Event_To_Stream(ctx, client_name, "query_expired", NULL , "", query) != REDISMODULE_OK) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to adding to the stream." );
         return REDISMODULE_ERR;
     }
@@ -148,7 +148,7 @@ int Notify_Callback(RedisModuleCtx *ctx, int type, const char *event, RedisModul
     }
 
     // Ignore our self events
-    if (key_str.rfind(CCT_MODULE_PREFIX, 0) == 0){
+    if (key_str.rfind(CCT_MODULE_PREFIX, 0) == 0) {
         if(strcasecmp(event, "expired") != 0) {
             LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " ignore our own events to prevent loops." );
             return REDISMODULE_OK;

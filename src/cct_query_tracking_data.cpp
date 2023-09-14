@@ -50,7 +50,8 @@ int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std
     RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
     RedisModuleString **xadd_params = (RedisModuleString **) RedisModule_Alloc(sizeof(RedisModuleString *) * 8);
     xadd_params[0] = RedisModule_CreateString(ctx, "operation", strlen("operation"));
-    xadd_params[1] = RedisModule_CreateString(ctx, event.c_str(), event.length());
+    std::string internal_event = CCT_KEY_EVENTS.at(event);
+    xadd_params[1] = RedisModule_CreateString(ctx, internal_event.c_str(), internal_event.length());
     xadd_params[2] = RedisModule_CreateString(ctx, "key", strlen("key"));
     if(key != NULL) {
         xadd_params[3] = key;
