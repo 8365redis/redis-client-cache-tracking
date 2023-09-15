@@ -9,6 +9,7 @@ from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 TEST_APP_NAME_1 = "app1"
 TEST_APP_NAME_2 = "app2"
 TEST_APP_NAME_3 = "app3"
+TEST_APP_NAME_4 = "app4"
 
 DUPLICATE = "Duplicate"
 OK = "OK"

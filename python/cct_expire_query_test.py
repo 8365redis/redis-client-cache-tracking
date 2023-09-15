@@ -20,11 +20,14 @@ def test_query_expired():
     # ADD INITIAL DATA
     passport_value = "aaa"
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
-    producer.json().set(cct_prepare.TEST_INDEX_PREFIX + str(1), Path.root_path(), d)
+    key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
+    producer.json().set(key_1, Path.root_path(), d)
     d = cct_prepare.generate_single_object(1001 , 2001, passport_value)
-    producer.json().set(cct_prepare.TEST_INDEX_PREFIX + str(2), Path.root_path(), d) # This is tracked by both client
+    key_2 = cct_prepare.TEST_INDEX_PREFIX + str(2) 
+    producer.json().set(key_2, Path.root_path(), d) # This is tracked by both client
     d = cct_prepare.generate_single_object(1001 , 2002, "bbb")
-    producer.json().set(cct_prepare.TEST_INDEX_PREFIX + str(3), Path.root_path(), d)       
+    key_3 = cct_prepare.TEST_INDEX_PREFIX + str(3) 
+    producer.json().set(key_3, Path.root_path(), d)       
 
     # FIRST CLIENT
     query_value = passport_value
@@ -69,9 +72,9 @@ def test_query_expired():
     print(from_stream)
 
     # CHECK BEFORE EXPIRE
-    result = producer.get(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1)
+    result = producer.sismember(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1, key_2)
     assert result
-    result = producer.get(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2)
+    result = producer.sismember(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2, key_2)
     assert result  
 
     result = producer.sismember(CCT_MODULE_QUERY_PREFIX +  "User\\.PASSPORT:aaa" ,  cct_prepare.TEST_APP_NAME_1)
@@ -83,9 +86,9 @@ def test_query_expired():
     time.sleep(6)
 
     # CHECK EXPIRE Q1
-    result = producer.get(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1)
+    result = producer.sismember(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1, key_2)
     assert not result
-    result = producer.get(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2)
+    result = producer.sismember(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2, key_2)
     assert result
 
     result = producer.sismember(CCT_MODULE_QUERY_PREFIX +  "User\\.PASSPORT:aaa" ,  cct_prepare.TEST_APP_NAME_1)
@@ -129,9 +132,9 @@ def test_query_expired():
     time.sleep(6)
 
     # CHECK EXPIRE Q2
-    result = producer.get(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1)
+    result = producer.sismember(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1, key_2)
     assert not result
-    result = producer.get(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2)
+    result = producer.sismember(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2, key_2)
     assert not result  
 
     result = producer.sismember(CCT_MODULE_QUERY_PREFIX +  "User\\.PASSPORT:aaa" ,  cct_prepare.TEST_APP_NAME_1)

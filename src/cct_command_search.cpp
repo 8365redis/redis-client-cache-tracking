@@ -80,7 +80,7 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         return REDISMODULE_ERR;
     }
 
-    Add_Tracking_Query(ctx, argv[2], client_name_str);
+    Add_Tracking_Query(ctx, argv[2], client_name_str, key_ids);
 
     return REDISMODULE_OK;
 }
