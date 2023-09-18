@@ -2,7 +2,7 @@ import pytest
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
-from constants import CCT_MODULE_TRACKING_PREFIX
+from constants import CCT_MODULE_KEY_2_CLIENT
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -37,7 +37,7 @@ def test_updated_key_added_no_affect():
     assert not from_stream
 
     # Check new key is not tracked    
-    tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(2), cct_prepare.TEST_APP_NAME_1)
+    tracked_key = producer.sismember(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(2), cct_prepare.TEST_APP_NAME_1)
     assert not tracked_key 
 
 def test_updated_key_matches_query():
@@ -66,7 +66,7 @@ def test_updated_key_matches_query():
     assert key in str(from_stream[0][1])
 
     # Check new key is tracked    
-    tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + key, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = producer.sismember(CCT_MODULE_KEY_2_CLIENT + key, cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
 
 def test_updated_key_doesnt_match_any_query():
@@ -96,7 +96,7 @@ def test_updated_key_doesnt_match_any_query():
     assert key in str(from_stream[0][1])
 
     # Check new key is not tracked anymore   
-    tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + key, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = producer.sismember(CCT_MODULE_KEY_2_CLIENT + key, cct_prepare.TEST_APP_NAME_1)
     assert not tracked_key
 
 
@@ -136,7 +136,7 @@ def test_updated_key_doesnt_match_old_query_but_match_new_query():
     assert key in str(from_stream[0][1])
 
     # Check new key is tracked
-    tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + key, cct_prepare.TEST_APP_NAME_2)
+    tracked_key = producer.sismember(CCT_MODULE_KEY_2_CLIENT + key, cct_prepare.TEST_APP_NAME_2)
     assert tracked_key 
     
     # Add More data to stream
@@ -179,9 +179,9 @@ def test_updated_key_match_new_query_while_not_mathing_old_matching_query():
     assert key_1 in str(from_stream[0][1])
 
     # Check both keys are tracked
-    tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + key_1, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = producer.sismember(CCT_MODULE_KEY_2_CLIENT + key_1, cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
-    tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + key_2, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = producer.sismember(CCT_MODULE_KEY_2_CLIENT + key_2, cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
    
 
@@ -226,11 +226,11 @@ def test_updated_key_match_multiple_queries_one_client():
     producer.json().set(key_3, Path.root_path(), d)
 
     # Check first three keys are tracked
-    tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + key_1, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = producer.sismember(CCT_MODULE_KEY_2_CLIENT + key_1, cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
-    tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + key_2, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = producer.sismember(CCT_MODULE_KEY_2_CLIENT + key_2, cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
-    tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + key_3, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = producer.sismember(CCT_MODULE_KEY_2_CLIENT + key_3, cct_prepare.TEST_APP_NAME_1)
     assert tracked_key
 
     # Check key is in streams 

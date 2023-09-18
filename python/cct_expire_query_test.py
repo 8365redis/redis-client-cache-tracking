@@ -3,7 +3,7 @@ import time
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
-from constants import CCT_MODULE_TRACKING_PREFIX, CCT_MODULE_QUERY_PREFIX, CCT_MODULE_CLIENT_QUERY_PREFIX
+from constants import CCT_MODULE_KEY_2_CLIENT, CCT_MODULE_QUERY_2_CLIENT, CCT_MODULE_QUERY_CLIENT
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -45,18 +45,18 @@ def test_query_expired():
     client2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
 
     # CHECK TRACKED KEYS
-    result = producer.sismember(CCT_MODULE_TRACKING_PREFIX +  cct_prepare.TEST_INDEX_PREFIX + str(1) ,  cct_prepare.TEST_APP_NAME_1)
+    result = producer.sismember(CCT_MODULE_KEY_2_CLIENT +  cct_prepare.TEST_INDEX_PREFIX + str(1) ,  cct_prepare.TEST_APP_NAME_1)
     assert result
-    result = producer.sismember(CCT_MODULE_TRACKING_PREFIX +  cct_prepare.TEST_INDEX_PREFIX + str(2) ,  cct_prepare.TEST_APP_NAME_1)
+    result = producer.sismember(CCT_MODULE_KEY_2_CLIENT +  cct_prepare.TEST_INDEX_PREFIX + str(2) ,  cct_prepare.TEST_APP_NAME_1)
     assert result
-    result = producer.sismember(CCT_MODULE_TRACKING_PREFIX +  cct_prepare.TEST_INDEX_PREFIX + str(3) ,  cct_prepare.TEST_APP_NAME_1)
+    result = producer.sismember(CCT_MODULE_KEY_2_CLIENT +  cct_prepare.TEST_INDEX_PREFIX + str(3) ,  cct_prepare.TEST_APP_NAME_1)
     assert not result    
 
-    result = producer.sismember(CCT_MODULE_TRACKING_PREFIX +  cct_prepare.TEST_INDEX_PREFIX + str(1) ,  cct_prepare.TEST_APP_NAME_2)
+    result = producer.sismember(CCT_MODULE_KEY_2_CLIENT +  cct_prepare.TEST_INDEX_PREFIX + str(1) ,  cct_prepare.TEST_APP_NAME_2)
     assert not result   
-    result = producer.sismember(CCT_MODULE_TRACKING_PREFIX +  cct_prepare.TEST_INDEX_PREFIX + str(2) ,  cct_prepare.TEST_APP_NAME_2)
+    result = producer.sismember(CCT_MODULE_KEY_2_CLIENT +  cct_prepare.TEST_INDEX_PREFIX + str(2) ,  cct_prepare.TEST_APP_NAME_2)
     assert result
-    result = producer.sismember(CCT_MODULE_TRACKING_PREFIX +  cct_prepare.TEST_INDEX_PREFIX + str(3) ,  cct_prepare.TEST_APP_NAME_2)
+    result = producer.sismember(CCT_MODULE_KEY_2_CLIENT +  cct_prepare.TEST_INDEX_PREFIX + str(3) ,  cct_prepare.TEST_APP_NAME_2)
     assert result    
 
     # UPDATE DATA (K2)
@@ -72,35 +72,35 @@ def test_query_expired():
     print(from_stream)
 
     # CHECK BEFORE EXPIRE
-    result = producer.sismember(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1, key_2)
+    result = producer.sismember(CCT_MODULE_QUERY_CLIENT + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1, key_2)
     assert result
-    result = producer.sismember(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2, key_2)
+    result = producer.sismember(CCT_MODULE_QUERY_CLIENT + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2, key_2)
     assert result  
 
-    result = producer.sismember(CCT_MODULE_QUERY_PREFIX +  "User\\.PASSPORT:aaa" ,  cct_prepare.TEST_APP_NAME_1)
+    result = producer.sismember(CCT_MODULE_QUERY_2_CLIENT +  "User\\.PASSPORT:aaa" ,  cct_prepare.TEST_APP_NAME_1)
     assert result
-    result = producer.sismember(CCT_MODULE_QUERY_PREFIX +"User\\.ID:1001" , cct_prepare.TEST_APP_NAME_2)
+    result = producer.sismember(CCT_MODULE_QUERY_2_CLIENT +"User\\.ID:1001" , cct_prepare.TEST_APP_NAME_2)
     assert result  
 
     # PASS TIME (Q1 expires after this)
     time.sleep(6)
 
     # CHECK EXPIRE Q1
-    result = producer.sismember(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1, key_2)
+    result = producer.sismember(CCT_MODULE_QUERY_CLIENT + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1, key_2)
     assert not result
-    result = producer.sismember(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2, key_2)
+    result = producer.sismember(CCT_MODULE_QUERY_CLIENT + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2, key_2)
     assert result
 
-    result = producer.sismember(CCT_MODULE_QUERY_PREFIX +  "User\\.PASSPORT:aaa" ,  cct_prepare.TEST_APP_NAME_1)
+    result = producer.sismember(CCT_MODULE_QUERY_2_CLIENT +  "User\\.PASSPORT:aaa" ,  cct_prepare.TEST_APP_NAME_1)
     assert not result
-    result = producer.sismember(CCT_MODULE_QUERY_PREFIX +"User\\.ID:1001" , cct_prepare.TEST_APP_NAME_2)
+    result = producer.sismember(CCT_MODULE_QUERY_2_CLIENT +"User\\.ID:1001" , cct_prepare.TEST_APP_NAME_2)
     assert result
 
-    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(1))
+    result = producer.exists(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(1))
     assert not result
-    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(2))
+    result = producer.exists(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(2))
     assert result
-    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(3))
+    result = producer.exists(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(3))
     assert result
 
 
@@ -132,21 +132,21 @@ def test_query_expired():
     time.sleep(6)
 
     # CHECK EXPIRE Q2
-    result = producer.sismember(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1, key_2)
+    result = producer.sismember(CCT_MODULE_QUERY_CLIENT + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1, key_2)
     assert not result
-    result = producer.sismember(CCT_MODULE_CLIENT_QUERY_PREFIX + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2, key_2)
+    result = producer.sismember(CCT_MODULE_QUERY_CLIENT + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2, key_2)
     assert not result  
 
-    result = producer.sismember(CCT_MODULE_QUERY_PREFIX +  "User\\.PASSPORT:aaa" ,  cct_prepare.TEST_APP_NAME_1)
+    result = producer.sismember(CCT_MODULE_QUERY_2_CLIENT +  "User\\.PASSPORT:aaa" ,  cct_prepare.TEST_APP_NAME_1)
     assert not result
-    result = producer.sismember(CCT_MODULE_QUERY_PREFIX +"User\\.ID:1001" , cct_prepare.TEST_APP_NAME_2)
+    result = producer.sismember(CCT_MODULE_QUERY_2_CLIENT +"User\\.ID:1001" , cct_prepare.TEST_APP_NAME_2)
     assert not result  
 
-    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(1))
+    result = producer.exists(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(1))
     assert not result
-    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(2)) # this will not expire because its key is updated so we are keep tracking
+    result = producer.exists(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(2)) # this will not expire because its key is updated so we are keep tracking
     assert result
-    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(3))
+    result = producer.exists(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(3))
     assert not result    
 
     # UPDATE DATA (K2)
@@ -174,11 +174,11 @@ def test_query_expired():
     print(from_stream)        
 
 
-    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(1))
+    result = producer.exists(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(1))
     assert not result
-    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(2)) # this will expire this time because even the related query is deleted and second one will delete this
+    result = producer.exists(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(2)) # this will expire this time because even the related query is deleted and second one will delete this
     assert not result
-    result = producer.exists(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(3))
+    result = producer.exists(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(3))
     assert not result
 
     

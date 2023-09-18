@@ -2,7 +2,7 @@ import pytest
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
-from constants import CCT_MODULE_TRACKING_PREFIX
+from constants import CCT_MODULE_KEY_2_CLIENT
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -36,7 +36,7 @@ def test_new_key_added_no_affect():
     assert not from_stream
 
     # Check new key is not tracked    
-    tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(2), cct_prepare.TEST_APP_NAME_1)
+    tracked_key = producer.sismember(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(2), cct_prepare.TEST_APP_NAME_1)
     assert not tracked_key 
 
 def test_new_key_added__affect_query():
@@ -60,5 +60,5 @@ def test_new_key_added__affect_query():
     assert (cct_prepare.TEST_INDEX_PREFIX + str(1)) in str(from_stream[0][1])
 
     # Check new key is tracked    
-    tracked_key = producer.sismember(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(1), cct_prepare.TEST_APP_NAME_1)
+    tracked_key = producer.sismember(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(1), cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 

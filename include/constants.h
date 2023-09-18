@@ -5,9 +5,12 @@
 #include <unordered_map>
 
 const std::string CCT_MODULE_PREFIX  = "CCT:" ;
-const std::string CCT_MODULE_TRACKING_PREFIX = CCT_MODULE_PREFIX + "TRACKED_KEYS:" ;
-const std::string CCT_MODULE_QUERY_PREFIX = CCT_MODULE_PREFIX + "TRACKED_QUERIES:" ;
-const std::string CCT_MODULE_CLIENT_QUERY_PREFIX =  CCT_MODULE_PREFIX + "TRACKED_CLIENT_QUERIES:" ;
+const std::string CCT_MODULE_KEY_2_CLIENT = CCT_MODULE_PREFIX + "K2C:" ;
+const std::string CCT_MODULE_KEY_2_QUERY = CCT_MODULE_PREFIX + "K2Q:" ;
+const std::string CCT_MODULE_QUERY_2_CLIENT = CCT_MODULE_PREFIX + "Q2C:" ;
+const std::string CCT_MODULE_QUERY_2_KEY =  CCT_MODULE_PREFIX + "Q2K:" ;
+const std::string CCT_MODULE_QUERY_CLIENT =  CCT_MODULE_PREFIX + "QC:" ;
+const std::string CCT_MODULE_CLIENT_2_QUERY = CCT_MODULE_PREFIX + "C2Q:" ;
 const std::string CCT_MODULE_KEY_SEPERATOR  = ":" ;
 const std::string CCT_MODULE_KEY_LEVEL = "." ;
 const std::string CCT_MODULE_KEY_LEVEL_WITH_ESCAPE = "\\." ;
@@ -22,6 +25,6 @@ const std::unordered_map<std::string, std::string> CCT_KEY_EVENTS =
                                                                     } ;
 
 const int MS_MULT = 1000 ; 
-const int CCT_TTL = 10 * MS_MULT ; // Seconds
+const int CCT_TTL = 1000 * MS_MULT ; // Seconds
 
 #endif /* CONSTANTS_H */

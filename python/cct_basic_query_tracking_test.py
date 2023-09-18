@@ -3,7 +3,7 @@ import pytest
 from redis.commands.json.path import Path
 import cct_prepare
 from manage_redis import connect_redis, connect_redis_with_start, kill_redis
-from constants import CCT_MODULE_CLIENT_PREFIX, CCT_MODULE_QUERY_PREFIX, CCT_MODULE_TRACKING_PREFIX
+from constants import CCT_MODULE_CLIENT_PREFIX, CCT_MODULE_QUERY_2_CLIENT, CCT_MODULE_KEY_2_CLIENT
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -35,11 +35,11 @@ def test_basic_query_tracking_test_1():
     print("CCT.FT.SEARCH Resp:" + str(resp))
 
     #CHECK TRACKED QUERY
-    tracked_query = r.sismember(CCT_MODULE_QUERY_PREFIX + query_key_attr, cct_prepare.TEST_APP_NAME_1)
+    tracked_query = r.sismember(CCT_MODULE_QUERY_2_CLIENT + query_key_attr, cct_prepare.TEST_APP_NAME_1)
     assert tracked_query
 
     #CHECK TRACKED KEY
-    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(1), cct_prepare.TEST_APP_NAME_1)
+    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(1), cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
 
     # SAME CLIENT ADDS A NEW DATA THAT MATCHES TO QUERY
@@ -54,7 +54,7 @@ def test_basic_query_tracking_test_1():
     print("From Stream :" + str(from_stream[0][1]))
 
     #CHECK NEW TRACKED KEY
-    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + cct_prepare.TEST_INDEX_PREFIX + str(2), cct_prepare.TEST_APP_NAME_1)
+    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(2), cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
     
 
@@ -92,13 +92,13 @@ def test_basic_query_tracking_test_2():
     assert new_added_key in str(from_stream[0][1])    
 
     #CHECK NEW TRACKED KEY
-    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + first_key, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + first_key, cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
-    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + new_added_key, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + new_added_key, cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
-    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + first_key, cct_prepare.TEST_APP_NAME_2)
+    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + first_key, cct_prepare.TEST_APP_NAME_2)
     assert tracked_key 
-    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + new_added_key, cct_prepare.TEST_APP_NAME_2)
+    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + new_added_key, cct_prepare.TEST_APP_NAME_2)
     assert tracked_key     
 
 def test_basic_query_tracking_test_3():
@@ -138,11 +138,11 @@ def test_basic_query_tracking_test_3():
     #assert from_stream[0][1][-1][1][new_added_key] == '' 
 
     #CHECK NEW TRACKED KEY
-    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + first_key, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + first_key, cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
-    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + new_added_key, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + new_added_key, cct_prepare.TEST_APP_NAME_1)
     assert not tracked_key 
-    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + first_key, cct_prepare.TEST_APP_NAME_2)
+    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + first_key, cct_prepare.TEST_APP_NAME_2)
     assert tracked_key 
-    tracked_key = r.sismember(CCT_MODULE_TRACKING_PREFIX + new_added_key, cct_prepare.TEST_APP_NAME_2)
+    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + new_added_key, cct_prepare.TEST_APP_NAME_2)
     assert not tracked_key     
