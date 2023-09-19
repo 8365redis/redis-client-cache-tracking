@@ -24,7 +24,8 @@ const std::unordered_map<std::string, std::string> CCT_KEY_EVENTS =
                                                                         {"query_expired", "EXPIRE"}
                                                                     } ;
 
-const int MS_MULT = 1000 ; 
-const int CCT_TTL = 10000 * MS_MULT ; // Seconds
+const int MS_MULT = 1000 ;
+const int CCT_TTL_SECOND = 10 ; 
+const int CCT_TTL = CCT_TTL_SECOND * MS_MULT ; 
 
 #endif /* CONSTANTS_H */
