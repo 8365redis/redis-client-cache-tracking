@@ -25,6 +25,6 @@ const std::unordered_map<std::string, std::string> CCT_KEY_EVENTS =
                                                                     } ;
 
 const int MS_MULT = 1000 ; 
-const int CCT_TTL = 1000 * MS_MULT ; // Seconds
+const int CCT_TTL = 10000 * MS_MULT ; // Seconds
 
 #endif /* CONSTANTS_H */

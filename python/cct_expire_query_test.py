@@ -3,7 +3,7 @@ import time
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
-from constants import CCT_MODULE_KEY_2_CLIENT, CCT_MODULE_QUERY_2_CLIENT, CCT_MODULE_QUERY_CLIENT
+from constants import CCT_MODULE_KEY_2_CLIENT, CCT_MODULE_QUERY_2_CLIENT, CCT_MODULE_QUERY_CLIENT, CCT_EXPIRE_HALF_TIME
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -36,7 +36,7 @@ def test_query_expired():
     client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # PASS TIME
-    time.sleep(6)
+    time.sleep(CCT_EXPIRE_HALF_TIME)
 
     # SECOND CLIENT
     query_value = 1001
@@ -72,9 +72,9 @@ def test_query_expired():
     print(from_stream)
 
     # CHECK BEFORE EXPIRE
-    result = producer.sismember(CCT_MODULE_QUERY_CLIENT + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1, key_2)
+    result = producer.exists(CCT_MODULE_QUERY_CLIENT + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1)
     assert result
-    result = producer.sismember(CCT_MODULE_QUERY_CLIENT + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2, key_2)
+    result = producer.exists(CCT_MODULE_QUERY_CLIENT + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2)
     assert result  
 
     result = producer.sismember(CCT_MODULE_QUERY_2_CLIENT +  "User\\.PASSPORT:aaa" ,  cct_prepare.TEST_APP_NAME_1)
@@ -83,12 +83,12 @@ def test_query_expired():
     assert result  
 
     # PASS TIME (Q1 expires after this)
-    time.sleep(6)
+    time.sleep(CCT_EXPIRE_HALF_TIME)
 
     # CHECK EXPIRE Q1
-    result = producer.sismember(CCT_MODULE_QUERY_CLIENT + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1, key_2)
+    result = producer.exists(CCT_MODULE_QUERY_CLIENT + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1)
     assert not result
-    result = producer.sismember(CCT_MODULE_QUERY_CLIENT + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2, key_2)
+    result = producer.exists(CCT_MODULE_QUERY_CLIENT + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2)
     assert result
 
     result = producer.sismember(CCT_MODULE_QUERY_2_CLIENT +  "User\\.PASSPORT:aaa" ,  cct_prepare.TEST_APP_NAME_1)
@@ -129,12 +129,12 @@ def test_query_expired():
     print(from_stream)
 
     # PASS TIME (Q2 expires after this)
-    time.sleep(6)
+    time.sleep(CCT_EXPIRE_HALF_TIME)
 
     # CHECK EXPIRE Q2
-    result = producer.sismember(CCT_MODULE_QUERY_CLIENT + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1, key_2)
+    result = producer.exists(CCT_MODULE_QUERY_CLIENT + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1)
     assert not result
-    result = producer.sismember(CCT_MODULE_QUERY_CLIENT + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2, key_2)
+    result = producer.exists(CCT_MODULE_QUERY_CLIENT + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2)
     assert not result  
 
     result = producer.sismember(CCT_MODULE_QUERY_2_CLIENT +  "User\\.PASSPORT:aaa" ,  cct_prepare.TEST_APP_NAME_1)

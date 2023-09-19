@@ -12,7 +12,7 @@ int Handle_Query_Expire(RedisModuleCtx *ctx , std::string key) {
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Handle_Query_Expire parsed  client_name :" + client_name  + " , query :" + query);
     // FIX HERE : what():  std::out_of_range -> basic_string::substr: __pos (which is 27) > this->size() (which is 22)
     // Handle_Query_Expire parsed  client_name :1 , query :CCT:TRACKED_KEYS:users
-    std::string new_query(query.substr(CCT_MODULE_QUERY_2_KEY.length()));
+    std::string new_query(query.substr(CCT_MODULE_QUERY_CLIENT.length()));
     std::string new_query_with_prefix = CCT_MODULE_QUERY_2_CLIENT  + new_query;
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Handle_Query_Expire parsed  client_name :" + client_name  + " , new_query :" + new_query_with_prefix);
 

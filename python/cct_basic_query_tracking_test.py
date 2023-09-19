@@ -3,7 +3,8 @@ import pytest
 from redis.commands.json.path import Path
 import cct_prepare
 from manage_redis import connect_redis, connect_redis_with_start, kill_redis
-from constants import CCT_MODULE_CLIENT_PREFIX, CCT_MODULE_QUERY_2_CLIENT, CCT_MODULE_KEY_2_CLIENT
+from constants import CCT_MODULE_QUERY_2_CLIENT, CCT_MODULE_KEY_2_CLIENT, CCT_MODULE_CLIENT_2_QUERY, \
+                CCT_MODULE_KEY_2_QUERY, CCT_MODULE_KEY_SEPERATOR, CCT_MODULE_QUERY_2_KEY, CCT_MODULE_QUERY_CLIENT
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -146,3 +147,36 @@ def test_basic_query_tracking_test_3():
     assert tracked_key 
     tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + new_added_key, cct_prepare.TEST_APP_NAME_2)
     assert not tracked_key     
+
+
+def test_basic_query_tracking_test_4():
+    producer = connect_redis_with_start()
+    cct_prepare.flush_db(producer) # clean all db first
+    cct_prepare.create_index(producer)
+
+    # ADD INITIAL DATA
+    passport_value = "aaa"
+    d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
+    key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
+    producer.json().set(key_1, Path.root_path(), d)
+
+    # FIRST CLIENT
+    query_value = passport_value
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+
+    query_normalized = "User\.PASSPORT:aaa"
+    # CHECK CCT_META_DATA 
+    result = producer.sismember(CCT_MODULE_CLIENT_2_QUERY +  cct_prepare.TEST_APP_NAME_1,  query_normalized)
+    assert result
+    result = producer.sismember(CCT_MODULE_KEY_2_CLIENT + key_1, cct_prepare.TEST_APP_NAME_1)
+    assert result
+    result = producer.sismember(CCT_MODULE_KEY_2_QUERY + key_1, query_normalized )
+    assert result
+    result = producer.sismember(CCT_MODULE_QUERY_2_CLIENT + query_normalized , cct_prepare.TEST_APP_NAME_1)
+    assert result
+    result = producer.sismember(CCT_MODULE_QUERY_2_KEY + query_normalized , key_1)
+    assert result
+    result = producer.exists(CCT_MODULE_QUERY_CLIENT + query_normalized + CCT_MODULE_KEY_SEPERATOR + cct_prepare.TEST_APP_NAME_1)
+    assert result

@@ -5,6 +5,9 @@ from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
 from constants import CCT_MODULE_KEY_2_CLIENT, CCT_MODULE_QUERY_2_CLIENT, CCT_MODULE_QUERY_CLIENT
 
+KEY_EXPIRE_SECOND = 1
+KEY_EXPIRE_WAIT_SECOND = 2
+
 @pytest.fixture(autouse=True)
 def before_and_after_test():
     print("Start")
@@ -21,11 +24,11 @@ def test_key_expired_no_affect():
     passport_value = "aaa"
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
     producer.json().set(cct_prepare.TEST_INDEX_PREFIX + str(1), Path.root_path(), d)
-    producer.expire(cct_prepare.TEST_INDEX_PREFIX + str(1), 3, nx = True)
+    producer.expire(cct_prepare.TEST_INDEX_PREFIX + str(1), KEY_EXPIRE_SECOND, nx = True)
     passport_value = "bbb"
     d = cct_prepare.generate_single_object(1001 , 2001, passport_value)
     producer.json().set(cct_prepare.TEST_INDEX_PREFIX + str(2), Path.root_path(), d)
-    producer.expire(cct_prepare.TEST_INDEX_PREFIX + str(2), 3, nx = True)
+    producer.expire(cct_prepare.TEST_INDEX_PREFIX + str(2), KEY_EXPIRE_SECOND, nx = True)
 
     # FIRST CLIENT
     passport_value = "ccc"
@@ -34,7 +37,7 @@ def test_key_expired_no_affect():
     client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
 
     # PASS TIME TO EXPIRE KEY
-    time.sleep(4)
+    time.sleep(KEY_EXPIRE_WAIT_SECOND)
 
     # Check stream is empty
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -60,11 +63,11 @@ def test_key_expired_affects_query():
     passport_value = "aaa"
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
     producer.json().set(key, Path.root_path(), d)
-    producer.expire(cct_prepare.TEST_INDEX_PREFIX + str(1), 3, nx = True)
+    producer.expire(cct_prepare.TEST_INDEX_PREFIX + str(1), KEY_EXPIRE_SECOND, nx = True)
     passport_value = "bbb"
     d = cct_prepare.generate_single_object(1001 , 2001, passport_value)
     producer.json().set(cct_prepare.TEST_INDEX_PREFIX + str(2), Path.root_path(), d)
-    producer.expire(cct_prepare.TEST_INDEX_PREFIX + str(2), 3, nx = True)
+    producer.expire(cct_prepare.TEST_INDEX_PREFIX + str(2), KEY_EXPIRE_SECOND, nx = True)
 
     # FIRST CLIENT
     passport_value = "aaa"
@@ -73,7 +76,7 @@ def test_key_expired_affects_query():
     client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
 
     # PASS TIME TO EXPIRE KEY
-    time.sleep(4)
+    time.sleep(KEY_EXPIRE_WAIT_SECOND)
 
     # Check deleted key is not tracked anymore   
     tracked_key = producer.sismember(CCT_MODULE_KEY_2_CLIENT + key, cct_prepare.TEST_APP_NAME_1)
