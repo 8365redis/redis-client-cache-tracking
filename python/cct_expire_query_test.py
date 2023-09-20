@@ -5,7 +5,7 @@ from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
 from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
                 CCT_K2Q, CCT_DELI, CCT_Q2K, CCT_QC, \
-                CCT_HALF_TTL, CCT_TTL
+                CCT_HALF_TTL, CCT_TTL, CCT_MODULE_PREFIX
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -13,6 +13,40 @@ def before_and_after_test():
     yield
     kill_redis()
     print("End")
+
+
+def check_query_meta_data(producer , app_name , query , key , assert_list):
+    assert (6 == len(assert_list))
+    assert (app_name)
+    assert (query)
+    assert (key)
+    assert (producer)
+
+    result = producer.sismember(CCT_C2Q +  app_name,  query)
+    assert ( result == assert_list[0] )
+    result = producer.sismember(CCT_K2C + key, app_name)
+    assert ( result == assert_list[1] )
+    result = producer.sismember(CCT_K2Q + key, query)
+    assert ( result == assert_list[2] )
+    result = producer.sismember(CCT_Q2C + query , app_name)
+    assert ( result == assert_list[3] )
+    result = producer.sismember(CCT_Q2K + query , key)
+    assert ( result == assert_list[4] )
+    result = producer.exists(CCT_QC + query + CCT_DELI + app_name)
+    assert ( result == assert_list[5] )
+
+def get_redis_snapshot():
+    print("=======REDIS SNAPSHOT BEGIN========")
+    client = connect_redis()
+    all_keys = client.keys("*")
+    for key in all_keys:
+        if CCT_MODULE_PREFIX not in key :
+            continue
+        if CCT_QC in key : 
+            print(key + "=" + client.get(key))
+        else:
+            print(key + "=" + str(client.smembers(key)))
+    print("========REDIS SNAPSHOT END=========")
 
 def test_query_expired():
     producer = connect_redis_with_start()
@@ -203,35 +237,12 @@ def test_1_client_1_query_1_key_expired():
 
     query_normalized = "User\\.PASSPORT:aaa"
     # CHECK CCT_META_DATA 
-    result = producer.sismember(CCT_C2Q +  cct_prepare.TEST_APP_NAME_1,  query_normalized)
-    assert result
-    result = producer.sismember(CCT_K2C + key_1, cct_prepare.TEST_APP_NAME_1)
-    assert result
-    result = producer.sismember(CCT_K2Q + key_1, query_normalized )
-    assert result
-    result = producer.sismember(CCT_Q2C + query_normalized , cct_prepare.TEST_APP_NAME_1)
-    assert result
-    result = producer.sismember(CCT_Q2K + query_normalized , key_1)
-    assert result
-    result = producer.exists(CCT_QC + query_normalized + CCT_DELI + cct_prepare.TEST_APP_NAME_1)
-    assert result
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, query_normalized, key_1, [True]*6 )
 
     time.sleep(CCT_TTL + 1)
 
     # CHECK CCT_META_DATA 
-    result = producer.sismember(CCT_C2Q +  cct_prepare.TEST_APP_NAME_1,  query_normalized)
-    assert not result
-    result = producer.sismember(CCT_K2C + key_1, cct_prepare.TEST_APP_NAME_1)
-    assert not result
-    result = producer.sismember(CCT_K2Q + key_1, query_normalized )
-    assert not result
-    result = producer.sismember(CCT_Q2C + query_normalized , cct_prepare.TEST_APP_NAME_1)
-    assert not result
-    result = producer.sismember(CCT_Q2K + query_normalized , key_1)
-    assert not result
-    result = producer.exists(CCT_QC + query_normalized + CCT_DELI + cct_prepare.TEST_APP_NAME_1)
-    assert not result
-
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, query_normalized, key_1, [False]*6 )
 
 def test_1_client_2_query_1_key_expired():
     producer = connect_redis_with_start()
@@ -260,58 +271,193 @@ def test_1_client_2_query_1_key_expired():
     second_query_normalized = "User\\.ID:1000"
 
     # CHECK CCT_META_DATA 
-    result = producer.sismember(CCT_C2Q +  cct_prepare.TEST_APP_NAME_1,  first_query_normalized)
-    assert result
-    result = producer.sismember(CCT_K2C + key_1, cct_prepare.TEST_APP_NAME_1)
-    assert result
-    result = producer.sismember(CCT_K2Q + key_1, first_query_normalized )
-    assert result
-    result = producer.sismember(CCT_Q2C + first_query_normalized , cct_prepare.TEST_APP_NAME_1)
-    assert result
-    result = producer.sismember(CCT_Q2K + first_query_normalized , key_1)
-    assert result
-    result = producer.exists(CCT_QC + first_query_normalized + CCT_DELI + cct_prepare.TEST_APP_NAME_1)
-    assert result
 
-    result = producer.sismember(CCT_C2Q +  cct_prepare.TEST_APP_NAME_1,  second_query_normalized)
-    assert result
-    result = producer.sismember(CCT_K2C + key_1, cct_prepare.TEST_APP_NAME_1)
-    assert result
-    result = producer.sismember(CCT_K2Q + key_1, second_query_normalized )
-    assert result
-    result = producer.sismember(CCT_Q2C + second_query_normalized , cct_prepare.TEST_APP_NAME_1)
-    assert result
-    result = producer.sismember(CCT_Q2K + second_query_normalized , key_1)
-    assert result
-    result = producer.exists(CCT_QC + second_query_normalized + CCT_DELI + cct_prepare.TEST_APP_NAME_1)
-    assert result
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [True]*6 )
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, second_query_normalized, key_1, [True]*6 )     
 
     # THIS WILL EXPIRE FIRST QUERY
     time.sleep(CCT_HALF_TTL)
 
     # CHECK CCT_META_DATA 
-    result = producer.sismember(CCT_C2Q +  cct_prepare.TEST_APP_NAME_1,  first_query_normalized)
-    assert not result
-    result = producer.sismember(CCT_K2C + key_1, cct_prepare.TEST_APP_NAME_1)
-    assert result
-    result = producer.sismember(CCT_K2Q + key_1, first_query_normalized )
-    assert not result
-    result = producer.sismember(CCT_Q2C + first_query_normalized , cct_prepare.TEST_APP_NAME_1)
-    assert not result
-    result = producer.sismember(CCT_Q2K + first_query_normalized , key_1)
-    assert not result
-    result = producer.exists(CCT_QC + first_query_normalized + CCT_DELI + cct_prepare.TEST_APP_NAME_1)
-    assert not result
 
-    result = producer.sismember(CCT_C2Q +  cct_prepare.TEST_APP_NAME_1,  second_query_normalized)
-    assert result
-    result = producer.sismember(CCT_K2C + key_1, cct_prepare.TEST_APP_NAME_1)
-    assert result
-    result = producer.sismember(CCT_K2Q + key_1, second_query_normalized)
-    assert result
-    result = producer.sismember(CCT_Q2C + second_query_normalized , cct_prepare.TEST_APP_NAME_1)
-    assert result
-    result = producer.sismember(CCT_Q2K + second_query_normalized , key_1)
-    assert result
-    result = producer.exists(CCT_QC + second_query_normalized + CCT_DELI + cct_prepare.TEST_APP_NAME_1)
-    assert result
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [False] + [True] + [False]*4  )
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, second_query_normalized, key_1, [True]*6 )
+
+    # THIS WILL EXPIRE SECOND QUERY
+    time.sleep(CCT_HALF_TTL)
+
+    # CHECK CCT_META_DATA 
+
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, second_query_normalized, key_1, [False]*6 )
+
+# 1 client makes 2 queries matches to different 2 key
+def test_1_client_2_query_2_key_expired():
+    producer = connect_redis_with_start()
+    cct_prepare.flush_db(producer) # clean all db first
+    cct_prepare.create_index(producer)
+
+    # ADD INITIAL DATA
+    passport_value = "aaa"
+    d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
+    key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
+    producer.json().set(key_1, Path.root_path(), d)
+    d = cct_prepare.generate_single_object(1001 , 2001, passport_value)
+    key_2 = cct_prepare.TEST_INDEX_PREFIX + str(2) 
+    producer.json().set(key_2, Path.root_path(), d)
+
+    # FIRST CLIENT FiRST QUERY
+    query_value = passport_value
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+
+    time.sleep(CCT_HALF_TTL)
+
+    #FIRST CLIENT SECOND QUERY
+    query_value = 1001
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
+
+    first_query_normalized = "User\\.PASSPORT:aaa"
+    second_query_normalized = "User\\.ID:1001"
+
+    # CHECK CCT_META_DATA
+
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [True]*6 )
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, second_query_normalized, key_2, [True]*6 ) 
+
+    # THIS WILL EXPIRE FIRST QUERY
+    time.sleep(CCT_HALF_TTL)
+
+    # CHECK CCT_META_DATA 
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [False]*6 )
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, second_query_normalized, key_2, [True]*6 )
+
+    # THIS WILL EXPIRE SECOND QUERY
+    time.sleep(CCT_HALF_TTL)
+
+    # CHECK CCT_META_DATA 
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, second_query_normalized, key_2, [False]*6 )
+
+# 2 client makes 2 same query matches to same 1 key
+def test_2_client_1_query_1_key_expired_same_time():
+    
+    producer = connect_redis_with_start()
+    cct_prepare.flush_db(producer) # clean all db first
+    cct_prepare.create_index(producer)
+
+    # ADD INITIAL DATA
+    passport_value = "aaa"
+    d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
+    key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
+    producer.json().set(key_1, Path.root_path(), d)
+
+    first_query_normalized = "User\\.PASSPORT:aaa"
+
+    # FIRST CLIENT FiRST QUERY
+    query_value = passport_value
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
+
+    #SECOND CLIENT SAME QUERY
+    client2 = connect_redis()
+    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    client2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
+
+    # CHECK CCT_META_DATA
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [True]*6 )
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_2, first_query_normalized, key_1, [True]*6 ) 
+
+    # THIS WILL EXPIRE BOTH QUERIES
+    time.sleep(CCT_TTL+1)
+
+    # CHECK CCT_META_DATA
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [False]*6 )
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_2, first_query_normalized, key_1, [False]*6 )
+
+# 2 client makes 2 same query matches to same 1 key
+def test_2_client_1_query_1_key_expired_sequentially():
+    
+    producer = connect_redis_with_start()
+    cct_prepare.flush_db(producer) # clean all db first
+    cct_prepare.create_index(producer)
+
+    # ADD INITIAL DATA
+    passport_value = "aaa"
+    d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
+    key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
+    producer.json().set(key_1, Path.root_path(), d)
+
+    first_query_normalized = "User\\.PASSPORT:aaa"
+
+    # FIRST CLIENT FiRST QUERY
+    query_value = passport_value
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
+
+    # WAIT
+    time.sleep(CCT_HALF_TTL)
+
+    # SECOND CLIENT SAME QUERY
+    client2 = connect_redis()
+    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    client2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
+
+    # CHECK CCT_META_DATA
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [True]*6 )
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_2, first_query_normalized, key_1, [True]*6 ) 
+
+    # THIS WILL EXPIRE FIRST QUERY
+    time.sleep(CCT_HALF_TTL)
+    
+    # CHECK CCT_META_DATA
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [False,True,True,False,True,False]  )   
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_2, first_query_normalized, key_1, [True]*6 )
+
+    # THIS WILL EXPIRE SECOND QUERY
+    time.sleep(CCT_HALF_TTL)
+    
+    # CHECK CCT_META_DATA
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [False]*6  )
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_2, first_query_normalized, key_1, [False]*6 )
+
+
+# 2 client makes 2 different query matches to same 1 key
+def test_2_client_2_query_1_key_expired_same_time():
+    
+    producer = connect_redis_with_start()
+    cct_prepare.flush_db(producer) # clean all db first
+    cct_prepare.create_index(producer)
+
+    # ADD INITIAL DATA
+    passport_value = "aaa"
+    d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
+    key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
+    producer.json().set(key_1, Path.root_path(), d)
+
+    first_query_normalized = "User\\.PASSPORT:aaa"
+    second_query_normalized = "User\\.ID:1000"
+
+    # FIRST CLIENT FiRST QUERY
+    query_value = passport_value
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
+
+    #SECOND CLIENT SECOND QUERY
+    query_value = 1000
+    client2 = connect_redis()
+    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    client2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.ID:{" + str(query_value) + "}")
+
+    # CHECK CCT_META_DATA
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [True]*6)
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_2, second_query_normalized, key_1, [True]*6) 
+
+    # THIS WILL EXPIRE BOTH QUERIES
+    time.sleep(CCT_TTL+1)
+
+    # CHECK CCT_META_DATA
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [False]*6 )
+    check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_2, second_query_normalized, key_1, [False]*6 )

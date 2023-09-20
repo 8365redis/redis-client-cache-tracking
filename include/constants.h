@@ -14,6 +14,7 @@ const std::string CCT_MODULE_CLIENT_2_QUERY = CCT_MODULE_PREFIX + "C2Q:" ;
 const std::string CCT_MODULE_KEY_SEPERATOR  = ":" ;
 const std::string CCT_MODULE_KEY_LEVEL = "." ;
 const std::string CCT_MODULE_KEY_LEVEL_WITH_ESCAPE = "\\." ;
+const char CCT_MODULE_QUERY_DELIMETER = char(5) ;
 const int CLIENT_OFFLINE = 0 ;
 
 const std::unordered_map<std::string, std::string> CCT_KEY_EVENTS = 
