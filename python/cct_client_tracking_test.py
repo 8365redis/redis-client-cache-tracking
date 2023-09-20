@@ -3,7 +3,7 @@ import redis
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis_with_start
 import cct_prepare
-from constants import CCT_MODULE_KEY_2_CLIENT, CCT_MODULE_QUERY_2_CLIENT
+from constants import CCT_K2C, CCT_Q2C
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():

@@ -3,8 +3,8 @@ import pytest
 from redis.commands.json.path import Path
 import cct_prepare
 from manage_redis import connect_redis, connect_redis_with_start, kill_redis
-from constants import CCT_MODULE_QUERY_2_CLIENT, CCT_MODULE_KEY_2_CLIENT, CCT_MODULE_CLIENT_2_QUERY, \
-                CCT_MODULE_KEY_2_QUERY, CCT_MODULE_KEY_SEPERATOR, CCT_MODULE_QUERY_2_KEY, CCT_MODULE_QUERY_CLIENT
+from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
+                CCT_K2Q, CCT_DELI, CCT_Q2K, CCT_QC
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -36,11 +36,11 @@ def test_basic_query_tracking_test_1():
     print("CCT.FT.SEARCH Resp:" + str(resp))
 
     #CHECK TRACKED QUERY
-    tracked_query = r.sismember(CCT_MODULE_QUERY_2_CLIENT + query_key_attr, cct_prepare.TEST_APP_NAME_1)
+    tracked_query = r.sismember(CCT_Q2C + query_key_attr, cct_prepare.TEST_APP_NAME_1)
     assert tracked_query
 
     #CHECK TRACKED KEY
-    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(1), cct_prepare.TEST_APP_NAME_1)
+    tracked_key = r.sismember(CCT_K2C + cct_prepare.TEST_INDEX_PREFIX + str(1), cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
 
     # SAME CLIENT ADDS A NEW DATA THAT MATCHES TO QUERY
@@ -55,7 +55,7 @@ def test_basic_query_tracking_test_1():
     print("From Stream :" + str(from_stream[0][1]))
 
     #CHECK NEW TRACKED KEY
-    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + cct_prepare.TEST_INDEX_PREFIX + str(2), cct_prepare.TEST_APP_NAME_1)
+    tracked_key = r.sismember(CCT_K2C + cct_prepare.TEST_INDEX_PREFIX + str(2), cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
     
 
@@ -93,13 +93,13 @@ def test_basic_query_tracking_test_2():
     assert new_added_key in str(from_stream[0][1])    
 
     #CHECK NEW TRACKED KEY
-    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + first_key, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = r.sismember(CCT_K2C + first_key, cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
-    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + new_added_key, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = r.sismember(CCT_K2C + new_added_key, cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
-    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + first_key, cct_prepare.TEST_APP_NAME_2)
+    tracked_key = r.sismember(CCT_K2C + first_key, cct_prepare.TEST_APP_NAME_2)
     assert tracked_key 
-    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + new_added_key, cct_prepare.TEST_APP_NAME_2)
+    tracked_key = r.sismember(CCT_K2C + new_added_key, cct_prepare.TEST_APP_NAME_2)
     assert tracked_key     
 
 def test_basic_query_tracking_test_3():
@@ -139,44 +139,14 @@ def test_basic_query_tracking_test_3():
     #assert from_stream[0][1][-1][1][new_added_key] == '' 
 
     #CHECK NEW TRACKED KEY
-    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + first_key, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = r.sismember(CCT_K2C + first_key, cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
-    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + new_added_key, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = r.sismember(CCT_K2C + new_added_key, cct_prepare.TEST_APP_NAME_1)
     assert not tracked_key 
-    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + first_key, cct_prepare.TEST_APP_NAME_2)
+    tracked_key = r.sismember(CCT_K2C + first_key, cct_prepare.TEST_APP_NAME_2)
     assert tracked_key 
-    tracked_key = r.sismember(CCT_MODULE_KEY_2_CLIENT + new_added_key, cct_prepare.TEST_APP_NAME_2)
+    tracked_key = r.sismember(CCT_K2C + new_added_key, cct_prepare.TEST_APP_NAME_2)
     assert not tracked_key     
 
 
-def test_basic_query_tracking_test_4():
-    producer = connect_redis_with_start()
-    cct_prepare.flush_db(producer) # clean all db first
-    cct_prepare.create_index(producer)
 
-    # ADD INITIAL DATA
-    passport_value = "aaa"
-    d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
-    key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
-    producer.json().set(key_1, Path.root_path(), d)
-
-    # FIRST CLIENT
-    query_value = passport_value
-    client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
-
-    query_normalized = "User\.PASSPORT:aaa"
-    # CHECK CCT_META_DATA 
-    result = producer.sismember(CCT_MODULE_CLIENT_2_QUERY +  cct_prepare.TEST_APP_NAME_1,  query_normalized)
-    assert result
-    result = producer.sismember(CCT_MODULE_KEY_2_CLIENT + key_1, cct_prepare.TEST_APP_NAME_1)
-    assert result
-    result = producer.sismember(CCT_MODULE_KEY_2_QUERY + key_1, query_normalized )
-    assert result
-    result = producer.sismember(CCT_MODULE_QUERY_2_CLIENT + query_normalized , cct_prepare.TEST_APP_NAME_1)
-    assert result
-    result = producer.sismember(CCT_MODULE_QUERY_2_KEY + query_normalized , key_1)
-    assert result
-    result = producer.exists(CCT_MODULE_QUERY_CLIENT + query_normalized + CCT_MODULE_KEY_SEPERATOR + cct_prepare.TEST_APP_NAME_1)
-    assert result

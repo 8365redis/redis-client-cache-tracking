@@ -61,7 +61,7 @@ int Handle_Query_Expire(RedisModuleCtx *ctx , std::string key) {
                 LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Query_Expire (Key:{Queries}) failed while deleting query (non existing key): " +  plain_query);
                 return REDISMODULE_ERR;
             }
-        }      
+        } 
 
 
         // Finally delete all "Query:{Keys}"" set
