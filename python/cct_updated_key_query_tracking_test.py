@@ -2,7 +2,7 @@ import pytest
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
-from constants import CCT_K2C
+from constants import CCT_K2C, CCT_Q_DELI
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -240,4 +240,4 @@ def test_updated_key_match_multiple_queries_one_client():
 
     # Check query is in streams 
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert "User\\.ID:1000 User\\.PASSPORT:bbb" in str(from_stream[0][1][0][1]["queries"])
+    assert "User\\.ID:1000" + CCT_Q_DELI +"User\\.PASSPORT:bbb" in str(from_stream[0][1][0][1]["queries"])
