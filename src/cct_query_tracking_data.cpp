@@ -78,7 +78,7 @@ void Add_Tracking_Key(RedisModuleCtx *ctx, std::string key, std::string client) 
     }
 }
 
-int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std::string event, RedisModuleString * key, const std::string value, const std::string queries) { 
+int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std::string event, const std::string key, const std::string value, const std::string queries) { 
 
     RedisModuleString *client_name = RedisModule_CreateString(ctx, client.c_str(), client.length());
     RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
@@ -87,8 +87,8 @@ int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std
     std::string internal_event = CCT_KEY_EVENTS.at(event);
     xadd_params[1] = RedisModule_CreateString(ctx, internal_event.c_str(), internal_event.length());
     xadd_params[2] = RedisModule_CreateString(ctx, "key", strlen("key"));
-    if(key != NULL) {
-        xadd_params[3] = key;
+    if(!key.empty()) {
+        xadd_params[3] = RedisModule_CreateString(ctx, key.c_str(), key.length());
     } else {
         xadd_params[3] = RedisModule_CreateString(ctx, "", strlen(""));
     }

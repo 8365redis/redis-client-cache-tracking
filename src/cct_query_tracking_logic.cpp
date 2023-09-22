@@ -77,7 +77,7 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
         std::copy(client_queries.begin(), client_queries.end(), std::ostream_iterator<std::string>(imploded, &CCT_MODULE_QUERY_DELIMETER));
         client_queries_str = imploded.str();
 
-        if (Add_Event_To_Stream(ctx, client_name, event, r_key, json_str, client_queries_str) != REDISMODULE_OK) {
+        if (Add_Event_To_Stream(ctx, client_name, event, key_str, json_str, client_queries_str) != REDISMODULE_OK) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to adding to the stream." );
             return RedisModule_ReplyWithError(ctx, strerror(errno));
         }

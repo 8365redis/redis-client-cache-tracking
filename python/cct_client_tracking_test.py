@@ -1,7 +1,7 @@
 import pytest
 import redis
 from redis.commands.json.path import Path
-from manage_redis import kill_redis, connect_redis_with_start, connect_redis_with_start
+from manage_redis import kill_redis, connect_redis_with_start, connect_redis_with_start, connect_redis
 import cct_prepare
 from constants import CCT_K2C, CCT_Q2C
 
@@ -18,13 +18,13 @@ def test_multi_register_client():
     cct_prepare.create_index(producer)
 
     # REGISTER CLIENT1
-    client1 = connect_redis_with_start()
+    client1 = connect_redis()
     resp = client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(resp)
     print(resp)
 
     # REGISTER CLIENT2
-    client2 = connect_redis_with_start()
+    client2 = connect_redis()
     resp = client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
     assert cct_prepare.OK in str(resp)
     print(resp)
@@ -35,7 +35,7 @@ def test_multi_register_ignored():
     cct_prepare.create_index(producer)
 
     # REGISTER CLIENT1
-    client1 = connect_redis_with_start()
+    client1 = connect_redis()
     resp = client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(resp)
 
@@ -44,7 +44,7 @@ def test_multi_register_ignored():
     assert cct_prepare.OK in str(resp)
 
     # REGISTER CLIENT2
-    client2 = connect_redis_with_start()
+    client2 = connect_redis()
     resp = client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
     assert cct_prepare.OK in str(resp) 
 
@@ -59,12 +59,12 @@ def test_multi_register_client_and_disconnect():
     cct_prepare.create_index(producer)
 
     # REGISTER CLIENT1
-    client1 = connect_redis_with_start()
+    client1 = connect_redis()
     resp = client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(resp)
 
     # REGISTER CLIENT2
-    client2 = connect_redis_with_start()
+    client2 = connect_redis()
     resp = client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
     assert cct_prepare.OK in str(resp)
 
@@ -72,6 +72,6 @@ def test_multi_register_client_and_disconnect():
     client2.close()
 
     # REGISTER CLIENT3
-    client3 = connect_redis_with_start()
+    client3 = connect_redis()
     resp = client3.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_3)
     assert cct_prepare.OK in str(resp)
