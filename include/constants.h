@@ -29,4 +29,9 @@ const int MS_MULT = 1000 ;
 const int CCT_TTL_SECOND = 4 ; 
 const int CCT_TTL = CCT_TTL_SECOND * MS_MULT ; 
 
+const std::string CCT_OPERATION = "operation" ;
+const std::string CCT_KEY = "key" ;
+const std::string CCT_VALUE = "value" ;
+const std::string CCT_QUERIES = "queries" ;
+
 #endif /* CONSTANTS_H */

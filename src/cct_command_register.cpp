@@ -18,14 +18,13 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         return RedisModule_ReplyWithError(ctx, strerror(errno));
     }
 
-    // Check if the stream exists and delete if it
+    // Check if the stream exists and delete if it is
     if( RedisModule_KeyExists(ctx, client_name) ) { // NOT checking if it is stream
         RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
         if (RedisModule_DeleteKey(stream_key) != REDISMODULE_OK ) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to delete the stream." );
             return RedisModule_ReplyWithError(ctx, strerror(errno));
         }
-
     } 
 
     // Create a new stream

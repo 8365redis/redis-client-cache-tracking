@@ -83,18 +83,18 @@ int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std
     RedisModuleString *client_name = RedisModule_CreateString(ctx, client.c_str(), client.length());
     RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
     RedisModuleString **xadd_params = (RedisModuleString **) RedisModule_Alloc(sizeof(RedisModuleString *) * 8);
-    xadd_params[0] = RedisModule_CreateString(ctx, "operation", strlen("operation"));
+    xadd_params[0] = RedisModule_CreateString(ctx, CCT_OPERATION.c_str(), strlen(CCT_OPERATION.c_str()));
     std::string internal_event = CCT_KEY_EVENTS.at(event);
     xadd_params[1] = RedisModule_CreateString(ctx, internal_event.c_str(), internal_event.length());
-    xadd_params[2] = RedisModule_CreateString(ctx, "key", strlen("key"));
+    xadd_params[2] = RedisModule_CreateString(ctx, CCT_KEY.c_str(), strlen(CCT_KEY.c_str()));
     if(!key.empty()) {
         xadd_params[3] = RedisModule_CreateString(ctx, key.c_str(), key.length());
     } else {
         xadd_params[3] = RedisModule_CreateString(ctx, "", strlen(""));
     }
-    xadd_params[4] = RedisModule_CreateString(ctx, "value", strlen("value"));
+    xadd_params[4] = RedisModule_CreateString(ctx, CCT_VALUE.c_str(), strlen(CCT_VALUE.c_str()));
     xadd_params[5] = RedisModule_CreateString(ctx, value.c_str(), value.length());
-    xadd_params[6] = RedisModule_CreateString(ctx, "queries", strlen("queries"));
+    xadd_params[6] = RedisModule_CreateString(ctx, CCT_QUERIES.c_str(), strlen(CCT_QUERIES.c_str()));
     xadd_params[7] = RedisModule_CreateString(ctx, queries.c_str(), queries.length());
     int stream_add_resp = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params, 4);
     if (stream_add_resp != REDISMODULE_OK) {

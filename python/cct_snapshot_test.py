@@ -3,9 +3,7 @@ import time
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
-from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
-                CCT_K2Q, CCT_DELI, CCT_Q2K, CCT_QC, \
-                CCT_HALF_TTL, CCT_TTL, CCT_MODULE_PREFIX
+from constants import CCT_QUERIES, CCT_VALUE
 from cct_test_utils import check_query_meta_data
 
 @pytest.fixture(autouse=True)
@@ -48,7 +46,7 @@ def test_1_client_1_query_with_disconnect():
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert key_1 in str(from_stream[0][1][0][1])
-    assert query_normalized in from_stream[0][1][0][1]["queries"]
+    assert query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
 
 def test_1_client_2_query_with_disconnect():
     producer = connect_redis_with_start()
@@ -88,8 +86,8 @@ def test_1_client_2_query_with_disconnect():
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert key_1 in str(from_stream[0][1][0][1])
-    assert first_query_normalized in from_stream[0][1][0][1]["queries"]
-    assert second_query_normalized in from_stream[0][1][0][1]["queries"]
+    assert first_query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
+    assert second_query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
 
 def test_1_client_1_query_without_disconnect():
     producer = connect_redis_with_start()
@@ -121,7 +119,7 @@ def test_1_client_1_query_without_disconnect():
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert key_1 in str(from_stream[0][1][0][1])
-    assert query_normalized in from_stream[0][1][0][1]["queries"]
+    assert query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
 
 def test_1_client_2_query_without_disconnect():
     producer = connect_redis_with_start()
@@ -158,8 +156,8 @@ def test_1_client_2_query_without_disconnect():
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert key_1 in str(from_stream[0][1][0][1])
-    assert first_query_normalized in from_stream[0][1][0][1]["queries"]
-    assert second_query_normalized in from_stream[0][1][0][1]["queries"]
+    assert first_query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
+    assert second_query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
 
 
 def test_1_client_1_query_1_key_multiple_update_still_match_query():
@@ -203,7 +201,7 @@ def test_1_client_1_query_1_key_multiple_update_still_match_query():
     print(from_stream)
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert key_1 in str(from_stream[0][1][0][1])
-    assert query_normalized in from_stream[0][1][0][1]["queries"]
+    assert query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
     assert 1 == len(from_stream[0][1])
 
 def test_1_client_1_query_1_key_multiple_update_doesnt_match_query():
@@ -250,7 +248,7 @@ def test_1_client_1_query_1_key_multiple_update_doesnt_match_query():
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert key_1 in str(from_stream[0][1][0][1])
-    assert query_normalized in from_stream[0][1][0][1]["queries"]
+    assert query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
     assert 1 == len(from_stream[0][1])
 
 def test_1_client_1_query_multiple_key_multiple_update_still_match_query():
@@ -299,8 +297,8 @@ def test_1_client_1_query_multiple_key_multiple_update_still_match_query():
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert key_2 in str(from_stream[0][1][0][1])
     assert key_1 in str(from_stream[0][1][1][1])
-    assert query_normalized in from_stream[0][1][0][1]["queries"]
-    assert str(2006) in from_stream[0][1][0][1]["value"]
+    assert query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
+    assert str(2006) in from_stream[0][1][0][1][CCT_VALUE]
     assert 2 == len(from_stream[0][1])
 
 def test_1_client_1_query_multiple_key_multiple_update_doesnt_match_query():
@@ -356,8 +354,8 @@ def test_1_client_1_query_multiple_key_multiple_update_doesnt_match_query():
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert key_2 in str(from_stream[0][1][0][1])
     assert key_1 in str(from_stream[0][1][1][1])
-    assert query_normalized in from_stream[0][1][0][1]["queries"]
-    assert query_normalized in from_stream[0][1][1][1]["queries"]
+    assert query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
+    assert query_normalized in from_stream[0][1][1][1][CCT_QUERIES]
     assert 2 == len(from_stream[0][1])
 
 def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query():
