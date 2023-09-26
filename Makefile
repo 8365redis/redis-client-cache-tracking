@@ -1,6 +1,6 @@
 CC = g++
-CPPFLAGS = -Wall -g -fPIC -lc -lm -Og -std=c++11 -I$(INCDIR)
-LDFLAGS = -shared
+CPPFLAGS = -Wall -g -fPIC -lc -lm -Og -std=c++11 -I$(INCDIR) 
+LDFLAGS = -static-libstdc++ -shared
 DEBUGFLAGS = -O0 -D _DEBUG
 RELEASEFLAGS = -O2 -D NDEBUG -combine -fwhole-program
 
@@ -16,7 +16,7 @@ TARGET  = $(BINDIR)/cct.so
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(CPPFLAGS) $(DEBUGFLAGS) -shared -o  $(TARGET) $(OBJECTS)
+	$(CC) $(CPPFLAGS) $(DEBUGFLAGS) $(LDFLAGS) -o  $(TARGET) $(OBJECTS)
 	rm -rf  $(SRCDIR)/*.o
 
 clean:

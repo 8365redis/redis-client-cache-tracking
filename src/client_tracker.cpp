@@ -2,6 +2,8 @@
 #include "logger.h"
 #include "constants.h"
 
+std::unordered_map<std::string, bool> CCT_CLIENT_CONNECTION;
+
 void handleClientEvent(RedisModuleCtx *ctx, RedisModuleEvent eid,
                        uint64_t subevent, void *data) {
 
@@ -16,18 +18,29 @@ void handleClientEvent(RedisModuleCtx *ctx, RedisModuleEvent eid,
     if (eid.id == REDISMODULE_EVENT_CLIENT_CHANGE) {
         switch (subevent) {
             case REDISMODULE_SUBEVENT_CLIENT_CHANGE_DISCONNECTED: {
-                LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "handleClientEvent client disconnected : " +  client_name );
-            } 
-            break;
-
+                LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "handleClientEvent client disconnected : " + client_name );
+                if (!client_name.empty()) {
+                    Disconnect_Client(client_name);
+                }
+            } break;
             case REDISMODULE_SUBEVENT_CLIENT_CHANGE_CONNECTED: {
-                LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "handleClientEvent client connected : " +  client_name );
-            } 
-            break;
+                LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "handleClientEvent client connected : " + client_name);
+            } break;
         }
     }
 }
 
+void Connect_Client(std::string client) {
+    CCT_CLIENT_CONNECTION[client] = true;
+}
+
+void Disconnect_Client(std::string client) {
+    CCT_CLIENT_CONNECTION[client] = false;
+}
+
+bool Client_Connected(std::string client) {
+    return CCT_CLIENT_CONNECTION[client] ;
+}
 
 std::string Get_Client_Name(RedisModuleCtx *ctx) {
     unsigned long long client_id = RedisModule_GetClientId(ctx);

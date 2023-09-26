@@ -36,7 +36,7 @@ def test_1_client_1_query_with_disconnect():
     assert not from_stream
 
     # DISCONNECT
-    client1.close()
+    client1.connection_pool.disconnect()
 
     # RE-REGISTER
     client1 = connect_redis()
@@ -76,7 +76,7 @@ def test_1_client_2_query_with_disconnect():
     assert not from_stream
 
     # DISCONNECT
-    client1.close()
+    client1.connection_pool.disconnect()
 
     # RE-REGISTER
     client1 = connect_redis()
@@ -190,7 +190,7 @@ def test_1_client_1_query_1_key_multiple_update_still_match_query():
     assert 3 == len(from_stream[0][1])
 
     # DISCONNECT
-    client1.close()
+    client1.connection_pool.disconnect()
 
     # RE-REGISTER
     client1 = connect_redis()
@@ -238,7 +238,7 @@ def test_1_client_1_query_1_key_multiple_update_doesnt_match_query():
     assert 3 == len(from_stream[0][1])
 
     # DISCONNECT
-    client1.close()
+    client1.connection_pool.disconnect()
 
     # RE-REGISTER
     client1 = connect_redis()
@@ -286,7 +286,7 @@ def test_1_client_1_query_multiple_key_multiple_update_still_match_query():
     assert 4 == len(from_stream[0][1])
 
     # DISCONNECT
-    client1.close()
+    client1.connection_pool.disconnect()
 
     # RE-REGISTER
     client1 = connect_redis()
@@ -343,7 +343,7 @@ def test_1_client_1_query_multiple_key_multiple_update_doesnt_match_query():
     assert 6 == len(from_stream[0][1])
 
     # DISCONNECT
-    client1.close()
+    client1.connection_pool.disconnect()
 
     # RE-REGISTER
     client1 = connect_redis()
@@ -403,7 +403,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query(
     assert 6 == len(from_stream[0][1])
 
     # DISCONNECT
-    client1.close()
+    client1.connection_pool.disconnect()
 
     # RE-REGISTER
     client1 = connect_redis()
@@ -521,7 +521,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     assert 4 == len(from_stream[0][1])
 
     # DISCONNECT
-    client1.close()
+    client1.connection_pool.disconnect()
 
     # THIS WILL EXPIRE FIRST QUERY 
     time.sleep(CCT_HALF_TTL)
@@ -583,7 +583,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     time.sleep(CCT_HALF_TTL)
 
     # DISCONNECT
-    client1.close()
+    client1.connection_pool.disconnect()
 
     # RE-REGISTER
     client1 = connect_redis()
@@ -643,7 +643,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     time.sleep(CCT_HALF_TTL)
 
     # DISCONNECT
-    client1.close()
+    client1.connection_pool.disconnect()
 
     # THIS WILL EXPIRE SECOND QUERY 
     time.sleep(CCT_HALF_TTL)    
@@ -685,7 +685,7 @@ def test_1_client_1_query_key_expire():
     time.sleep(KEY_EXPIRE_SECOND + 0.1)   
 
     # DISCONNECT
-    client1.close()
+    client1.connection_pool.disconnect()
 
     # RE-REGISTER
     client1 = connect_redis()
@@ -727,7 +727,7 @@ def test_1_client_1_query_first_key_later_query_expire():
     time.sleep(CCT_TTL + 0.1)  
 
     # DISCONNECT
-    client1.close()
+    client1.connection_pool.disconnect()
 
     # RE-REGISTER
     client1 = connect_redis()
@@ -766,7 +766,7 @@ def test_1_client_1_query_first_query_later_key_expire():
     time.sleep(CCT_TTL + 1)  
 
     # DISCONNECT
-    client1.close()
+    client1.connection_pool.disconnect()
 
     # RE-REGISTER
     client1 = connect_redis()

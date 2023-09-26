@@ -18,6 +18,10 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         return RedisModule_ReplyWithError(ctx, strerror(errno));
     }
 
+    // Update client connection status
+    std::string client_name_str = RedisModule_StringPtrLen(client_name, NULL);
+    Connect_Client(client_name_str);
+
     // Check if the stream exists and delete if it is
     if( RedisModule_KeyExists(ctx, client_name) ) { // NOT checking if it is stream
         RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
@@ -25,7 +29,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to delete the stream." );
             return RedisModule_ReplyWithError(ctx, strerror(errno));
         }
-    } 
+    }
 
     // Create a new stream
     RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
@@ -43,7 +47,6 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     // Send SNAPSHOT to client
     // First get clients queries
     std::vector<std::string> client_queries;
-    std::string client_name_str = RedisModule_StringPtrLen(client_name, NULL);
     std::string client_query_key_str = CCT_MODULE_CLIENT_2_QUERY + client_name_str;
     RedisModuleCallReply *c2q_smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", client_query_key_str.c_str());
     const size_t reply_length = RedisModule_CallReplyLength(c2q_smembers_reply);

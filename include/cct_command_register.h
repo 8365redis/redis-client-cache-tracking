@@ -12,6 +12,7 @@
 #include "constants.h"
 #include "cct_query_tracking_data.h"
 #include "json_handler.h"
+#include "client_tracker.h"
 
 int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc);
 

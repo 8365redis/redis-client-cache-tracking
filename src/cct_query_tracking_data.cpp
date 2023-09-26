@@ -80,6 +80,12 @@ void Add_Tracking_Key(RedisModuleCtx *ctx, std::string key, std::string client) 
 
 int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std::string event, const std::string key, const std::string value, const std::string queries) { 
 
+    if( Client_Connected(client) == false) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream skipping offline client : " + client);
+        return REDISMODULE_OK;
+    } else {
+         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream adding for client:  " + client);
+    }
     RedisModuleString *client_name = RedisModule_CreateString(ctx, client.c_str(), client.length());
     RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
     RedisModuleString **xadd_params = (RedisModuleString **) RedisModule_Alloc(sizeof(RedisModuleString *) * 8);
@@ -98,7 +104,7 @@ int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std
     xadd_params[7] = RedisModule_CreateString(ctx, queries.c_str(), queries.length());
     int stream_add_resp = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params, 4);
     if (stream_add_resp != REDISMODULE_OK) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Event_To_Stream failed to add the stream." );
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Event_To_Stream failed to add the stream.");
         return REDISMODULE_ERR;
     }
     return REDISMODULE_OK;

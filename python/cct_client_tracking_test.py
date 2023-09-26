@@ -68,8 +68,7 @@ def test_multi_register_client_and_disconnect():
     resp = client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
     assert cct_prepare.OK in str(resp)
 
-    client1.close()
-    client2.close()
+    client1.connection_pool.disconnect()
 
     # REGISTER CLIENT3
     client3 = connect_redis()

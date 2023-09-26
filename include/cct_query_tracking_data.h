@@ -9,6 +9,7 @@
 #include "logger.h"
 #include "constants.h"
 #include "query_parser.h"
+#include "client_tracker.h"
 
 void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::string client_name, const std::vector<std::string> &key_ids);
 void Add_Tracking_Key(RedisModuleCtx *ctx, std::string key, std::string client);
