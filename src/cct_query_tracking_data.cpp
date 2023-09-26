@@ -80,7 +80,7 @@ void Add_Tracking_Key(RedisModuleCtx *ctx, std::string key, std::string client) 
 
 int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std::string event, const std::string key, const std::string value, const std::string queries) { 
 
-    if( Client_Connected(client) == false) {
+    if( Is_Client_Connected(client) == false) {
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream skipping offline client : " + client);
         return REDISMODULE_OK;
     } else {

@@ -22,6 +22,12 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     std::string client_name_str = RedisModule_StringPtrLen(client_name, NULL);
     Connect_Client(client_name_str);
 
+    // Update the client TTL
+    if ( Update_Client_TTL(ctx) == false ) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set TTL.");
+        return REDISMODULE_ERR;
+    }
+
     // Check if the stream exists and delete if it is
     if( RedisModule_KeyExists(ctx, client_name) ) { // NOT checking if it is stream
         RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);

@@ -3,12 +3,13 @@
 #include "constants.h"
 
 std::unordered_map<std::string, bool> CCT_CLIENT_CONNECTION;
+std::unordered_map<std::string, unsigned long long> CCT_CLIENT_CONNECTION_TIMEOUT;
 
-void handleClientEvent(RedisModuleCtx *ctx, RedisModuleEvent eid,
+void Handle_Client_Event(RedisModuleCtx *ctx, RedisModuleEvent eid,
                        uint64_t subevent, void *data) {
 
     if (data == NULL) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "handleClientEvent failed with NULL data." );
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Client_Event failed with NULL data." );
         return;
     }
 
@@ -18,13 +19,13 @@ void handleClientEvent(RedisModuleCtx *ctx, RedisModuleEvent eid,
     if (eid.id == REDISMODULE_EVENT_CLIENT_CHANGE) {
         switch (subevent) {
             case REDISMODULE_SUBEVENT_CLIENT_CHANGE_DISCONNECTED: {
-                LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "handleClientEvent client disconnected : " + client_name );
+                LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Handle_Client_Event client disconnected : " + client_name );
                 if (!client_name.empty()) {
                     Disconnect_Client(client_name);
                 }
             } break;
             case REDISMODULE_SUBEVENT_CLIENT_CHANGE_CONNECTED: {
-                LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "handleClientEvent client connected : " + client_name);
+                LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Handle_Client_Event client connected : " + client_name);
             } break;
         }
     }
@@ -38,8 +39,24 @@ void Disconnect_Client(std::string client) {
     CCT_CLIENT_CONNECTION[client] = false;
 }
 
-bool Client_Connected(std::string client) {
+bool Is_Client_Connected(std::string client) {
+    if (CCT_CLIENT_CONNECTION.count(client) == 0){
+        return false;
+    }
     return CCT_CLIENT_CONNECTION[client] ;
+}
+
+bool Update_Client_TTL(RedisModuleCtx *ctx ) {
+    std::string client_name = Get_Client_Name(ctx);
+    if ( client_name.empty() || CCT_CLIENT_CONNECTION_TIMEOUT.count(client_name) == 0 ) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Update_Client_TTL failed for client : " +  client_name);
+        return false;
+    }
+    auto now = std::chrono::system_clock::now();
+    auto ms  = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
+    unsigned long long ms_value = ms.count();
+    CCT_CLIENT_CONNECTION_TIMEOUT[client_name] = ms_value;
+    return true;
 }
 
 std::string Get_Client_Name(RedisModuleCtx *ctx) {
