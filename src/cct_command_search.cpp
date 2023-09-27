@@ -8,6 +8,11 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     if (argc < 3) {
         return RedisModule_WrongArity(ctx);
     }
+
+    if (Is_Client_Connected(Get_Client_Name(ctx)) == false) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed : Client is not registered" );
+        return RedisModule_ReplyWithError(ctx, "Not registered client");
+    }
        
     // Forward Search
     RedisModuleCallReply *reply = RedisModule_Call(ctx, "FT.SEARCH", "v", argv + 1, argc - 1);

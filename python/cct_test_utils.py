@@ -1,8 +1,8 @@
-
+import threading
 from manage_redis import connect_redis
 from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
                 CCT_K2Q, CCT_DELI, CCT_Q2K, CCT_QC, \
-                CCT_MODULE_PREFIX
+                CCT_MODULE_PREFIX, CCT_HEART_BEAT_INTERVAL
 
 def check_query_meta_data(producer , app_name , query , key , assert_list):
     assert (6 == len(assert_list))
@@ -36,3 +36,4 @@ def get_redis_snapshot():
         else:
             print(key + "=" + str(client.smembers(key)))
     print("========REDIS SNAPSHOT END=========")
+

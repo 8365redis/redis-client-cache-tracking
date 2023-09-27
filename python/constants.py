@@ -17,5 +17,11 @@ CCT_VALUE = "value"
 CCT_QUERIES = "queries" 
 
 
-CCT_TTL = 4  # This must be same as CCT_TTL in constants.h
-CCT_HALF_TTL = ( CCT_TTL / 2 ) + 1
+CCT_QUERY_TTL = 4  # This must be same as CCT_TTL in constants.h
+CCT_QUERY_HALF_TTL = ( CCT_QUERY_TTL / 2 ) + 1
+
+CCT_HEART_BEAT_INTERVAL = 2 # This must be same as CCT_CLIENT_TTL_CHECK_INTERVAL in constants.h
+
+CCT_NOT_REGISTERED_COMMAND_ERROR  = "Not registered client"
+
+SKIP_HB_TEST = True

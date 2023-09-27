@@ -10,7 +10,7 @@
 void Handle_Client_Event(RedisModuleCtx *ctx, RedisModuleEvent eid, uint64_t subevent, void *data);
 std::string Get_Client_Name(RedisModuleCtx *ctx);
 std::string Get_Client_Name_From_ID(RedisModuleCtx *ctx, unsigned long long client_id);
-bool Connect_Client(std::string client);
+void Connect_Client(std::string client);
 void Disconnect_Client(std::string client);
 bool Is_Client_Connected(std::string client);
 bool Update_Client_TTL(RedisModuleCtx *ctx , bool first_update = false);

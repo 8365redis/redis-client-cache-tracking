@@ -3,7 +3,7 @@ import time
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
-from constants import CCT_QUERIES, CCT_VALUE, CCT_HALF_TTL, CCT_TTL
+from constants import CCT_QUERIES, CCT_VALUE, CCT_QUERY_HALF_TTL, CCT_QUERY_TTL
 from cct_test_utils import check_query_meta_data
 
 @pytest.fixture(autouse=True)
@@ -500,7 +500,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
     
-    time.sleep(CCT_HALF_TTL)
+    time.sleep(CCT_QUERY_HALF_TTL)
 
     query_value = id_value
     client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
@@ -524,7 +524,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     client1.connection_pool.disconnect()
 
     # THIS WILL EXPIRE FIRST QUERY 
-    time.sleep(CCT_HALF_TTL)
+    time.sleep(CCT_QUERY_HALF_TTL)
 
     # RE-REGISTER
     client1 = connect_redis()
@@ -559,7 +559,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
     
-    time.sleep(CCT_HALF_TTL)
+    time.sleep(CCT_QUERY_HALF_TTL)
 
     query_value = id_value
     client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
@@ -580,7 +580,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     assert 4 == len(from_stream[0][1])
 
     # THIS WILL EXPIRE FIRST QUERY 
-    time.sleep(CCT_HALF_TTL)
+    time.sleep(CCT_QUERY_HALF_TTL)
 
     # DISCONNECT
     client1.connection_pool.disconnect()
@@ -619,7 +619,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
     
-    time.sleep(CCT_HALF_TTL)
+    time.sleep(CCT_QUERY_HALF_TTL)
 
     query_value = id_value
     client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
@@ -640,13 +640,13 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     assert 4 == len(from_stream[0][0])
 
     # THIS WILL EXPIRE FIRST QUERY 
-    time.sleep(CCT_HALF_TTL)
+    time.sleep(CCT_QUERY_HALF_TTL)
 
     # DISCONNECT
     client1.connection_pool.disconnect()
 
     # THIS WILL EXPIRE SECOND QUERY 
-    time.sleep(CCT_HALF_TTL)    
+    time.sleep(CCT_QUERY_HALF_TTL)    
 
     # RE-REGISTER
     client1 = connect_redis()
@@ -724,7 +724,7 @@ def test_1_client_1_query_first_key_later_query_expire():
     time.sleep(KEY_EXPIRE_SECOND + 0.1)
 
     # THIS WILL QUERY 
-    time.sleep(CCT_TTL + 0.1)  
+    time.sleep(CCT_QUERY_TTL + 0.1)  
 
     # DISCONNECT
     client1.connection_pool.disconnect()
@@ -749,7 +749,7 @@ def test_1_client_1_query_first_query_later_key_expire():
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
     key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
     producer.json().set(key_1, Path.root_path(), d)
-    producer.expire(key_1, (CCT_TTL+1), nx = True)
+    producer.expire(key_1, (CCT_QUERY_TTL+1), nx = True)
     passport_value = "bbb"
 
     # FIRST CLIENT
@@ -763,7 +763,7 @@ def test_1_client_1_query_first_query_later_key_expire():
     assert not from_stream
 
     # THIS WILL EXPIRE KEY AND QUERY 
-    time.sleep(CCT_TTL + 1)  
+    time.sleep(CCT_QUERY_TTL + 1)  
 
     # DISCONNECT
     client1.connection_pool.disconnect()

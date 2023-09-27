@@ -25,7 +25,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     // Update the client TTL
     if ( Update_Client_TTL(ctx , true) == false ) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set TTL.");
-        return REDISMODULE_ERR;
+        return RedisModule_ReplyWithError(ctx, "Setting TTL Failed");
     }
 
     // Check if the stream exists and delete if it is
