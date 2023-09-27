@@ -20,7 +20,7 @@ int Heartbeat_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     if ( Update_Client_TTL(ctx) == false ) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Heartbeat_RedisCommand failed.");
         return REDISMODULE_ERR;
-    }
+    }  
 
     RedisModule_ReplyWithSimpleString(ctx, "OK");
     return REDISMODULE_OK;
