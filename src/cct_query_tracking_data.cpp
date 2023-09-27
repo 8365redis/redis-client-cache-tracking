@@ -50,7 +50,7 @@ void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::stri
     if(RedisModule_StringSet(query_client_key, empty) != REDISMODULE_OK){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed while registering Query:Client:1 " +  query_client_expire_key_name_str);
     }
-    if(RedisModule_SetExpire(query_client_key, CCT_TTL) != REDISMODULE_OK){
+    if(RedisModule_SetExpire(query_client_key, CCT_QUERY_TTL) != REDISMODULE_OK){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed set expire for Query:Client:1  " +  query_client_expire_key_name_str);
     }
 
@@ -73,7 +73,7 @@ void Add_Tracking_Key(RedisModuleCtx *ctx, std::string key, std::string client) 
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed set expire for client tracking set (key null): " +  key_with_prefix);
     }
     // This is best effort clening
-    if(RedisModule_SetExpire(key_tracking_set_key, CCT_TTL) != REDISMODULE_OK) {
+    if(RedisModule_SetExpire(key_tracking_set_key, CCT_QUERY_TTL) != REDISMODULE_OK) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed set expire for client tracking set: " +  key_with_prefix);
     }
 }

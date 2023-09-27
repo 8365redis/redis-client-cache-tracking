@@ -47,6 +47,8 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "RedisModule_OnLoad failed to SubscribeToServerEvent." );
         return RedisModule_ReplyWithError(ctx, strerror(errno));
     }
+
+    Start_Client_Handler(ctx);
   
     return REDISMODULE_OK;
 }
