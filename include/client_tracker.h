@@ -11,6 +11,6 @@ std::string Get_Client_Name_From_ID(RedisModuleCtx *ctx, unsigned long long clie
 void Connect_Client(std::string client);
 void Disconnect_Client(std::string client);
 bool Is_Client_Connected(std::string client);
-bool Update_Client_TTL(RedisModuleCtx *ctx);
+bool Update_Client_TTL(RedisModuleCtx *ctx , bool first_update = false);
 
 #endif /* CLIENT_TRACKER_H */

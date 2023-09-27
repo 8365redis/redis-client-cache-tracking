@@ -23,7 +23,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     Connect_Client(client_name_str);
 
     // Update the client TTL
-    if ( Update_Client_TTL(ctx) == false ) {
+    if ( Update_Client_TTL(ctx , true) == false ) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set TTL.");
         return REDISMODULE_ERR;
     }

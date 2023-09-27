@@ -46,11 +46,13 @@ bool Is_Client_Connected(std::string client) {
     return CCT_CLIENT_CONNECTION[client] ;
 }
 
-bool Update_Client_TTL(RedisModuleCtx *ctx ) {
+bool Update_Client_TTL(RedisModuleCtx *ctx, bool first_update = false ) {
     std::string client_name = Get_Client_Name(ctx);
-    if ( client_name.empty() || CCT_CLIENT_CONNECTION_TIMEOUT.count(client_name) == 0 ) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Update_Client_TTL failed for client : " +  client_name);
+    if ( client_name.empty() ) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Update_Client_TTL failed . Client name is empty. ");
         return false;
+    }else if ( CCT_CLIENT_CONNECTION_TIMEOUT.count(client_name) == 0 && first_update == false) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Update_Client_TTL failed . Client is not registered. ");
     }
     auto now = std::chrono::system_clock::now();
     auto ms  = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
