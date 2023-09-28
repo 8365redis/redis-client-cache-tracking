@@ -4,6 +4,7 @@
 
 std::unordered_map<std::string, bool> CCT_CLIENT_CONNECTION;
 std::unordered_map<std::string, unsigned long long> CCT_CLIENT_CONNECTION_TIMEOUT;
+std::unordered_map<std::string, unsigned long long> CCT_CLIENT_QUERY_TTL;
 
 void Handle_Client_Event(RedisModuleCtx *ctx, RedisModuleEvent eid,
                        uint64_t subevent, void *data) {
@@ -107,4 +108,16 @@ void Client_TTL_Handler(RedisModuleCtx *ctx, std::unordered_map<std::string, uns
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(CCT_CLIENT_TTL_CHECK_INTERVAL));
     }
+}
+
+void Set_Client_Query_TTL(RedisModuleCtx *ctx, std::string client, unsigned long long ttl) {
+    CCT_CLIENT_QUERY_TTL[client] = ttl * MS_MULT;
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Set_Client_Query_TTL client  : " + client + " , TTL: " + std::to_string(ttl) );
+}
+
+unsigned long long Get_Client_Query_TTL(std::string client) {
+    if(CCT_CLIENT_QUERY_TTL.count(client) == 0 ){
+        return CCT_QUERY_TTL;
+    }
+    return CCT_CLIENT_QUERY_TTL[client];
 }

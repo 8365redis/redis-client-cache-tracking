@@ -4,8 +4,17 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     RedisModule_AutoMemory(ctx);
     Log_Command(ctx,argv,argc);
     
-    if (argc != 2 ) {
+    if (argc < 2  || argc > 3) {
         return RedisModule_WrongArity(ctx);
+    }
+
+    unsigned long long client_query_ttl = 0;
+    if (argc == 3) {
+        RedisModuleString *client_query_ttl_str = argv[2];
+        if(RedisModule_StringToULongLong(client_query_ttl_str, &client_query_ttl) == REDISMODULE_ERR ) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set client query TTL. Invalid TTL value." );
+            return RedisModule_ReplyWithError(ctx, strerror(errno));
+        }
     }
 
     // Get Client ID
@@ -27,6 +36,14 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set TTL.");
         return RedisModule_ReplyWithError(ctx, "Setting TTL Failed");
     }
+
+    // Update the client Query TTL
+    if(client_query_ttl == 0 ) {
+        Set_Client_Query_TTL(ctx, client_name_str, CCT_QUERY_TTL);
+    } else {
+        Set_Client_Query_TTL(ctx, client_name_str, client_query_ttl);
+    }
+    
 
     // Check if the stream exists and delete if it is
     if( RedisModule_KeyExists(ctx, client_name) ) { // NOT checking if it is stream

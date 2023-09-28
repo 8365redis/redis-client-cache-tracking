@@ -37,7 +37,7 @@ int Handle_Query_Expire(RedisModuleCtx *ctx , std::string key) {
     if (expired_query_has_other_clients == false) {
 
         // First find all keys matching to query
-        std::vector<std::string> keys_matching_expired_query; 
+        std::vector<std::string> keys_matching_expired_query;
         std::string q2k_str = CCT_MODULE_QUERY_2_KEY + plain_query;
         RedisModuleCallReply *q2k_smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", q2k_str.c_str());
         const size_t reply_length = RedisModule_CallReplyLength(q2k_smembers_reply);

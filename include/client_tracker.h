@@ -16,5 +16,7 @@ bool Is_Client_Connected(std::string client);
 bool Update_Client_TTL(RedisModuleCtx *ctx , bool first_update = false);
 void Client_TTL_Handler(RedisModuleCtx *ctx, std::unordered_map<std::string, unsigned long long> &client2ttl , std::unordered_map<std::string, bool> &client2online);
 void Start_Client_Handler(RedisModuleCtx *ctx);
+void Set_Client_Query_TTL(RedisModuleCtx *ctx, std::string client, unsigned long long ttl);
+unsigned long long Get_Client_Query_TTL(std::string client);
 
 #endif /* CLIENT_TRACKER_H */
