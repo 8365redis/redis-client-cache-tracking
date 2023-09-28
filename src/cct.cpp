@@ -6,6 +6,10 @@
 #include "cct_command_search.h"
 #include "cct_command_heartbeat.h"
 
+#ifndef CCT_MODULE_VERSION
+#define CCT_MODULE_VERSION "unknown"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -15,6 +19,9 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     if (RedisModule_Init(ctx,"CCT",1,REDISMODULE_APIVER_1) == REDISMODULE_ERR) {
         return REDISMODULE_ERR;
     }
+    
+    const char* version = CCT_MODULE_VERSION;
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT_MODULE_VERSION : " + std::string(version));
     
     if (RedisModule_CreateCommand(ctx,"CCT.REGISTER", Register_RedisCommand , "admin write", 0, 0, 0) == REDISMODULE_ERR) {
         return REDISMODULE_ERR;
