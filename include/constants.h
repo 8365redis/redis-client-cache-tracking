@@ -26,10 +26,10 @@ const std::unordered_map<std::string, std::string> CCT_KEY_EVENTS =
                                                                     } ;
 
 const int MS_MULT = 1000 ;
-const int CCT_QUERY_TTL_SECOND = 4000 ; 
+const int CCT_QUERY_TTL_SECOND = 7 * 24 * 60 * 60  ; 
 const int CCT_QUERY_TTL = CCT_QUERY_TTL_SECOND * MS_MULT ;
 
-const int CCT_CLIENT_TTL_CHECK_INTERVAL_SECOND = 2 ; // 2 Minutes
+const int CCT_CLIENT_TTL_CHECK_INTERVAL_SECOND = 2 * 60 ; // 2 Minutes
 const int CCT_CLIENT_TTL_CHECK_INTERVAL = CCT_CLIENT_TTL_CHECK_INTERVAL_SECOND  * MS_MULT; 
 const int CCT_CLIENT_TTL_HEARTBEAT_MISS_COUNT = 3;
 const int CCT_CLIENT_TTL = CCT_CLIENT_TTL_CHECK_INTERVAL * CCT_CLIENT_TTL_HEARTBEAT_MISS_COUNT;

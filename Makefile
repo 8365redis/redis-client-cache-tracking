@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SHELL := /bin/bash
-VERSION            := $(shell git describe --abbrev=0)
+VERSION := $(shell git describe --abbrev=0)
 
 CC = g++
 CPPFLAGS = -Wall -g -fPIC -lc -lm -Og -std=c++11 -I$(INCDIR) -DCCT_MODULE_VERSION=\"$(VERSION)\"
