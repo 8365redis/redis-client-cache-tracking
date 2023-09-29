@@ -75,9 +75,11 @@ void Recursive_JSON_Iterate(const json& j, std::string prefix , std::vector<std:
                 value_str = std::to_string(it.value().get<int>());
             } else if (val_type == json::value_t::number_float ) {
                 value_str = std::to_string(it.value().get<float>());
+            } else if (val_type == json::value_t::boolean ){
+                value_str =  it.value().get<bool>() ?  "true" : "false";
             } else if (val_type == json::value_t::null ){
-                value_str = "null";
-            } else {
+                value_str = "null";       
+            } else{
                 value_str = it.value().get<std::string>();
             }
             // TODO FIX prefix
