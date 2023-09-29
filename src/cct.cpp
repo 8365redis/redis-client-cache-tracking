@@ -21,8 +21,15 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     }
     
     const char* version_string = { CCT_MODULE_VERSION " compiled at " __TIME__ " "  __DATE__  };
-    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT_MODULE_VERSION : " + std::string(version_string));
-    
+    LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "CCT_MODULE_VERSION : " + std::string(version_string));
+
+    #ifdef _DEBUG
+    LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "THIS IS A DEBUG BUILD." );
+    #endif
+    #ifdef NDEBUG
+    LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "THIS IS A RELEASE BUILD." );
+    #endif 
+
     if (RedisModule_CreateCommand(ctx,"CCT.REGISTER", Register_RedisCommand , "admin write", 0, 0, 0) == REDISMODULE_ERR) {
         return REDISMODULE_ERR;
     } else {

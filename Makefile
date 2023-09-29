@@ -3,11 +3,15 @@
 SHELL := /bin/bash
 VERSION := $(shell git describe --abbrev=0)
 
+DEBUG ?= 0
+ifeq ($(DEBUG), 1)
+    CPPFLAGS = -Wall -g -fPIC -std=c++11 -I$(INCDIR) -D CCT_MODULE_VERSION=\"$(VERSION)\" -D _DEBUG -O0
+else
+    CPPFLAGS = -Wall -g -fPIC -std=c++11 -I$(INCDIR) -D CCT_MODULE_VERSION=\"$(VERSION)\" -D NDEBUG -O3
+endif
+
 CC = g++
-CPPFLAGS = -Wall -g -fPIC -lc -lm -Og -std=c++11 -I$(INCDIR) -DCCT_MODULE_VERSION=\"$(VERSION)\"
-LDFLAGS = -static-libstdc++ -shared
-DEBUGFLAGS = -O0 -D _DEBUG
-RELEASEFLAGS = -O2 -D NDEBUG -combine -fwhole-program
+LDFLAGS = -static-libstdc++ -shared -o
  
 BINDIR = bin
 SRCDIR = src
@@ -18,11 +22,14 @@ HEADERS = $(shell echo include/*.h)
 OBJECTS = $(SOURCES:.cpp=.o)
 
 TARGET  = $(BINDIR)/cct.so
+
 all: $(TARGET)
 
-$(TARGET): $(OBJECTS)
-	$(CC) $(CPPFLAGS) $(DEBUGFLAGS) $(LDFLAGS) -o  $(TARGET) $(OBJECTS)
+$(TARGET) : $(OBJECTS)
+	$(CC) $(CPPFLAGS) $(LDFLAGS) $(TARGET) $(OBJECTS)
 	rm -rf  $(SRCDIR)/*.o
+
+.PHONY: clean load test perf_test
 
 clean:
 	rm -rf  $(SRCDIR)/*.o $(BINDIR)/*.so 
