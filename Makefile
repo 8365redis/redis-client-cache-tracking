@@ -1,5 +1,6 @@
 #!/bin/bash
 
+CURRENTDIR:=$(strip $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST)))))
 SHELL := /bin/bash
 VERSION := $(shell git describe --abbrev=0)
 
@@ -36,7 +37,7 @@ clean:
 	rm -f dump.rdb
 
 load: 
-	redis-stack-server --loadmodule $(BINDIR)/cct.so
+	redis-stack-server --loadmodule $(CURRENTDIR)/$(BINDIR)/cct.so
 
 test:
 	pytest -rP
