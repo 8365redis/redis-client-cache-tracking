@@ -56,7 +56,7 @@ void Recursive_JSON_Iterate(const json& j, std::string prefix , std::vector<std:
 
     for(auto it = j.begin(); it != j.end(); ++it)
     {
-        std::cout<<"Recursive_JSON_Iterate prefix:"<<prefix<<" key:"<<it.key()<<" value:"<<it.value()<<std::endl;
+        //std::cout<<"Recursive_JSON_Iterate prefix:"<<prefix<<" key:"<<it.key()<<" value:"<<it.value()<<std::endl;
         if( it->is_array()) {
             continue;
         }
@@ -84,7 +84,7 @@ void Recursive_JSON_Iterate(const json& j, std::string prefix , std::vector<std:
             }
             // TODO FIX prefix
             std::string new_prefix = prefix + CCT_MODULE_KEY_LEVEL_WITH_ESCAPE + it.key() + CCT_MODULE_KEY_SEPERATOR + value_str;
-            std::cout<<"Recursive_JSON_Iterate new_prefix:"<<new_prefix<<std::endl;
+            //std::cout<<"Recursive_JSON_Iterate new_prefix:"<<new_prefix<<std::endl;
             keys.push_back(new_prefix);
         }
     }

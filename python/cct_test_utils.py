@@ -1,8 +1,13 @@
-import threading
+import json
 from manage_redis import connect_redis
 from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
                 CCT_K2Q, CCT_DELI, CCT_Q2K, CCT_QC, \
                 CCT_MODULE_PREFIX, CCT_HEART_BEAT_INTERVAL
+
+from mimesis import Field, Fieldset, Schema
+from mimesis.enums import Gender, TimestampFormat
+from mimesis.locales import Locale
+
 
 def check_query_meta_data(producer , app_name , query , key , assert_list):
     assert (6 == len(assert_list))
@@ -37,3 +42,37 @@ def get_redis_snapshot():
             print(key + "=" + str(client.smembers(key)))
     print("========REDIS SNAPSHOT END=========")
 
+def generate_json():
+    field = Field(locale=Locale.EN)
+    fieldset = Fieldset(locale=Locale.EN)
+
+    schema = Schema(
+        schema=lambda: {
+            "pk": field("increment"),
+            "uid": field("uuid"),
+            "name": field("text.word"),
+            "version": field("version", pre_release=True),
+            "timestamp": field("timestamp", fmt=TimestampFormat.POSIX),
+            "owner": {
+                "email": field("person.email", domains=["mimesis.name"]),
+                "token": field("token_hex"),
+                "creator": field("full_name", gender=Gender.FEMALE),
+            },
+            "sub1-owner": {
+                "email": field("person.email", domains=["mimesis.name"]),
+                "token": field("token_hex"),
+                "creator": field("full_name", gender=Gender.FEMALE),
+            },
+            "sub2-owner": {
+                "email": field("person.email", domains=["mimesis.name"]),
+                "token": field("token_hex"),
+                "creator": field("full_name", gender=Gender.FEMALE),
+            },                     
+            "apps": fieldset(
+                "text.word", i=8, key=lambda name: {"name": name, "id": field("uuid")}
+            ),
+        },
+        iterations=2,
+    )
+    val =  schema.create() 
+    return val[0]
