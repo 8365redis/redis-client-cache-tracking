@@ -14,7 +14,7 @@ const std::string CCT_MODULE_CLIENT_2_QUERY = CCT_MODULE_PREFIX + "C2Q:" ;
 const std::string CCT_MODULE_KEY_SEPERATOR  = ":" ;
 const std::string CCT_MODULE_KEY_LEVEL = "." ;
 const std::string CCT_MODULE_KEY_LEVEL_WITH_ESCAPE = "\\." ;
-const char CCT_MODULE_QUERY_DELIMETER = char(5) ;
+const std::string CCT_MODULE_QUERY_DELIMETER = "\x05" ;
 const int CLIENT_OFFLINE = 0 ;
 
 const std::unordered_map<std::string, std::string> CCT_KEY_EVENTS = 
@@ -26,13 +26,23 @@ const std::unordered_map<std::string, std::string> CCT_KEY_EVENTS =
                                                                     } ;
 
 const int MS_MULT = 1000 ;
+#ifdef NDEBUG
 const int CCT_QUERY_TTL_SECOND = 7 * 24 * 60 * 60  ; // 7 days
 const int CCT_QUERY_TTL = CCT_QUERY_TTL_SECOND * MS_MULT ;
-
 const int CCT_CLIENT_TTL_CHECK_INTERVAL_SECOND = 2 * 60 ; // 2 Minutes
 const int CCT_CLIENT_TTL_CHECK_INTERVAL = CCT_CLIENT_TTL_CHECK_INTERVAL_SECOND  * MS_MULT; 
 const int CCT_CLIENT_TTL_HEARTBEAT_MISS_COUNT = 3;
 const int CCT_CLIENT_TTL = CCT_CLIENT_TTL_CHECK_INTERVAL * CCT_CLIENT_TTL_HEARTBEAT_MISS_COUNT;
+#else
+const int CCT_QUERY_TTL_SECOND = 4  ; // 4 seconds
+const int CCT_QUERY_TTL = CCT_QUERY_TTL_SECOND * MS_MULT ;
+const int CCT_CLIENT_TTL_CHECK_INTERVAL_SECOND = 600 ; // 10 Minutes
+const int CCT_CLIENT_TTL_CHECK_INTERVAL = CCT_CLIENT_TTL_CHECK_INTERVAL_SECOND  * MS_MULT; 
+const int CCT_CLIENT_TTL_HEARTBEAT_MISS_COUNT = 3;
+const int CCT_CLIENT_TTL = CCT_CLIENT_TTL_CHECK_INTERVAL * CCT_CLIENT_TTL_HEARTBEAT_MISS_COUNT;
+#endif
+
+
 
 const std::string CCT_OPERATION = "operation" ;
 const std::string CCT_KEY = "key" ;

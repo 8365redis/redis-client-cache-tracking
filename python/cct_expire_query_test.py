@@ -186,7 +186,7 @@ def test_query_expired():
 
     
 def test_1_client_1_query_1_key_expired():
-    producer = connect_redis_with_start()
+    producer = connect_redis()
     cct_prepare.flush_db(producer) # clean all db first
     cct_prepare.create_index(producer)
 

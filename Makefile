@@ -2,7 +2,7 @@
 
 CURRENTDIR:=$(strip $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST)))))
 SHELL := /bin/bash
-VERSION := $(shell git describe --abbrev=0)
+VERSION := $(shell git describe --abbrev=0 --tags)
 
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)

@@ -13,7 +13,7 @@ void Log_Redis(RedisModuleCtx *ctx, const char *levelstr, std::string fmt ) {
     if( strcmp(levelstr, REDISMODULE_LOGLEVEL_WARNING) != 0 ) {
         return;
     }
-    RedisModule_Log(ctx, levelstr , fmt.c_str());
+    RedisModule_Log(ctx, levelstr, "%s", fmt.c_str());
 }
 
 void Log_Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {

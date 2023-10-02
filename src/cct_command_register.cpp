@@ -41,7 +41,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     if(client_query_ttl == 0 ) {
         Set_Client_Query_TTL(ctx, client_name_str, CCT_QUERY_TTL);
     } else {
-        Set_Client_Query_TTL(ctx, client_name_str, client_query_ttl);
+        Set_Client_Query_TTL(ctx, client_name_str, client_query_ttl * MS_MULT); // Argument TTL is in second
     }
     
 
@@ -111,7 +111,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         std::string key = pair.first;
         auto client_queries_internal = client_keys_2_query[key];
         std::ostringstream imploded;
-        std::copy(client_queries_internal.begin(), client_queries_internal.end(), std::ostream_iterator<std::string>(imploded, &CCT_MODULE_QUERY_DELIMETER));
+        std::copy(client_queries_internal.begin(), client_queries_internal.end(), std::ostream_iterator<std::string>(imploded, CCT_MODULE_QUERY_DELIMETER.c_str()));
         std::string client_queries_internal_str = imploded.str();
         if (Add_Event_To_Stream(ctx, client_name_str, "json.set", key, client_keys_2_values[key], client_queries_internal_str) != REDISMODULE_OK) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Snaphot failed to adding to the stream." );

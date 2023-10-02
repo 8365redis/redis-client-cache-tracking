@@ -23,7 +23,7 @@ void Handle_Client_Event(RedisModuleCtx *ctx, RedisModuleEvent eid,
             case REDISMODULE_SUBEVENT_CLIENT_CHANGE_DISCONNECTED: 
                 LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Handle_Client_Event client disconnected : " + client_name );
                 if (!client_name.empty()) {
-                    Disconnect_Client(client_name);
+                    Disconnect_Client(ctx, client_name);
                 }
                 break;
             case REDISMODULE_SUBEVENT_CLIENT_CHANGE_CONNECTED: 
@@ -37,9 +37,18 @@ void Connect_Client(std::string client) {
     CCT_CLIENT_CONNECTION[client] = true;
 }
 
-void Disconnect_Client(std::string client) {
+void Disconnect_Client(RedisModuleCtx *ctx, std::string client) {
     CCT_CLIENT_CONNECTION[client] = false;
+    RedisModuleString *client_name = RedisModule_CreateString(ctx, client.c_str(), client.length());
     CCT_CLIENT_CONNECTION_TIMEOUT.erase(client);
+    // Check if the stream exists and delete if it is
+    if( RedisModule_KeyExists(ctx, client_name) ) { // NOT checking if it is stream
+        RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
+        if (RedisModule_DeleteKey(stream_key) != REDISMODULE_OK ) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Disconnect_Client failed to delete the stream." );
+        }
+    }
+    RedisModule_FreeString(ctx, client_name);
 }
 
 bool Is_Client_Connected(std::string client) {
@@ -56,6 +65,7 @@ bool Update_Client_TTL(RedisModuleCtx *ctx, bool first_update ) {
         return false;
     }else if ( CCT_CLIENT_CONNECTION_TIMEOUT.count(client_name) == 0 && first_update == false) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Update_Client_TTL failed . Client is not registered. ");
+        return false;
     }
     auto now = std::chrono::system_clock::now();
     auto ms  = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
@@ -104,14 +114,14 @@ void Client_TTL_Handler(RedisModuleCtx *ctx, std::unordered_map<std::string, uns
             }
         }
         for(const auto &client : expire_client_list) {
-            Disconnect_Client(client);
+            Disconnect_Client(ctx, client);
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(CCT_CLIENT_TTL_CHECK_INTERVAL));
     }
 }
 
 void Set_Client_Query_TTL(RedisModuleCtx *ctx, std::string client, unsigned long long ttl) {
-    CCT_CLIENT_QUERY_TTL[client] = ttl * MS_MULT;
+    CCT_CLIENT_QUERY_TTL[client] = ttl ;
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Set_Client_Query_TTL client  : " + client + " , TTL: " + std::to_string(ttl) );
 }
 
