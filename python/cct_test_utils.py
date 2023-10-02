@@ -2,12 +2,19 @@ import json
 from manage_redis import connect_redis
 from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
                 CCT_K2Q, CCT_DELI, CCT_Q2K, CCT_QC, \
-                CCT_MODULE_PREFIX, CCT_HEART_BEAT_INTERVAL
+                CCT_MODULE_PREFIX
+
+from redis.commands.json.path import Path
+from redis.commands.search.field import TextField, NumericField, TagField
+from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 
 from mimesis import Field, Fieldset, Schema
 from mimesis.enums import Gender, TimestampFormat
 from mimesis.locales import Locale
 
+
+TEST_INDEX_NAME = "usersJsonIdx"
+TEST_INDEX_PREFIX = "users:"
 
 def check_query_meta_data(producer , app_name , query , key , assert_list):
     assert (6 == len(assert_list))
@@ -69,10 +76,15 @@ def generate_json():
                 "creator": field("full_name", gender=Gender.FEMALE),
             },                     
             "apps": fieldset(
-                "text.word", i=8, key=lambda name: {"name": name, "id": field("uuid")}
+                "text.word", i=20, key=lambda name: {"name": name, "id": field("uuid")}
             ),
         },
         iterations=2,
     )
     val =  schema.create() 
     return val[0]
+
+def generate_json_scheme(r):
+    schema = (TagField("$.name", as_name="name"), TagField("$.version", as_name="version"),  \
+              TagField("$.timestamp", as_name="timestamp"))
+    r.ft(TEST_INDEX_NAME).create_index(schema, definition=IndexDefinition(prefix=[TEST_INDEX_PREFIX], index_type=IndexType.JSON))    

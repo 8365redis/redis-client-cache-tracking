@@ -12,7 +12,7 @@ else
 endif
 
 CC = g++
-LDFLAGS = -static-libstdc++ -shared -o
+LDFLAGS = -shared -o
  
 BINDIR = bin
 SRCDIR = src
