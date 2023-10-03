@@ -121,7 +121,7 @@ def test_expired_client_stream():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 2 == len(from_stream[0][1])
+    assert not from_stream
 
     try:
         client1.execute_command("CCT.HEARTBEAT")
