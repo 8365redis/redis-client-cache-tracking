@@ -44,7 +44,6 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         Set_Client_Query_TTL(ctx, client_name_str, client_query_ttl * MS_MULT); // Argument TTL is in second
     }
     
-
     // Check if the stream exists and delete if it is
     if( RedisModule_KeyExists(ctx, client_name) ) { // NOT checking if it is stream
         RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
