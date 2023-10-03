@@ -9,7 +9,7 @@ CCT_K2Q  = CCT_MODULE_PREFIX + "K2Q:"
 CCT_Q2K  = CCT_MODULE_PREFIX + "Q2K:"
 CCT_QC =  CCT_MODULE_PREFIX + "QC:" 
 CCT_DELI =  ":" 
-CCT_Q_DELI =  chr(5) 
+CCT_Q_DELI =  "-CCT_DEL-"
 
 CCT_OPERATION = "operation" 
 CCT_KEY = "key" 

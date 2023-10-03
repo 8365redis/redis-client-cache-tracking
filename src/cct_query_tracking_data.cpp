@@ -117,3 +117,22 @@ int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std
     }
     return REDISMODULE_OK;
 }
+
+
+int Trim_From_Stream(RedisModuleCtx *ctx, RedisModuleString *last_read_id, std::string client_name) {
+    RedisModuleStreamID minid;
+    if (RedisModule_StringToStreamID(last_read_id, &minid) != REDISMODULE_OK) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Trim_From_Stream:  Provided Stream ID is not valid.");
+        return REDISMODULE_ERR;
+    }
+
+    RedisModuleString *client_name_r = RedisModule_CreateString(ctx, client_name.c_str(), client_name.length());
+    RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name_r, REDISMODULE_WRITE);
+
+    if (RedisModule_StreamTrimByID(stream_key, 0, &minid) < 0) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Trim_From_Stream:  Trim with given Stream ID failed.");
+        return REDISMODULE_ERR;
+    }
+
+    return REDISMODULE_OK;
+}

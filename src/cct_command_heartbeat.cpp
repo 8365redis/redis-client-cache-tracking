@@ -8,25 +8,28 @@ int Heartbeat_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         return RedisModule_WrongArity(ctx);
     }
 
-    if (Is_Client_Connected(Get_Client_Name(ctx)) == false) {
+    std::string client_name = Get_Client_Name(ctx);
+
+    if (Is_Client_Connected(client_name) == false) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Heartbeat_RedisCommand failed : Client is not registered" );
         return RedisModule_ReplyWithError(ctx, "Not registered client");
-    }
-
-    // Check if we have to trim the stream
-    bool just_update_ttl = false;
-    if (argc == 2) {
-        RedisModuleString *last_read_id = argv[1];
-    } else {
-        just_update_ttl = true;
     }
 
     // Regardless update the TTL
     if ( Update_Client_TTL(ctx) == false ) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Heartbeat_RedisCommand failed.");
         return RedisModule_ReplyWithError(ctx, "Updating the TTL failed");
-    }  
+    }
 
+    // Check if we have to trim the stream
+    if (argc == 2) {
+        if ( Trim_From_Stream(ctx, argv[1], client_name) == REDISMODULE_ERR ){
+            return RedisModule_ReplyWithError(ctx, "Trim with given Stream ID failed");
+        }
+    } 
+
+
+    
     RedisModule_ReplyWithSimpleString(ctx, "OK");
     return REDISMODULE_OK;
 }
