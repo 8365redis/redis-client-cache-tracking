@@ -17,11 +17,11 @@ CCT_VALUE = "value"
 CCT_QUERIES = "queries" 
 
 
-CCT_QUERY_TTL = 4  # This must be same as CCT_TTL in constants.h
+CCT_QUERY_TTL = 4  # This must be same as CCT_QUERY_TTL_SECOND in constants.h with _DEBUG
 CCT_QUERY_HALF_TTL = ( CCT_QUERY_TTL / 2 ) + 1
 
-CCT_HEART_BEAT_INTERVAL = 2 # This must be same as CCT_CLIENT_TTL_CHECK_INTERVAL in constants.h
+CCT_HEART_BEAT_INTERVAL = 2 # This must be same as CCT_CLIENT_TTL_CHECK_INTERVAL_SECOND in constants.h with _DEBUG
 
 CCT_NOT_REGISTERED_COMMAND_ERROR  = "Not registered client"
 
-SKIP_HB_TEST = True
+SKIP_HB_TEST = False

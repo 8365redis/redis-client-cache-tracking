@@ -39,8 +39,8 @@ void Connect_Client(std::string client) {
 
 void Disconnect_Client(RedisModuleCtx *ctx, std::string client) {
     CCT_CLIENT_CONNECTION[client] = false;
-    RedisModuleString *client_name = RedisModule_CreateString(ctx, client.c_str(), client.length());
     CCT_CLIENT_CONNECTION_TIMEOUT.erase(client);
+    RedisModuleString *client_name = RedisModule_CreateString(ctx, client.c_str(), client.length());
     // Check if the stream exists and delete if it is
     if( RedisModule_KeyExists(ctx, client_name) ) { // NOT checking if it is stream
         RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
@@ -113,10 +113,10 @@ void Client_TTL_Handler(RedisModuleCtx *ctx, std::unordered_map<std::string, uns
                 expire_client_list.push_back(pair.first);
             }
         }
-        for(const auto &client : expire_client_list) {
+        for(auto client : expire_client_list) {
             Disconnect_Client(ctx, client);
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(CCT_CLIENT_TTL_CHECK_INTERVAL));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // Check every second
     }
 }
 

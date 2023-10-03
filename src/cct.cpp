@@ -14,6 +14,9 @@
 extern "C" {
 #endif
 
+
+RedisModuleCtx *rdts_staticCtx;
+
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     
     if (RedisModule_Init(ctx,"CCT",1,REDISMODULE_APIVER_1) == REDISMODULE_ERR) {
@@ -29,6 +32,8 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     #ifdef NDEBUG
     LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "THIS IS A RELEASE BUILD." );
     #endif 
+
+    rdts_staticCtx = RedisModule_GetDetachedThreadSafeContext(ctx);
 
     if (RedisModule_CreateCommand(ctx,"CCT.REGISTER", Register_RedisCommand , "admin write", 0, 0, 0) == REDISMODULE_ERR) {
         return REDISMODULE_ERR;
@@ -62,7 +67,7 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         return RedisModule_ReplyWithError(ctx, strerror(errno));
     }
 
-    Start_Client_Handler(ctx);
+    Start_Client_Handler(rdts_staticCtx);
   
     return REDISMODULE_OK;
 }
