@@ -19,7 +19,7 @@ After preparing the build environment just run :
 make
 ```
 
-Or if you want the Debug version which has lots of logs to standard output (don't run heavy stress tests) you can use: 
+Or if you want the Debug version which has lots of logs to standard output (don't run heavy stress tests) or to run the tests you can use: 
 
 ```
 make DEBUG=1
@@ -46,7 +46,7 @@ Development is done by `Python 3.10.2` but any version after `3.6.X` should be f
 pip install -r python/requirements.txt
 ```
 
-For test purposes you can use the python client. To run the tests just run : 
+For test purposes you can use the python client. To run the tests just run (Run the tests with DEBUG build): 
 
 ```
 make test
@@ -63,6 +63,7 @@ Normally to not effect the other test *client heartbeat tests* are disabled (ski
 ### Long Perf Tests
 
 You can also run the long performance tests which are disabled to run bydefault with this command (this command is actually generic to run any test): 
+But don't run this test with DEBUG build it will degrade the performance.
 ```
 pytest -rP python/cct_search_perf_test.py
 ```
