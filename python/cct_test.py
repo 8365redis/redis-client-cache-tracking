@@ -49,22 +49,15 @@ def test_multi_register_handle_1():
     assert cct_prepare.OK in str(resp)
 
     # REGISTER 2. Attempt 
-    try:
-        resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    except redis.exceptions.ResponseError as e:
-        assert cct_prepare.DUPLICATE in str(e)
+    resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # REGISTER 3. Attempt
-    try:
-        resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    except redis.exceptions.ResponseError as e:
-        assert cct_prepare.DUPLICATE in str(e) 
+    resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # REGISTER with different app name from same client
-    try:
-        resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
-    except redis.exceptions.ResponseError as e:
-        assert cct_prepare.DUPLICATE in str(e) 
+    resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    redis.exceptions.ResponseError as e:
+
 
 def test_ft_search_result_comparison_1():
     r = connect_redis_with_start()

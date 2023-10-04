@@ -126,6 +126,8 @@ int Trim_From_Stream(RedisModuleCtx *ctx, RedisModuleString *last_read_id, std::
         return REDISMODULE_ERR;
     }
 
+    minid.seq = minid.seq + 1; // We get last read so delete the last read too 
+
     RedisModuleString *client_name_r = RedisModule_CreateString(ctx, client_name.c_str(), client_name.length());
     RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name_r, REDISMODULE_WRITE);
 

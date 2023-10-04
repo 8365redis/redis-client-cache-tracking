@@ -724,7 +724,7 @@ def test_1_client_1_query_first_key_later_query_expire():
     time.sleep(KEY_EXPIRE_SECOND + 0.1)
 
     # THIS WILL QUERY 
-    time.sleep(CCT_QUERY_TTL + 0.1)  
+    time.sleep(CCT_QUERY_TTL + 0.1)
 
     # DISCONNECT
     client1.connection_pool.disconnect()

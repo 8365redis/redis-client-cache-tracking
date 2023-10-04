@@ -87,4 +87,4 @@ def generate_json():
 def generate_json_scheme(r):
     schema = (TagField("$.name", as_name="name"), TagField("$.version", as_name="version"),  \
               TagField("$.timestamp", as_name="timestamp"))
-    r.ft(TEST_INDEX_NAME).create_index(schema, definition=IndexDefinition(prefix=[TEST_INDEX_PREFIX], index_type=IndexType.JSON))    
+    r.ft(TEST_INDEX_NAME).create_index(schema, definition=IndexDefinition(prefix=[TEST_INDEX_PREFIX], index_type=IndexType.JSON))

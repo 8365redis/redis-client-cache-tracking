@@ -27,8 +27,6 @@ int Heartbeat_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
             return RedisModule_ReplyWithError(ctx, "Trim with given Stream ID failed");
         }
     } 
-
-
     
     RedisModule_ReplyWithSimpleString(ctx, "OK");
     return REDISMODULE_OK;
