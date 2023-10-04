@@ -9,7 +9,7 @@ void Log_Std_Output(RedisModuleCtx *ctx, const char *levelstr, std::string fmt )
     std::cout<<"XXXXX:X "<<time<<"."<<std::to_string(ms.count())<<" * <CCT_MODULE> "<< fmt << std::endl;
 }
 
-void Log_Redis(RedisModuleCtx *ctx, const char *levelstr, std::string fmt ) { 
+void Log_Redis(RedisModuleCtx *ctx, const char *levelstr, std::string fmt ) {
     if( strcmp(levelstr, REDISMODULE_LOGLEVEL_WARNING) != 0 ) {
         return;
     }
@@ -22,5 +22,9 @@ void Log_Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     for ( int i = 1; i < argc; i++) {
         argument_stream<<RedisModule_StringPtrLen(argv[i], NULL)<< " ";
     }
+    #ifdef _DEBUG
     Log_Std_Output(ctx, REDISMODULE_LOGLEVEL_DEBUG , command_name + " command called with arguments " + argument_stream.str());
+    #else
+    Log_Redis(ctx, REDISMODULE_LOGLEVEL_DEBUG , command_name + " command called with arguments " + argument_stream.str());
+    #endif
 }

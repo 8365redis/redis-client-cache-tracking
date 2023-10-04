@@ -60,6 +60,14 @@ make perf_test
 
 Normally to not effect the other test *client heartbeat tests* are disabled (skipped) by default. You can enable them by setting `SKIP_HB_TEST` to `True` .
 
+### Long Perf Tests
+
+You can also run the long performance tests which are disabled to run bydefault with this command (this command is actually generic to run any test): 
+```
+pytest -rP python/cct_search_perf_test.py
+```
+
+
 ## Logging
 
 When build is done with `make DEBUG=1` logging is done to standard output. If no parameter is given it will be a release build and logging level is *hardcoded* to only `warning` level and it will be logging to log file given in config file. 
