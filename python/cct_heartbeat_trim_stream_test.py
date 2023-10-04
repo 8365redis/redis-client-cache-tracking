@@ -6,7 +6,7 @@ from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
 from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
                 CCT_K2Q, CCT_DELI, SKIP_HB_TEST,  \
-                CCT_NOT_REGISTERED_COMMAND_ERROR, CCT_QUERY_TTL
+                CCT_EOS, CCT_QUERY_TTL
 
 import constants
 
@@ -53,7 +53,7 @@ def test_heartbeat_trims_one_from_stream():
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     read_ids = []
-    assert 2 == len(from_stream[0][1])
+    assert 3 == len(from_stream[0][1])
     for id, value in from_stream[0][1]:
         read_ids.append(id)
         #print( f"id: {id} value: {value}")
@@ -132,7 +132,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     read_ids = []
-    assert 2 == len(from_stream[0][1])
+    assert 3 == len(from_stream[0][1])
     for id, value in from_stream[0][1]:
         read_ids.append(id)
     
@@ -146,7 +146,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
     res = client1.execute_command("CCT.HEARTBEAT " + str(new_min_id) )
     assert cct_prepare.OK in str(res)
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 2 == len(from_stream[0][1])
+    assert 3 == len(from_stream[0][1])
 
     # SEND HB with trim invalid value
     min_id = min(read_ids)
@@ -156,7 +156,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
     res = client1.execute_command("CCT.HEARTBEAT " + str(new_min_id) )
     assert cct_prepare.OK in str(res)
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 2 == len(from_stream[0][1])
+    assert 3 == len(from_stream[0][1])
 
     # SEND HB with trim invalid value
     new_min_id = "234324234-2"
@@ -164,7 +164,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
     res = client1.execute_command("CCT.HEARTBEAT " + str(new_min_id) )
     assert cct_prepare.OK in str(res)
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 2 == len(from_stream[0][1]) 
+    assert 3 == len(from_stream[0][1]) 
 
     # SEND HB with trim invalid value
     new_min_id = "-121212212"
@@ -174,7 +174,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
     except redis.exceptions.ResponseError as e:
         assert "failed" in str(e)
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 2 == len(from_stream[0][1])
+    assert 3 == len(from_stream[0][1])
 
     # SEND HB with trim invalid value
     new_min_id = "-121212212-1212"
@@ -186,7 +186,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
 
     
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 2 == len(from_stream[0][1])
+    assert 3 == len(from_stream[0][1])
 
     # SEND HB with trim invalid value
     new_min_id = "asdasdasdsasd"
@@ -196,7 +196,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
     except redis.exceptions.ResponseError as e:
         assert "failed" in str(e)
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 2 == len(from_stream[0][1])  
+    assert 3 == len(from_stream[0][1])  
 
     # SEND HB with trim invalid value
     new_min_id = "asdasdasdsasd-2"
@@ -206,7 +206,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
     except redis.exceptions.ResponseError as e:
         assert "failed" in str(e)
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 2 == len(from_stream[0][1])  
+    assert 3 == len(from_stream[0][1])  
 
     # SEND HB with trim higher than max
     max_id = max(read_ids)
@@ -240,7 +240,7 @@ def test_heartbeat_trims_empty():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert not from_stream
+    assert CCT_EOS in from_stream[0][1][0][1]
 
     # SEND HB with trim invalid value
     new_min_id = "234324234"
@@ -248,7 +248,7 @@ def test_heartbeat_trims_empty():
     res = client1.execute_command("CCT.HEARTBEAT " + str(new_min_id) )
     assert cct_prepare.OK in str(res)
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert not from_stream
+    assert CCT_EOS in from_stream[0][1][0][1]
 
 
 @pytest.mark.skipif(SKIP_HB_TEST ,
@@ -299,7 +299,7 @@ def test_heartbeat_trims_stream_after_snapshot():
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     read_ids = []
-    assert 6 == len(from_stream[0][1])
+    assert 7 == len(from_stream[0][1])
     for id, value in from_stream[0][1]:
         read_ids.append(id)
 
@@ -313,7 +313,7 @@ def test_heartbeat_trims_stream_after_snapshot():
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     read_ids = []
-    assert 3 == len(from_stream[0][1])
+    assert 4 == len(from_stream[0][1])
     for id, value in from_stream[0][1]:
         read_ids.append(id)
     

@@ -3,7 +3,7 @@ import time
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
-from constants import CCT_QUERIES
+from constants import CCT_QUERIES, CCT_EOS
 
 
 @pytest.fixture(autouse=True)
@@ -42,8 +42,7 @@ def test_client_get_update_while_connected():
 
     # CHECK STREAM
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 1 == len(from_stream[0][1])
-    assert not from_stream[0][1][0][1][CCT_QUERIES]
+    assert 2 == len(from_stream[0][1])
     print(from_stream)
 
     # UPDATE DATA (K2)
@@ -52,7 +51,7 @@ def test_client_get_update_while_connected():
 
     # CHECK STREAM
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 2 == len(from_stream[0][1])
+    assert 3 == len(from_stream[0][1])
     assert not from_stream[0][1][1][1][CCT_QUERIES]
 
 
@@ -97,7 +96,7 @@ def test_client_get_update_while_disconnected():
 
     # Check stream 
     from_stream = producer.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 1 == len(from_stream[0][1])
+    assert 2 == len(from_stream[0][1])
     assert first_query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
 
     

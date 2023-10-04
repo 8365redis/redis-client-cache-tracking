@@ -2,7 +2,7 @@ import pytest
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
-from constants import CCT_K2C, CCT_Q_DELI
+from constants import CCT_K2C, CCT_Q_DELI, CCT_EOS
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -34,7 +34,7 @@ def test_updated_key_added_no_affect():
 
     # Check stream is empty
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert not from_stream
+    assert CCT_EOS in from_stream[0][1][0][1]
 
     # Check new key is not tracked    
     tracked_key = producer.sismember(CCT_K2C + cct_prepare.TEST_INDEX_PREFIX + str(2), cct_prepare.TEST_APP_NAME_1)
@@ -235,9 +235,8 @@ def test_updated_key_match_multiple_queries_one_client():
 
     # Check key is in streams 
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
     assert key_3 in str(from_stream[0][1])
 
     # Check query is in streams 
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert "User\\.ID:1000" + CCT_Q_DELI +"User\\.PASSPORT:bbb" in str(from_stream[0][1][0][1]["queries"])
+    assert "User\\.ID:1000" + CCT_Q_DELI +"User\\.PASSPORT:bbb" in str(from_stream[0][1][1][1]["queries"])

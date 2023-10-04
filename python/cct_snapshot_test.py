@@ -3,7 +3,7 @@ import time
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
-from constants import CCT_QUERIES, CCT_VALUE, CCT_QUERY_HALF_TTL, CCT_QUERY_TTL
+from constants import CCT_QUERIES, CCT_VALUE, CCT_QUERY_HALF_TTL, CCT_QUERY_TTL, CCT_EOS
 from cct_test_utils import check_query_meta_data
 
 @pytest.fixture(autouse=True)
@@ -33,7 +33,7 @@ def test_1_client_1_query_with_disconnect():
 
     # Check stream is empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert not from_stream
+    assert CCT_EOS in from_stream[0][1][0][1]
 
     # DISCONNECT
     client1.connection_pool.disconnect()
@@ -73,7 +73,7 @@ def test_1_client_2_query_with_disconnect():
 
     # Check stream is empty
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert not from_stream
+    assert CCT_EOS in from_stream[0][1][0][1]
 
     # DISCONNECT
     client1.connection_pool.disconnect()
@@ -109,7 +109,7 @@ def test_1_client_1_query_without_disconnect():
 
     # Check stream is empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert not from_stream
+    assert CCT_EOS in from_stream[0][1][0][1]
 
     # RE-REGISTER
     client1 = connect_redis()
@@ -146,7 +146,7 @@ def test_1_client_2_query_without_disconnect():
 
     # Check stream is empty
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert not from_stream
+    assert CCT_EOS in from_stream[0][1][0][1]
 
     # RE-REGISTER
     client1 = connect_redis()
@@ -187,7 +187,7 @@ def test_1_client_1_query_1_key_multiple_update_still_match_query():
 
     # Check stream is not empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 3 == len(from_stream[0][1])
+    assert 4 == len(from_stream[0][1])
 
     # DISCONNECT
     client1.connection_pool.disconnect()
@@ -202,7 +202,7 @@ def test_1_client_1_query_1_key_multiple_update_still_match_query():
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert key_1 in str(from_stream[0][1][0][1])
     assert query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
-    assert 1 == len(from_stream[0][1])
+    assert 2 == len(from_stream[0][1])
 
 def test_1_client_1_query_1_key_multiple_update_doesnt_match_query():
     producer = connect_redis_with_start()
@@ -235,7 +235,7 @@ def test_1_client_1_query_1_key_multiple_update_doesnt_match_query():
 
     # Check stream is not empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 3 == len(from_stream[0][1])
+    assert 4 == len(from_stream[0][1])
 
     # DISCONNECT
     client1.connection_pool.disconnect()
@@ -249,7 +249,7 @@ def test_1_client_1_query_1_key_multiple_update_doesnt_match_query():
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert key_1 in str(from_stream[0][1][0][1])
     assert query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
-    assert 1 == len(from_stream[0][1])
+    assert 2 == len(from_stream[0][1])
 
 def test_1_client_1_query_multiple_key_multiple_update_still_match_query():
     producer = connect_redis_with_start()
@@ -283,7 +283,7 @@ def test_1_client_1_query_multiple_key_multiple_update_still_match_query():
 
     # Check stream is not empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 4 == len(from_stream[0][1])
+    assert 5 == len(from_stream[0][1])
 
     # DISCONNECT
     client1.connection_pool.disconnect()
@@ -299,7 +299,7 @@ def test_1_client_1_query_multiple_key_multiple_update_still_match_query():
     assert key_1 in str(from_stream[0][1][1][1])
     assert query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
     assert str(2006) in from_stream[0][1][0][1][CCT_VALUE]
-    assert 2 == len(from_stream[0][1])
+    assert 3 == len(from_stream[0][1])
 
 def test_1_client_1_query_multiple_key_multiple_update_doesnt_match_query():
     producer = connect_redis_with_start()
@@ -340,7 +340,7 @@ def test_1_client_1_query_multiple_key_multiple_update_doesnt_match_query():
 
     # Check stream is not empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 6 == len(from_stream[0][1])
+    assert 7 == len(from_stream[0][1])
 
     # DISCONNECT
     client1.connection_pool.disconnect()
@@ -356,7 +356,7 @@ def test_1_client_1_query_multiple_key_multiple_update_doesnt_match_query():
     assert key_1 in str(from_stream[0][1][1][1])
     assert query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
     assert query_normalized in from_stream[0][1][1][1][CCT_QUERIES]
-    assert 2 == len(from_stream[0][1])
+    assert 3 == len(from_stream[0][1])
 
 def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query():
     producer = connect_redis_with_start()
@@ -400,7 +400,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query(
 
     # Check stream is not empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 6 == len(from_stream[0][1])
+    assert 7 == len(from_stream[0][1])
 
     # DISCONNECT
     client1.connection_pool.disconnect()
@@ -412,7 +412,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query(
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
-    assert 2 == len(from_stream[0][1])
+    assert 3 == len(from_stream[0][1])
     assert key_2 in str(from_stream[0][1][0][1])
     assert key_1 in str(from_stream[0][1][1][1])
     assert first_query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
@@ -462,7 +462,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
 
     # Check stream is not empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 6 == len(from_stream[0][1])
+    assert 7 == len(from_stream[0][1])
 
     # RE-REGISTER
     client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
@@ -470,7 +470,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
-    assert 2 == len(from_stream[0][1])
+    assert 3 == len(from_stream[0][1])
     assert key_2 in str(from_stream[0][1][0][1])
     assert key_1 in str(from_stream[0][1][1][1])
     assert first_query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
@@ -518,7 +518,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
 
     # Check stream is not empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 4 == len(from_stream[0][1])
+    assert 5 == len(from_stream[0][1])
 
     # DISCONNECT
     client1.connection_pool.disconnect()
@@ -532,7 +532,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 1 == len(from_stream[0][1])
+    assert 2 == len(from_stream[0][1])
     assert key_2 in str(from_stream[0][1][0][1])
     assert second_query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
 
@@ -577,7 +577,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
 
     # Check stream is not empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 4 == len(from_stream[0][1])
+    assert 5 == len(from_stream[0][1])
 
     # THIS WILL EXPIRE FIRST QUERY 
     time.sleep(CCT_QUERY_HALF_TTL)
@@ -591,7 +591,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 1 == len(from_stream[0][1])
+    assert 2 == len(from_stream[0][1])
     assert key_2 in str(from_stream[0][1][0][1])
     assert second_query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
 
@@ -654,7 +654,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 0 == len(from_stream)
+    assert 1 == len(from_stream)
 
 def test_1_client_1_query_key_expire():
     KEY_EXPIRE_SECOND = 1 # Expire before the query
@@ -679,7 +679,7 @@ def test_1_client_1_query_key_expire():
 
     # Check stream is empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert not from_stream
+    assert CCT_EOS in from_stream[0][1][0][1]
 
     # THIS WILL EXPIRE KEY 
     time.sleep(KEY_EXPIRE_SECOND + 0.1)   
@@ -693,7 +693,7 @@ def test_1_client_1_query_key_expire():
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 0 == len(from_stream)
+    assert 1 == len(from_stream)
 
 def test_1_client_1_query_first_key_later_query_expire():
     KEY_EXPIRE_SECOND = 1 # Expire before the query
@@ -718,7 +718,7 @@ def test_1_client_1_query_first_key_later_query_expire():
 
     # Check stream is empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert not from_stream
+    assert CCT_EOS in from_stream[0][1][0][1]
 
     # THIS WILL EXPIRE KEY 
     time.sleep(KEY_EXPIRE_SECOND + 0.1)
@@ -735,7 +735,7 @@ def test_1_client_1_query_first_key_later_query_expire():
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 0 == len(from_stream)
+    assert 1 == len(from_stream)
 
 def test_1_client_1_query_first_query_later_key_expire():
     KEY_EXPIRE_SECOND = 1 # Expire before the query
@@ -760,7 +760,7 @@ def test_1_client_1_query_first_query_later_key_expire():
 
     # Check stream is empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert not from_stream
+    assert CCT_EOS in from_stream[0][1][0][1]
 
     # THIS WILL EXPIRE KEY AND QUERY 
     time.sleep(CCT_QUERY_TTL + 1)  
@@ -774,4 +774,4 @@ def test_1_client_1_query_first_query_later_key_expire():
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 0 == len(from_stream)
+    assert 1 == len(from_stream)

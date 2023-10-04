@@ -105,7 +105,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         client_keys_2_values[key] = json_value;
     }
 
-    // Lastly write to client stream   
+    // Write to client stream   
     for (const auto &pair : client_keys_2_query) {
         std::string key = pair.first;
         auto client_queries_internal = client_keys_2_query[key];
@@ -119,6 +119,16 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Snaphot failed to adding to the stream." );
             return RedisModule_ReplyWithError(ctx, strerror(errno));
         }
+    }
+
+    //Finalize stream writing with end of snapshot
+    RedisModuleString **xadd_params_for_eos = (RedisModuleString **) RedisModule_Alloc(sizeof(RedisModuleString *) * 2);
+    xadd_params_for_eos[0] = RedisModule_CreateString(ctx, CCT_MODULE_END_OF_SNAPSHOT.c_str(), CCT_MODULE_END_OF_SNAPSHOT.length());
+    xadd_params_for_eos[1] = RedisModule_CreateString(ctx, CCT_MODULE_END_OF_SNAPSHOT.c_str(), CCT_MODULE_END_OF_SNAPSHOT.length());
+    int stream_add_resp_eos = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params_for_eos, 1);
+    if (stream_add_resp_eos != REDISMODULE_OK) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to write end of snapshot." );
+        return RedisModule_ReplyWithError(ctx, strerror(errno));
     }
 
     RedisModule_ReplyWithSimpleString(ctx, "OK");

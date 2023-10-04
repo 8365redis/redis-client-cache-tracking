@@ -6,7 +6,7 @@ from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
 from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
                 CCT_K2Q, CCT_DELI, SKIP_HB_TEST,  \
-                CCT_NOT_REGISTERED_COMMAND_ERROR, CCT_HEART_BEAT_INTERVAL
+                CCT_EOS, CCT_HEART_BEAT_INTERVAL
 
 import constants
 
@@ -81,7 +81,7 @@ def test_client_expire_after_some_heartbeat():
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     print(from_stream)
-    assert 1 == len(from_stream[0][1])
+    assert 2 == len(from_stream[0][1])
     
     res = client1.execute_command("CCT.HEARTBEAT")
     assert cct_prepare.OK in str(res)
@@ -95,7 +95,7 @@ def test_client_expire_after_some_heartbeat():
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     print(from_stream)
-    assert 3 == len(from_stream[0][1])
+    assert 4 == len(from_stream[0][1])
 
     res = client1.execute_command("CCT.HEARTBEAT")
     assert cct_prepare.OK in str(res)
@@ -108,7 +108,7 @@ def test_client_expire_after_some_heartbeat():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert 3 == len(from_stream[0][1])
+    assert 4 == len(from_stream[0][1])
 
     res = client1.execute_command("CCT.HEARTBEAT")
     assert cct_prepare.OK in str(res)    
@@ -117,4 +117,4 @@ def test_client_expire_after_some_heartbeat():
 
     # Check stream 
     from_stream = producer.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert not from_stream   
+    assert not from_stream

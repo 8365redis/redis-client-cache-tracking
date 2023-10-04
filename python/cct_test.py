@@ -56,7 +56,6 @@ def test_multi_register_handle_1():
 
     # REGISTER with different app name from same client
     resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
-    redis.exceptions.ResponseError as e:
 
 
 def test_ft_search_result_comparison_1():

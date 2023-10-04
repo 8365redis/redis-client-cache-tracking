@@ -3,7 +3,7 @@ import time
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
-from constants import CCT_K2C, CCT_Q2C, CCT_QC
+from constants import CCT_K2C, CCT_Q2C, CCT_EOS
 
 KEY_EXPIRE_SECOND = 1
 KEY_EXPIRE_WAIT_SECOND = 2
@@ -41,7 +41,7 @@ def test_key_expired_no_affect():
 
     # Check stream is empty
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert not from_stream
+    assert CCT_EOS in from_stream[0][1][0][1]
 
     # Check new key is not tracked    
     tracked_key = producer.sismember(CCT_K2C + cct_prepare.TEST_INDEX_PREFIX + str(1), cct_prepare.TEST_APP_NAME_1)

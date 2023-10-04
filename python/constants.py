@@ -10,6 +10,7 @@ CCT_Q2K  = CCT_MODULE_PREFIX + "Q2K:"
 CCT_QC =  CCT_MODULE_PREFIX + "QC:" 
 CCT_DELI =  ":" 
 CCT_Q_DELI =  "-CCT_DEL-"
+CCT_EOS =  "-END_OF_SNAPSHOT-"
 
 CCT_OPERATION = "operation" 
 CCT_KEY = "key" 
