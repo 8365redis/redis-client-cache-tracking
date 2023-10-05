@@ -58,6 +58,8 @@ or only run performance tests:
 make perf_test
 ```
 
+Attention: All tests flushes all the redis database for clean test purposes so never run tests on production environment.
+
 Normally to not effect the other test *client heartbeat tests* are disabled (skipped) by default. You can enable them by setting `SKIP_HB_TEST` to `True` .
 
 ### Long Perf Tests
