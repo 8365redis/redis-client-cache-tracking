@@ -5,6 +5,7 @@
 #include "cct_command_register.h"
 #include "cct_command_search.h"
 #include "cct_command_heartbeat.h"
+#include "cct_offline_query_expire.h"
 
 #ifndef CCT_MODULE_VERSION
 #define CCT_MODULE_VERSION "unknown"
@@ -32,6 +33,10 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     #ifdef NDEBUG
     LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "THIS IS A RELEASE BUILD." );
     #endif 
+
+    //if ( Handle_Offline_Query_Expire(ctx) == REDISMODULE_ERR){
+    //    return REDISMODULE_ERR;
+    //}
 
     rdts_staticCtx = RedisModule_GetDetachedThreadSafeContext(ctx);
 
@@ -63,9 +68,15 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
 
     if (RedisModule_SubscribeToServerEvent(ctx, RedisModuleEvent_ClientChange,
                                              Handle_Client_Event) != REDISMODULE_OK) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "RedisModule_OnLoad failed to SubscribeToServerEvent." );
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "RedisModule_OnLoad failed to SubscribeToServerEvent for RedisModuleEvent_ClientChange." );
         return RedisModule_ReplyWithError(ctx, strerror(errno));
     }
+
+    if (RedisModule_SubscribeToServerEvent(ctx, RedisModuleEvent_Loading,
+                                             Handle_RDB_Event) != REDISMODULE_OK) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "RedisModule_OnLoad failed to SubscribeToServerEvent for RedisModuleEvent_Loading." );
+        return RedisModule_ReplyWithError(ctx, strerror(errno));
+    }    
 
     Start_Client_Handler(rdts_staticCtx);
   

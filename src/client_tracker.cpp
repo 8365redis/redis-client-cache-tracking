@@ -94,7 +94,6 @@ std::string Get_Client_Name_From_ID(RedisModuleCtx *ctx, unsigned long long clie
 }
 
 void Start_Client_Handler(RedisModuleCtx *ctx) {
-
     std::thread client_checker_thread(Client_TTL_Handler, ctx, std::ref(CCT_CLIENT_CONNECTION_TIMEOUT), std::ref(CCT_CLIENT_CONNECTION));
     client_checker_thread.detach();
 }

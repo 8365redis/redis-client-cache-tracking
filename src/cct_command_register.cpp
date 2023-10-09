@@ -1,5 +1,74 @@
 #include "cct_command_register.h"
 
+void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string client_name_str) {
+    RedisModule_AutoMemory(ctx);
+
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Send_Snapshot starts for client : " + client_name_str );
+    // First get clients queries
+    std::vector<std::string> client_queries;
+    std::string client_query_key_str = CCT_MODULE_CLIENT_2_QUERY + client_name_str;
+    RedisModuleCallReply *c2q_smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", client_query_key_str.c_str());
+    const size_t reply_length = RedisModule_CallReplyLength(c2q_smembers_reply);
+    for (size_t i = 0; i < reply_length; i++) {
+        RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(c2q_smembers_reply, i);
+        if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING){
+            RedisModuleString *query_name = RedisModule_CreateStringFromCallReply(key_reply);
+            const char *query_name_str = RedisModule_StringPtrLen(query_name, NULL);
+            client_queries.push_back(std::string(query_name_str));
+        }
+    }
+   
+    // Second get the tracked keys from queries
+    std::unordered_map<std::string, std::vector<std::string>> client_keys_2_query;
+    for(const auto &query : client_queries) {
+        std::string q2k_key_str = CCT_MODULE_QUERY_2_KEY + query;
+        RedisModuleCallReply *q2k_smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", q2k_key_str.c_str());
+        const size_t reply_length = RedisModule_CallReplyLength(q2k_smembers_reply);
+        for (size_t i = 0; i < reply_length; i++) {
+            RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(q2k_smembers_reply, i);
+            if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING){
+                RedisModuleString *key_name = RedisModule_CreateStringFromCallReply(key_reply);
+                const char *key_name_str = RedisModule_StringPtrLen(key_name, NULL);
+                client_keys_2_query[std::string(key_name_str)].push_back(query);
+            }
+        }
+    }
+    
+    // Third get values for the key
+    std::unordered_map<std::string, std::string> client_keys_2_values;
+    for(const auto &pair : client_keys_2_query) { 
+        std::string key = pair.first;
+        std::string json_value = Get_Json_Str(ctx, key);
+        client_keys_2_values[key] = json_value;
+    }
+
+    // Write to client stream   
+    for (const auto &pair : client_keys_2_query) {
+        std::string key = pair.first;
+        auto client_queries_internal = client_keys_2_query[key];
+        std::ostringstream imploded;
+        std::copy(client_queries_internal.begin(), client_queries_internal.end(), std::ostream_iterator<std::string>(imploded, CCT_MODULE_QUERY_DELIMETER.c_str()));
+        std::string client_queries_internal_str = imploded.str();
+        if(client_queries_internal_str.length() > CCT_MODULE_QUERY_DELIMETER.length()) {
+            client_queries_internal_str.erase(client_queries_internal_str.length() - CCT_MODULE_QUERY_DELIMETER.length());
+        }
+        if (Add_Event_To_Stream(ctx, client_name_str, "json.set", key, client_keys_2_values[key], client_queries_internal_str) != REDISMODULE_OK) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Snaphot failed to adding to the stream." );
+            return ;
+        }
+    }
+
+    //Finalize stream writing with end of snapshot
+    RedisModuleString **xadd_params_for_eos = (RedisModuleString **) RedisModule_Alloc(sizeof(RedisModuleString *) * 2);
+    xadd_params_for_eos[0] = RedisModule_CreateString(ctx, CCT_MODULE_END_OF_SNAPSHOT.c_str(), CCT_MODULE_END_OF_SNAPSHOT.length());
+    xadd_params_for_eos[1] = RedisModule_CreateString(ctx, CCT_MODULE_END_OF_SNAPSHOT.c_str(), CCT_MODULE_END_OF_SNAPSHOT.length());
+    int stream_add_resp_eos = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params_for_eos, 1);
+    if (stream_add_resp_eos != REDISMODULE_OK) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Send_Snapshot failed to write end of snapshot." );
+        return ;
+    }    
+}
+
 int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     RedisModule_AutoMemory(ctx);
     Log_Command(ctx,argv,argc);
@@ -67,69 +136,12 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     RedisModule_StreamTrimByLength(stream_key, 0, 0);  // Clear the stream
 
     // Send SNAPSHOT to client
-    // First get clients queries
-    std::vector<std::string> client_queries;
-    std::string client_query_key_str = CCT_MODULE_CLIENT_2_QUERY + client_name_str;
-    RedisModuleCallReply *c2q_smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", client_query_key_str.c_str());
-    const size_t reply_length = RedisModule_CallReplyLength(c2q_smembers_reply);
-    for (size_t i = 0; i < reply_length; i++) {
-        RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(c2q_smembers_reply, i);
-        if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING){
-            RedisModuleString *query_name = RedisModule_CreateStringFromCallReply(key_reply);
-            const char *query_name_str = RedisModule_StringPtrLen(query_name, NULL);
-            client_queries.push_back(std::string(query_name_str));
-        }
-    }
-   
-    // Second get the tracked keys from queries
-    std::unordered_map<std::string, std::vector<std::string>> client_keys_2_query;
-    for(const auto &query : client_queries) {
-        std::string q2k_key_str = CCT_MODULE_QUERY_2_KEY + query;
-        RedisModuleCallReply *q2k_smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", q2k_key_str.c_str());
-        const size_t reply_length = RedisModule_CallReplyLength(q2k_smembers_reply);
-        for (size_t i = 0; i < reply_length; i++) {
-            RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(q2k_smembers_reply, i);
-            if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING){
-                RedisModuleString *key_name = RedisModule_CreateStringFromCallReply(key_reply);
-                const char *key_name_str = RedisModule_StringPtrLen(key_name, NULL);
-                client_keys_2_query[std::string(key_name_str)].push_back(query);
-            }
-        }
-    }
+    //LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Before Send_Snapshot starts for client : " + client_name_str );
+    //RedisModuleCtx *detached_ctx = RedisModule_GetDetachedThreadSafeContext(ctx);
+    //std::thread snapshot_sender(Send_Snapshot, detached_ctx, stream_key, client_name_str);
+    //snapshot_sender.detach();
+    Send_Snapshot(ctx, stream_key, client_name_str);
     
-    // Third get values for the key
-    std::unordered_map<std::string, std::string> client_keys_2_values;
-    for(const auto &pair : client_keys_2_query) { 
-        std::string key = pair.first;
-        std::string json_value = Get_Json_Str(ctx, key);
-        client_keys_2_values[key] = json_value;
-    }
-
-    // Write to client stream   
-    for (const auto &pair : client_keys_2_query) {
-        std::string key = pair.first;
-        auto client_queries_internal = client_keys_2_query[key];
-        std::ostringstream imploded;
-        std::copy(client_queries_internal.begin(), client_queries_internal.end(), std::ostream_iterator<std::string>(imploded, CCT_MODULE_QUERY_DELIMETER.c_str()));
-        std::string client_queries_internal_str = imploded.str();
-        if(client_queries_internal_str.length() > CCT_MODULE_QUERY_DELIMETER.length()) {
-            client_queries_internal_str.erase(client_queries_internal_str.length() - CCT_MODULE_QUERY_DELIMETER.length());
-        }
-        if (Add_Event_To_Stream(ctx, client_name_str, "json.set", key, client_keys_2_values[key], client_queries_internal_str) != REDISMODULE_OK) {
-            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Snaphot failed to adding to the stream." );
-            return RedisModule_ReplyWithError(ctx, strerror(errno));
-        }
-    }
-
-    //Finalize stream writing with end of snapshot
-    RedisModuleString **xadd_params_for_eos = (RedisModuleString **) RedisModule_Alloc(sizeof(RedisModuleString *) * 2);
-    xadd_params_for_eos[0] = RedisModule_CreateString(ctx, CCT_MODULE_END_OF_SNAPSHOT.c_str(), CCT_MODULE_END_OF_SNAPSHOT.length());
-    xadd_params_for_eos[1] = RedisModule_CreateString(ctx, CCT_MODULE_END_OF_SNAPSHOT.c_str(), CCT_MODULE_END_OF_SNAPSHOT.length());
-    int stream_add_resp_eos = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params_for_eos, 1);
-    if (stream_add_resp_eos != REDISMODULE_OK) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to write end of snapshot." );
-        return RedisModule_ReplyWithError(ctx, strerror(errno));
-    }
 
     RedisModule_ReplyWithSimpleString(ctx, "OK");
     return REDISMODULE_OK;
