@@ -789,3 +789,47 @@ def test_1_client_1_query_first_query_later_key_expire():
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert 1 == len(from_stream)
+
+def test_empty_queries_in_snapshot():
+    producer = connect_redis_with_start()
+    cct_prepare.flush_db(producer) # clean all db first
+    cct_prepare.create_index(producer)
+
+    # ADD INITIAL DATA
+    passport_value = "aaa"
+    d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
+    key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
+    producer.json().set(key_1, Path.root_path(), d)
+    query_normalized = "User\\.PASSPORT:aaa"
+
+    # FIRST CLIENT
+    query_value = passport_value
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    query_value = "non_existing_1"
+    query_normalized_non_matching_1 = "User\\.PASSPORT:non_existing_1"
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # This will not match
+    query_value = "non_existing_2"
+    query_normalized_non_matching_2 = "User\\.PASSPORT:non_existing_2"
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # This will not match
+
+    # Check stream is empty
+    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    assert CCT_EOS in from_stream[0][1][0][1]
+
+    # DISCONNECT
+    client1.connection_pool.disconnect()
+
+    # RE-REGISTER
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+
+    time.sleep(0.2)
+
+    # Check stream content
+    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    print(from_stream)
+    assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
+    assert key_1 in str(from_stream[0][1][0][1])
+    assert query_normalized in from_stream[0][1][0][1][CCT_QUERIES]

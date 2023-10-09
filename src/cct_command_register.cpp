@@ -17,6 +17,9 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
             client_queries.push_back(std::string(query_name_str));
         }
     }
+
+    // Queries that doesn't match to any key
+    std::vector<std::string> empty_queries;
    
     // Second get the tracked keys from queries
     std::unordered_map<std::string, std::vector<std::string>> client_keys_2_query;
@@ -24,6 +27,9 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
         std::string q2k_key_str = CCT_MODULE_QUERY_2_KEY + query;
         RedisModuleCallReply *q2k_smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", q2k_key_str.c_str());
         const size_t reply_length = RedisModule_CallReplyLength(q2k_smembers_reply);
+        if(reply_length == 0) {
+            empty_queries.push_back(query);
+        }
         for (size_t i = 0; i < reply_length; i++) {
             RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(q2k_smembers_reply, i);
             if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING){
@@ -54,6 +60,14 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
         }
         if (Add_Event_To_Stream(ctx, client_name_str, "json.set", key, client_keys_2_values[key], client_queries_internal_str) != REDISMODULE_OK) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Snaphot failed to adding to the stream." );
+            return ;
+        }
+    }
+
+    // Write empty queries to client stream  
+    for (auto k : empty_queries) {
+        if (Add_Event_To_Stream(ctx, client_name_str, "json.set", "", "", k) != REDISMODULE_OK) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Snaphot failed to adding to the stream for empty queries." );
             return ;
         }
     }
