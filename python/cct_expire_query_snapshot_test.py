@@ -15,6 +15,8 @@ def before_and_after_test():
     kill_redis()
     print("End")
 
+@pytest.mark.skipif(True ,
+                    reason="Feature is disabled")
 def test_query_expired_offline():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
@@ -54,6 +56,8 @@ def test_query_expired_offline():
     # Check Meta data after query is expired offline
     check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [False]*6 )
 
+@pytest.mark.skipif(True ,
+                    reason="Feature is disabled")
 def test_query_expired_with_not_expired_offline():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first

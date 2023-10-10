@@ -72,12 +72,14 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         return RedisModule_ReplyWithError(ctx, strerror(errno));
     }
 
+    /*
     if (RedisModule_SubscribeToServerEvent(ctx, RedisModuleEvent_Loading,
                                              Handle_RDB_Event) != REDISMODULE_OK) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "RedisModule_OnLoad failed to SubscribeToServerEvent for RedisModuleEvent_Loading." );
         return RedisModule_ReplyWithError(ctx, strerror(errno));
     }    
-
+    */
+   
     Start_Client_Handler(rdts_staticCtx);
   
     return REDISMODULE_OK;

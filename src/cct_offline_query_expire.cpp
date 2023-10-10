@@ -34,11 +34,7 @@ int Handle_Offline_Query_Expire(RedisModuleCtx *ctx) {
             existing_keys.push_back(plain_query);
         }
     }
-
-    //for(auto k : existing_keys) {
-    //    std::cout<<"Existing Query-Client Pairs : "<<k<<std::endl;
-    //}
-    
+   
     // Get Query Client Pairs From Metadata
     std::string pattern = CCT_MODULE_QUERY_2_CLIENT + "*";
     RedisModuleCallReply *q2c_keys_reply = RedisModule_Call(ctx, "KEYS", "c", pattern.c_str());
@@ -77,18 +73,10 @@ int Handle_Offline_Query_Expire(RedisModuleCtx *ctx) {
         }        
     }
 
-    //for(auto k : before_offline_keys) {
-    //    std::cout<<"Before Offline Query-Client Pairs : "<<k<<std::endl;
-    //}
-
     std::set<std::string> already_existing_query_client_pairs(existing_keys.begin(), existing_keys.end());
     std::set<std::string> before_offline_query_client_pairs(before_offline_keys.begin(), before_offline_keys.end());
     std::set<std::string> query_client_pairs_to_expire;
     std::set_difference (before_offline_query_client_pairs.begin(), before_offline_query_client_pairs.end(), already_existing_query_client_pairs.begin(), already_existing_query_client_pairs.end(), inserter(query_client_pairs_to_expire, query_client_pairs_to_expire.begin()));
-
-    //for(auto k : query_client_pairs_to_expire) {
-    //    std::cout<<"Expire these Query-Client Pairs : "<<k<<std::endl;
-    //}
 
     // Expire the queries
     for(auto k : query_client_pairs_to_expire) {
