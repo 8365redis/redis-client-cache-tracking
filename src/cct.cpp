@@ -6,6 +6,7 @@
 #include "cct_command_search.h"
 #include "cct_command_heartbeat.h"
 #include "cct_offline_query_expire.h"
+#include "version.h"
 
 #ifndef CCT_MODULE_VERSION
 #define CCT_MODULE_VERSION "unknown"
@@ -19,13 +20,16 @@ extern "C" {
 RedisModuleCtx *rdts_staticCtx;
 
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-    
-    if (RedisModule_Init(ctx,"CCT",1,REDISMODULE_APIVER_1) == REDISMODULE_ERR) {
-        return REDISMODULE_ERR;
-    }
-    
+
+    int version_int = Get_Module_Version(CCT_MODULE_VERSION);
+
     const char* version_string = { CCT_MODULE_VERSION " compiled at " __TIME__ " "  __DATE__  };
     LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "CCT_MODULE_VERSION : " + std::string(version_string));
+
+
+    if (RedisModule_Init(ctx,"CCT",version_int,REDISMODULE_APIVER_1) == REDISMODULE_ERR) {
+        return REDISMODULE_ERR;
+    }
 
     #ifdef _DEBUG
     LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "THIS IS A DEBUG BUILD." );
@@ -79,7 +83,7 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         return RedisModule_ReplyWithError(ctx, strerror(errno));
     }    
     */
-   
+
     Start_Client_Handler(rdts_staticCtx);
   
     return REDISMODULE_OK;
