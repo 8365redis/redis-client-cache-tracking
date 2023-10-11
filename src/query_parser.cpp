@@ -17,3 +17,13 @@ std::string Get_Query_Term(const std::string &s) {
 std::string Get_Query_Attribute(const std::string &s) {
     return Get_Str_Between(s, TAG_ATTRIBUTE_START, TAG_ATTRIBUTE_END);
 }
+
+std::string Normalized_to_Original(const std::string normalized_query) {
+    if(normalized_query.find(CCT_MODULE_KEY_SEPERATOR) == std::string::npos) {
+        return "";
+    }
+    std::string query = normalized_query.substr(0, normalized_query.find(CCT_MODULE_KEY_SEPERATOR));
+    std::string attribute = normalized_query.substr(normalized_query.find(CCT_MODULE_KEY_SEPERATOR) + 1, normalized_query.length() - normalized_query.find(CCT_MODULE_KEY_SEPERATOR));
+    std::string original_query = TERM_START + query + CCT_MODULE_KEY_SEPERATOR + TAG_ATTRIBUTE_START + attribute + TAG_ATTRIBUTE_END ;
+    return original_query;
+}

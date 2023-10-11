@@ -88,7 +88,8 @@ int Handle_Query_Expire(RedisModuleCtx *ctx , std::string key) {
 
 
     // Add event to stream
-    if (Add_Event_To_Stream(ctx, client_name, "query_expired", "" , "", plain_query) != REDISMODULE_OK) {
+    std::string original_query = Normalized_to_Original(plain_query);
+    if (Add_Event_To_Stream(ctx, client_name, "query_expired", "" , "", original_query) != REDISMODULE_OK) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Query_Expire failed to adding to the stream." );
         return REDISMODULE_ERR;
     }

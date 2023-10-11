@@ -23,7 +23,7 @@ def test_1_client_1_query_with_disconnect():
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
     key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
     producer.json().set(key_1, Path.root_path(), d)
-    query_normalized = "User\\.PASSPORT:aaa"
+    query_normalized = "@User\\.PASSPORT:{aaa}"
 
     # FIRST CLIENT
     query_value = passport_value
@@ -61,8 +61,8 @@ def test_1_client_2_query_with_disconnect():
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
     key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
     producer.json().set(key_1, Path.root_path(), d)
-    first_query_normalized = "User\\.PASSPORT:aaa"
-    second_query_normalized = "User\\.ID:1000"
+    first_query_normalized = "@User\\.PASSPORT:{aaa}"
+    second_query_normalized = "@User\\.ID:{1000}"
 
     # FIRST CLIENT
     query_value = passport_value
@@ -103,7 +103,7 @@ def test_1_client_1_query_without_disconnect():
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
     key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
     producer.json().set(key_1, Path.root_path(), d)
-    query_normalized = "User\\.PASSPORT:aaa"
+    query_normalized = "@User\\.PASSPORT:{aaa}"
 
     # FIRST CLIENT
     query_value = passport_value
@@ -135,8 +135,8 @@ def test_1_client_2_query_without_disconnect():
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
     key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
     producer.json().set(key_1, Path.root_path(), d)
-    first_query_normalized = "User\\.PASSPORT:aaa"
-    second_query_normalized = "User\\.ID:1000"
+    first_query_normalized = "@User\\.PASSPORT:{aaa}"
+    second_query_normalized = "@User\\.ID:{1000}"
 
     # FIRST CLIENT
     query_value = passport_value
@@ -174,7 +174,7 @@ def test_1_client_1_query_1_key_multiple_update_still_match_query():
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
     key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
     producer.json().set(key_1, Path.root_path(), d)
-    query_normalized = "User\\.PASSPORT:aaa"
+    query_normalized = "@User\\.PASSPORT:{aaa}"
 
     # FIRST CLIENT
     query_value = passport_value
@@ -219,7 +219,7 @@ def test_1_client_1_query_1_key_multiple_update_doesnt_match_query():
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
     key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
     producer.json().set(key_1, Path.root_path(), d)
-    query_normalized = "User\\.PASSPORT:aaa"
+    query_normalized = "@User\\.PASSPORT:{aaa}"
 
     # FIRST CLIENT
     query_value = passport_value
@@ -269,7 +269,7 @@ def test_1_client_1_query_multiple_key_multiple_update_still_match_query():
     d = cct_prepare.generate_single_object(1000 , 2001, passport_value)
     key_2 = cct_prepare.TEST_INDEX_PREFIX + str(2) 
     producer.json().set(key_2, Path.root_path(), d)    
-    query_normalized = "User\\.PASSPORT:aaa"
+    query_normalized = "@User\\.PASSPORT:{aaa}"
 
     # FIRST CLIENT
     query_value = passport_value
@@ -320,7 +320,7 @@ def test_1_client_1_query_multiple_key_multiple_update_doesnt_match_query():
     d = cct_prepare.generate_single_object(1000 , 2001, passport_value)
     key_2 = cct_prepare.TEST_INDEX_PREFIX + str(2) 
     producer.json().set(key_2, Path.root_path(), d)    
-    query_normalized = "User\\.PASSPORT:aaa"
+    query_normalized = "@User\\.PASSPORT:{aaa}"
 
     # FIRST CLIENT
     query_value = passport_value
@@ -378,8 +378,8 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query(
     d = cct_prepare.generate_single_object(1001 , 2001, passport_value)
     key_2 = cct_prepare.TEST_INDEX_PREFIX + str(2) 
     producer.json().set(key_2, Path.root_path(), d)    
-    first_query_normalized = "User\\.PASSPORT:aaa"
-    second_query_normalized = "User\\.ID:1001"
+    first_query_normalized = "@User\\.PASSPORT:{aaa}"
+    second_query_normalized = "@User\\.ID:{1001}"
 
     # FIRST CLIENT
     query_value = passport_value
@@ -440,8 +440,8 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     d = cct_prepare.generate_single_object(1001 , 2001, passport_value)
     key_2 = cct_prepare.TEST_INDEX_PREFIX + str(2) 
     producer.json().set(key_2, Path.root_path(), d)    
-    first_query_normalized = "User\\.PASSPORT:aaa"
-    second_query_normalized = "User\\.ID:1001"
+    first_query_normalized = "@User\\.PASSPORT:{aaa}"
+    second_query_normalized = "@User\\.ID:{1001}"
 
     # FIRST CLIENT
     query_value = passport_value
@@ -498,8 +498,8 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     d = cct_prepare.generate_single_object(1001 , 2001, passport_value)
     key_2 = cct_prepare.TEST_INDEX_PREFIX + str(2) 
     producer.json().set(key_2, Path.root_path(), d)    
-    first_query_normalized = "User\\.PASSPORT:aaa"
-    second_query_normalized = "User\\.ID:1001"
+    first_query_normalized = "@User\\.PASSPORT:{aaa}"
+    second_query_normalized = "@User\\.ID:{1001}"
 
     # FIRST CLIENT
     query_value = passport_value
@@ -558,8 +558,8 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     d = cct_prepare.generate_single_object(1001 , 2001, passport_value)
     key_2 = cct_prepare.TEST_INDEX_PREFIX + str(2) 
     producer.json().set(key_2, Path.root_path(), d)    
-    first_query_normalized = "User\\.PASSPORT:aaa"
-    second_query_normalized = "User\\.ID:1001"
+    first_query_normalized = "@User\\.PASSPORT:{aaa}"
+    second_query_normalized = "@User\\.ID:{1001}"
 
     # FIRST CLIENT
     query_value = passport_value
@@ -620,8 +620,8 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     d = cct_prepare.generate_single_object(1001 , 2001, passport_value)
     key_2 = cct_prepare.TEST_INDEX_PREFIX + str(2) 
     producer.json().set(key_2, Path.root_path(), d)    
-    first_query_normalized = "User\\.PASSPORT:aaa"
-    second_query_normalized = "User\\.ID:1001"
+    first_query_normalized = "@User\\.PASSPORT:{aaa}"
+    second_query_normalized = "@User\\.ID:{1001}"
 
     # FIRST CLIENT
     query_value = passport_value
@@ -800,7 +800,7 @@ def test_empty_queries_in_snapshot():
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
     key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
     producer.json().set(key_1, Path.root_path(), d)
-    query_normalized = "User\\.PASSPORT:aaa"
+    query_normalized = "@User\\.PASSPORT:{aaa}"
 
     # FIRST CLIENT
     query_value = passport_value

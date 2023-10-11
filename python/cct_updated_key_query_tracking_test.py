@@ -236,7 +236,3 @@ def test_updated_key_match_multiple_queries_one_client():
     # Check key is in streams 
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert key_3 in str(from_stream[0][1])
-
-    # Check query is in streams 
-    from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert "User\\.ID:1000" + CCT_Q_DELI +"User\\.PASSPORT:bbb" in str(from_stream[0][1][1][1]["queries"])

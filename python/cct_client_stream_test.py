@@ -71,7 +71,7 @@ def test_client_get_update_while_disconnected():
     client1 = connect_redis()
     client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # match first two item
-    first_query_normalized = "User\\.PASSPORT:aaa"
+    first_query_normalized = "@User\\.PASSPORT:{aaa}"
 
     # DISCONNECT
     client1.connection_pool.disconnect()

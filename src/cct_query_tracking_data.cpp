@@ -3,7 +3,6 @@
 
 void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::string client_name, const std::vector<std::string> &key_ids) {
     
-    
     std::string query_str = RedisModule_StringPtrLen(query, NULL);
     std::string query_term = Get_Query_Term(query_str);
     std::string query_attribute = Get_Query_Attribute(query_str);
