@@ -335,7 +335,7 @@ def test_updated_key_match_same_queries_one_client_no_root():
 
 
 def test_updated_key_match_same_queries_one_client_mixed_data():
-    producer = connect_redis()
+    producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
 
     # TEST SPECIFIC SCHEME
