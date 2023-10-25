@@ -1,6 +1,6 @@
 import pytest
 from redis.commands.json.path import Path
-from manage_redis import kill_redis, connect_redis_with_start, connect_redis
+from manage_redis import kill_redis, connect_redis_with_start, connect_redis, start_redis
 import cct_prepare
 from constants import CCT_K2C, CCT_Q_DELI, CCT_EOS
 from redis.commands.json.path import Path
@@ -361,6 +361,52 @@ def test_updated_key_match_same_queries_one_client_mixed_data():
     d = { "a" : "a_data2" , "b" : "b_data2" , "c" : "c_data2", "d" : { "d_1" : "d_1_data" , "d_2" : "d_2_data2" }}
     key = cct_prepare.TEST_INDEX_PREFIX + str(1)
     producer.json().set(key, Path.root_path(), d)
+
+    # Check key is in streams 
+    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    print(from_stream)
+
+
+def test_updated_key_match_single_query_after_restart():
+    producer = connect_redis_with_start()
+    cct_prepare.flush_db(producer) # clean all db first
+    cct_prepare.create_index(producer)
+
+    # ADD INITIAL DATA
+    key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1)
+    passport_value_1 = "aaa"
+    d = cct_prepare.generate_single_object(1000 , 2000, passport_value_1)
+    producer.json().set(key_1, Path.root_path(), d)
+    
+
+    # FIRST CLIENT
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+
+    query_value = "1000"
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + query_value + "}") # match first
+
+    # UPDATE DATA
+    d = cct_prepare.generate_single_object(1000 , 2001, "bbb")
+    producer.json().set(key_1, Path.root_path(), d)
+
+    # Check key is in streams 
+    from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
+    print(from_stream)
+
+    #Kill Redis
+    kill_redis()
+
+    #Start Redis
+    start_redis()
+
+    # FIRST CLIENT
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+
+    # UPDATE DATA AGAIN
+    d = cct_prepare.generate_single_object(1000 , 2002, "ccc")
+    producer.json().set(key_1, Path.root_path(), d)
 
     # Check key is in streams 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
