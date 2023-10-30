@@ -85,7 +85,23 @@ void Add_Tracking_Key(RedisModuleCtx *ctx, std::string key, std::string client) 
     }
 }
 
-int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std::string event, const std::string key, const std::string value, const std::string queries) { 
+void Add_Tracking_Key_Old_Value(RedisModuleCtx *ctx, std::string key, std::string value) {
+    std::string old_key_with_prefix = CCT_MODULE_KEY_OLD_VALUE + key;
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Tracking_Key_Old_Value has called with key : " +  old_key_with_prefix);
+    RedisModuleString *old_key_str = RedisModule_CreateString(ctx, old_key_with_prefix.c_str() , old_key_with_prefix.length());
+
+    RedisModuleKey *old_key = RedisModule_OpenKey(ctx, old_key_str, REDISMODULE_WRITE);
+    RedisModuleString *value_str = RedisModule_CreateString(ctx, value.c_str() , value.length());
+
+    if(RedisModule_StringSet(old_key, value_str) != REDISMODULE_OK){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracking_Key_Old_Value failed while writing to key : " +  old_key_with_prefix);
+    }else {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Tracking_Key_Old_Value has written key : " +  old_key_with_prefix);
+
+    }
+}
+
+int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std::string event, const std::string key, const std::string value, const std::string queries, bool send_old_value ) { 
 
     if( Is_Client_Connected(client) == false) {
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream skipping offline client : " + client);
@@ -95,7 +111,11 @@ int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std
     }
     RedisModuleString *client_name = RedisModule_CreateString(ctx, client.c_str(), client.length());
     RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
-    RedisModuleString **xadd_params = (RedisModuleString **) RedisModule_Alloc(sizeof(RedisModuleString *) * 8);
+    int alloc_count = 8;
+    if (send_old_value) {
+        alloc_count = 10;
+    }
+    RedisModuleString **xadd_params = (RedisModuleString **) RedisModule_Alloc(sizeof(RedisModuleString *) * alloc_count);
     xadd_params[0] = RedisModule_CreateString(ctx, CCT_OPERATION.c_str(), strlen(CCT_OPERATION.c_str()));
     std::string internal_event = CCT_KEY_EVENTS.at(event);
     xadd_params[1] = RedisModule_CreateString(ctx, internal_event.c_str(), internal_event.length());
@@ -109,10 +129,23 @@ int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std
     xadd_params[5] = RedisModule_CreateString(ctx, value.c_str(), value.length());
     xadd_params[6] = RedisModule_CreateString(ctx, CCT_QUERIES.c_str(), strlen(CCT_QUERIES.c_str()));
     xadd_params[7] = RedisModule_CreateString(ctx, queries.c_str(), queries.length());
-    int stream_add_resp = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params, 4);
+    if (send_old_value) {
+        std::string old_value_key = CCT_MODULE_KEY_OLD_VALUE + key;
+        RedisModuleCallReply *get_reply = RedisModule_Call(ctx,"GET","c", old_value_key.c_str());
+        size_t len;
+        const char *old_value = RedisModule_CallReplyStringPtr(get_reply, &len);
+        //std::string old_value = Get_Json_Str(ctx, old_value_key);
+        xadd_params[8] = RedisModule_CreateString(ctx, CCT_OLD_VALUE.c_str(), strlen(CCT_OLD_VALUE.c_str()));
+        xadd_params[9] = RedisModule_CreateString(ctx, old_value, strlen(old_value));        
+    }
+    int stream_add_resp = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params, (alloc_count/2));
     if (stream_add_resp != REDISMODULE_OK) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Event_To_Stream failed to add the stream.");
         return REDISMODULE_ERR;
+    }
+    // Now write new value to backup
+    if (send_old_value) {
+        Add_Tracking_Key_Old_Value(ctx, key, value);
     }
     return REDISMODULE_OK;
 }

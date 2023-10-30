@@ -83,7 +83,7 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
         if(client_queries_str.length() > CCT_MODULE_QUERY_DELIMETER.length()) {
             client_queries_str.erase(client_queries_str.length() - CCT_MODULE_QUERY_DELIMETER.length());
         }
-        if (Add_Event_To_Stream(ctx, client_name, event, key_str, json_str, client_queries_str) != REDISMODULE_OK) {
+        if (Add_Event_To_Stream(ctx, client_name, event, key_str, json_str, client_queries_str, true) != REDISMODULE_OK) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to adding to the stream." );
             return RedisModule_ReplyWithError(ctx, strerror(errno));
         }

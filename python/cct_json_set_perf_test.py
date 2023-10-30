@@ -2,6 +2,7 @@ import redis
 import time
 import pytest
 from redis.commands.json.path import Path
+from constants import SKIP_PERF_TEST
 import cct_prepare
 from manage_redis import connect_redis, connect_redis_with_start, kill_redis, connect_redis_with_start_without_module
 from cct_test_utils import generate_json, generate_json_scheme
@@ -14,6 +15,8 @@ def before_and_after_test():
     kill_redis()
     print("End")
 
+@pytest.mark.skipif(SKIP_PERF_TEST ,
+                    reason="Only run manually")
 def test_basic_json_set_test():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first

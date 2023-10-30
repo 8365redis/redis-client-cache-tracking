@@ -11,6 +11,7 @@ const std::string CCT_MODULE_QUERY_2_CLIENT = CCT_MODULE_PREFIX + "Q2C:" ;
 const std::string CCT_MODULE_QUERY_2_KEY =  CCT_MODULE_PREFIX + "Q2K:" ;
 const std::string CCT_MODULE_QUERY_CLIENT =  CCT_MODULE_PREFIX + "QC:" ;
 const std::string CCT_MODULE_CLIENT_2_QUERY = CCT_MODULE_PREFIX + "C2Q:" ;
+const std::string CCT_MODULE_KEY_OLD_VALUE = CCT_MODULE_PREFIX + "OLD:" ;
 const std::string CCT_MODULE_KEY_SEPERATOR  = ":" ;
 const std::string CCT_MODULE_KEY_LEVEL = "." ;
 const std::string CCT_MODULE_KEY_LEVEL_WITH_ESCAPE = "\\." ;
@@ -48,6 +49,7 @@ const int CCT_CLIENT_TTL = CCT_CLIENT_TTL_CHECK_INTERVAL * CCT_CLIENT_TTL_HEARTB
 const std::string CCT_OPERATION = "operation" ;
 const std::string CCT_KEY = "key" ;
 const std::string CCT_VALUE = "value" ;
+const std::string CCT_OLD_VALUE = "old_value" ;
 const std::string CCT_QUERIES = "queries" ;
 
 #endif /* CONSTANTS_H */
