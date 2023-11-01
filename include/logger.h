@@ -1,13 +1,10 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include <iostream>
 #include <string>
 #include <cstring>
 #include <chrono>
 #include <sstream>
-
-
 #include "redismodule.h"
 
 
