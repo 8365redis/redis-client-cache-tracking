@@ -1,11 +1,11 @@
 #include "logger.h"
 
 void Log_Std_Output(RedisModuleCtx *ctx, const char *levelstr, std::string fmt ) {
-    auto t = std::time(nullptr);
-    auto tm = *std::localtime(&t);
+    //auto t = std::time(nullptr);
+    //auto tm = *std::localtime(&t);
     auto now = std::chrono::system_clock::now();
     auto ms  = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch() % std::chrono::seconds{1});
-    auto time = std::put_time(&tm, "%d %b %Y %H:%M:%S");
+    auto time = "dummy-time"; //std::put_time(&tm, "%d %b %Y %H:%M:%S");
     std::cout<<"XXXXX:X "<<time<<"."<<std::to_string(ms.count())<<" * <CCT_MODULE> "<< fmt << std::endl;
 }
 
