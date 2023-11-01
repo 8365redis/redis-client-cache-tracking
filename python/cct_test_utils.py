@@ -8,10 +8,6 @@ from redis.commands.json.path import Path
 from redis.commands.search.field import TextField, NumericField, TagField
 from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 
-from mimesis.enums import Gender, TimestampFormat
-from mimesis.locales import Locale
-
-
 TEST_INDEX_NAME = "usersJsonIdx"
 TEST_INDEX_PREFIX = "users:"
 
