@@ -6,9 +6,9 @@ VERSION := $(shell git describe --abbrev=0 --tags)
 
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
-    CPPFLAGS = -Wall -g -fPIC -std=c++11 -I$(INCDIR) -D CCT_MODULE_VERSION=\"$(VERSION)\" -D _DEBUG -O0
+    CPPFLAGS = -Wall -g -fPIC -std=c++11 -lpthread -I$(INCDIR) -D CCT_MODULE_VERSION=\"$(VERSION)\" -D _DEBUG -O0
 else
-    CPPFLAGS = -Wall -g -fPIC -std=c++11 -I$(INCDIR) -D CCT_MODULE_VERSION=\"$(VERSION)\" -D NDEBUG -O3
+    CPPFLAGS = -Wall -g -fPIC -std=c++11 -lpthread -I$(INCDIR) -D CCT_MODULE_VERSION=\"$(VERSION)\" -D NDEBUG -O3
 endif
 
 CC = g++
