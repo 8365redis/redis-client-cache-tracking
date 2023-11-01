@@ -7,6 +7,7 @@
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+#include <iostream>
 
 #ifdef _DEBUG
 #define LOG(ctx, level, log) Log_Std_Output(ctx, level, log)
