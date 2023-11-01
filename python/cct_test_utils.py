@@ -8,7 +8,6 @@ from redis.commands.json.path import Path
 from redis.commands.search.field import TextField, NumericField, TagField
 from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 
-from mimesis import Field, Fieldset, Schema
 from mimesis.enums import Gender, TimestampFormat
 from mimesis.locales import Locale
 
@@ -50,38 +49,7 @@ def get_redis_snapshot():
     print("========REDIS SNAPSHOT END=========")
 
 def generate_json():
-    field = Field(locale=Locale.EN)
-    fieldset = Fieldset(locale=Locale.EN)
-
-    schema = Schema(
-        schema=lambda: {
-            "pk": field("increment"),
-            "uid": field("uuid"),
-            "name": field("text.word"),
-            "version": field("version", pre_release=True),
-            "timestamp": field("timestamp", fmt=TimestampFormat.POSIX),
-            "owner": {
-                "email": field("person.email", domains=["mimesis.name"]),
-                "token": field("token_hex"),
-                "creator": field("full_name", gender=Gender.FEMALE),
-            },
-            "sub1-owner": {
-                "email": field("person.email", domains=["mimesis.name"]),
-                "token": field("token_hex"),
-                "creator": field("full_name", gender=Gender.FEMALE),
-            },
-            "sub2-owner": {
-                "email": field("person.email", domains=["mimesis.name"]),
-                "token": field("token_hex"),
-                "creator": field("full_name", gender=Gender.FEMALE),
-            },                     
-            "apps": fieldset(
-                "text.word", i=20, key=lambda name: {"name": name, "id": field("uuid")}
-            ),
-        },
-        iterations=2,
-    )
-    val =  schema.create() 
+    val =  [{}]
     return val[0]
 
 def generate_json_scheme(r):
