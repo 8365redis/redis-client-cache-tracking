@@ -1,12 +1,12 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include <string>
-#include <string.h>
-#include <chrono>
-#include <iomanip>
-#include <sstream>
 #include <iostream>
+#include <string>
+#include <cstring>
+#include <chrono>
+#include <sstream>
+
 
 #include "redismodule.h"
 
