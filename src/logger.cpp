@@ -10,21 +10,21 @@ void Log_Std_Output(RedisModuleCtx *ctx, const char *levelstr, std::string fmt )
 }
 
 void Log_Redis(RedisModuleCtx *ctx, const char *levelstr, std::string fmt ) {
-    if( strcmp(levelstr, REDISMODULE_LOGLEVEL_WARNING) != 0 ) {
-        return;
-    }
-    RedisModule_Log(ctx, levelstr, "%s", fmt.c_str());
+    //if( strcmp(levelstr, REDISMODULE_LOGLEVEL_WARNING) != 0 ) {
+    //    return;
+    //}
+    //RedisModule_Log(ctx, levelstr, "%s", fmt.c_str());
 }
 
 void Log_Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-    std::stringstream argument_stream;
-    std::string command_name = RedisModule_StringPtrLen(argv[0], NULL);
-    for ( int i = 1; i < argc; i++) {
-        argument_stream<<RedisModule_StringPtrLen(argv[i], NULL)<< " ";
-    }
-    #ifdef _DEBUG
-    Log_Std_Output(ctx, REDISMODULE_LOGLEVEL_DEBUG , command_name + " command called with arguments " + argument_stream.str());
-    #else
-    Log_Redis(ctx, REDISMODULE_LOGLEVEL_DEBUG , command_name + " command called with arguments " + argument_stream.str());
-    #endif
+    //std::stringstream argument_stream;
+    //std::string command_name = RedisModule_StringPtrLen(argv[0], NULL);
+    //for ( int i = 1; i < argc; i++) {
+    //    argument_stream<<RedisModule_StringPtrLen(argv[i], NULL)<< " ";
+    //}
+    //#ifdef _DEBUG
+    //Log_Std_Output(ctx, REDISMODULE_LOGLEVEL_DEBUG , command_name + " command called with arguments " + argument_stream.str());
+    //#else
+    //Log_Redis(ctx, REDISMODULE_LOGLEVEL_DEBUG , command_name + " command called with arguments " + argument_stream.str());
+    //#endif
 }
