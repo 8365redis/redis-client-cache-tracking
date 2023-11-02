@@ -73,12 +73,11 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
     for (auto & client_name : total_clients) {
         auto client_queries = client_to_queries_map[client_name];
         std::string client_queries_str;
-        //std::ostringstream imploded;
-        //std::copy(client_queries.begin(), client_queries.end(), std::ostream_iterator<std::string>(imploded, CCT_MODULE_QUERY_DELIMETER.c_str()));
-        client_queries_str = "sdfsdf";//imploded.str();
-        if(client_queries_str.length() > CCT_MODULE_QUERY_DELIMETER.length()) {
+        for(auto const& e : client_queries) client_queries_str += (e + CCT_MODULE_QUERY_DELIMETER);
+        if(client_queries_str.length() > CCT_MODULE_QUERY_DELIMETER.length()){
             client_queries_str.erase(client_queries_str.length() - CCT_MODULE_QUERY_DELIMETER.length());
         }
+
         if (Add_Event_To_Stream(ctx, client_name, event, key_str, json_str, client_queries_str) != REDISMODULE_OK) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to adding to the stream." );
             return RedisModule_ReplyWithError(ctx, strerror(errno));
@@ -129,10 +128,7 @@ int Notify_Callback(RedisModuleCtx *ctx, int type, const char *event, RedisModul
     }
    
     // Add prefix
-    //std::stringstream prefix_stream;
-    //prefix_stream<<CCT_MODULE_KEY_2_CLIENT<<key_str;
-    std::string key_with_prefix = "dffs";//prefix_stream.str();
-
+    std::string key_with_prefix = CCT_MODULE_KEY_2_CLIENT + key_str;
 
     // First check which clients are tracking updated key
     std::vector<std::string> already_tracking_clients; 

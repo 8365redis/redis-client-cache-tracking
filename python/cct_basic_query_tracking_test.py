@@ -14,7 +14,7 @@ def before_and_after_test():
     print("End")
 
 def test_basic_query_tracking_test_1():
-    r = connect_redis()
+    r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
 
