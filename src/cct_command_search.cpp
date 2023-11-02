@@ -3,7 +3,6 @@
 
 int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     RedisModule_AutoMemory(ctx);
-    Log_Command(ctx,argv,argc);
     
     if (argc < 3) {
         return RedisModule_WrongArity(ctx);
