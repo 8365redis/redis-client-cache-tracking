@@ -52,9 +52,9 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
     for (const auto &pair : client_keys_2_query) {
         std::string key = pair.first;
         auto client_queries_internal = client_keys_2_query[key];
-        std::ostringstream imploded;
-        std::copy(client_queries_internal.begin(), client_queries_internal.end(), std::ostream_iterator<std::string>(imploded, CCT_MODULE_QUERY_DELIMETER.c_str()));
-        std::string client_queries_internal_str = imploded.str();
+        //std::ostringstream imploded;
+        //std::copy(client_queries_internal.begin(), client_queries_internal.end(), std::ostream_iterator<std::string>(imploded, CCT_MODULE_QUERY_DELIMETER.c_str()));
+        std::string client_queries_internal_str = "t4est";//imploded.str();
         if(client_queries_internal_str.length() > CCT_MODULE_QUERY_DELIMETER.length()) {
             client_queries_internal_str.erase(client_queries_internal_str.length() - CCT_MODULE_QUERY_DELIMETER.length());
         }

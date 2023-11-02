@@ -73,9 +73,9 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
     for (auto & client_name : total_clients) {
         auto client_queries = client_to_queries_map[client_name];
         std::string client_queries_str;
-        std::ostringstream imploded;
-        std::copy(client_queries.begin(), client_queries.end(), std::ostream_iterator<std::string>(imploded, CCT_MODULE_QUERY_DELIMETER.c_str()));
-        client_queries_str = imploded.str();
+        //std::ostringstream imploded;
+        //std::copy(client_queries.begin(), client_queries.end(), std::ostream_iterator<std::string>(imploded, CCT_MODULE_QUERY_DELIMETER.c_str()));
+        client_queries_str = "sdfsdf";//imploded.str();
         if(client_queries_str.length() > CCT_MODULE_QUERY_DELIMETER.length()) {
             client_queries_str.erase(client_queries_str.length() - CCT_MODULE_QUERY_DELIMETER.length());
         }
@@ -129,9 +129,9 @@ int Notify_Callback(RedisModuleCtx *ctx, int type, const char *event, RedisModul
     }
    
     // Add prefix
-    std::stringstream prefix_stream;
-    prefix_stream<<CCT_MODULE_KEY_2_CLIENT<<key_str;
-    std::string key_with_prefix = prefix_stream.str();
+    //std::stringstream prefix_stream;
+    //prefix_stream<<CCT_MODULE_KEY_2_CLIENT<<key_str;
+    std::string key_with_prefix = "dffs";//prefix_stream.str();
 
 
     // First check which clients are tracking updated key

@@ -4,7 +4,6 @@
 #include <string>
 #include <cstring>
 #include <chrono>
-#include <sstream>
 #include "redismodule.h"
 
 
