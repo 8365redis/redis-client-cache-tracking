@@ -57,8 +57,11 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
         if(client_queries_internal_str.length() > CCT_MODULE_QUERY_DELIMETER.length() ) {
             client_queries_internal_str.erase(client_queries_internal_str.length() - CCT_MODULE_QUERY_DELIMETER.length());
         }
-
-        if (Add_Event_To_Stream(ctx, client_name_str, "json.set", key, client_keys_2_values[key], client_queries_internal_str) != REDISMODULE_OK) {
+        std::string event = "json.set";
+        if(client_keys_2_values[key].empty()){
+            event = "del";
+        }
+        if (Add_Event_To_Stream(ctx, client_name_str, event, key, client_keys_2_values[key], client_queries_internal_str) != REDISMODULE_OK) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Snaphot failed to adding to the stream." );
             return ;
         }
@@ -66,7 +69,7 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
 
     // Write empty queries to client stream  
     for (auto k : empty_queries) {
-        if (Add_Event_To_Stream(ctx, client_name_str, "json.set", "", "", k) != REDISMODULE_OK) {
+        if (Add_Event_To_Stream(ctx, client_name_str, "del", "", "", k) != REDISMODULE_OK) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Snaphot failed to adding to the stream for empty queries." );
             return ;
         }

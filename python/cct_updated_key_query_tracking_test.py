@@ -371,3 +371,43 @@ def test_updated_key_match_same_queries_one_client_mixed_data():
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     print(from_stream)
 
+
+def test_keys_delete_while_client_offline_snapshot_operation():
+    producer = connect_redis_with_start()
+    cct_prepare.flush_db(producer) # clean all db first
+    cct_prepare.create_index(producer)
+
+    # ADD INITIAL DATA
+    key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1)
+    d = cct_prepare.generate_single_object(1000 , 2000, "aaa")
+    producer.json().set(key_1, Path.root_path(), d)
+    
+    key_2 = cct_prepare.TEST_INDEX_PREFIX + str(2)
+    d = cct_prepare.generate_single_object(1000 , 2001, "bbb")
+    producer.json().set(key_2, Path.root_path(), d)
+
+    key_3 = cct_prepare.TEST_INDEX_PREFIX + str(3)
+    d = cct_prepare.generate_single_object(1000 , 2002, "ccc")
+    producer.json().set(key_3, Path.root_path(), d)
+
+    # FIRST CLIENT
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+
+    query_value = "1000"
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + query_value + "}") # match all
+
+    # DISCONNECT
+    client1.connection_pool.disconnect()
+
+    #DELETE 2 KEYS
+    producer.delete(key_2)
+    producer.delete(key_3)
+
+    # FIRST CLIENT RECONNECT
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+
+    # Check stream content
+    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    print(from_stream)
