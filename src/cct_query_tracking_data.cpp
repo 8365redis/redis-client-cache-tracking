@@ -130,13 +130,13 @@ int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std
     xadd_params[6] = RedisModule_CreateString(ctx, CCT_QUERIES.c_str(), strlen(CCT_QUERIES.c_str()));
     xadd_params[7] = RedisModule_CreateString(ctx, queries.c_str(), queries.length());
     if (send_old_value) {
-        std::string old_value_key = CCT_MODULE_KEY_OLD_VALUE + key;
-        RedisModuleCallReply *get_reply = RedisModule_Call(ctx,"GET","c", old_value_key.c_str());
-        size_t len;
-        const char *old_value = RedisModule_CallReplyStringPtr(get_reply, &len);
-        //std::string old_value = Get_Json_Str(ctx, old_value_key);
+        //std::string old_value_key = CCT_MODULE_KEY_OLD_VALUE + key;
+        //RedisModuleCallReply *get_reply = RedisModule_Call(ctx,"GET","c", old_value_key.c_str());
+        //size_t len;
+        //const char *old_value = RedisModule_CallReplyStringPtr(get_reply, &len);
+        std::string old_value = "dummy";
         xadd_params[8] = RedisModule_CreateString(ctx, CCT_OLD_VALUE.c_str(), strlen(CCT_OLD_VALUE.c_str()));
-        xadd_params[9] = RedisModule_CreateString(ctx, old_value, strlen(old_value));        
+        xadd_params[9] = RedisModule_CreateString(ctx, old_value.c_str(), strlen(old_value.c_str()));        
     }
     int stream_add_resp = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params, (alloc_count/2));
     if (stream_add_resp != REDISMODULE_OK) {
