@@ -52,16 +52,21 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
     for (const auto &pair : client_keys_2_query) {
         std::string key = pair.first;
         auto client_queries_internal = client_keys_2_query[key];
+        std::vector<std::string> client_queries_internal_original;
+        for (auto q : client_queries_internal) {
+            client_queries_internal_original.push_back(Normalized_to_Original(q));
+        }
         std::string client_queries_internal_str;
-        for(auto const& e : client_queries_internal) client_queries_internal_str += (e + CCT_MODULE_QUERY_DELIMETER);
+        for(auto const& e : client_queries_internal_original) client_queries_internal_str += (e + CCT_MODULE_QUERY_DELIMETER);
         if(client_queries_internal_str.length() > CCT_MODULE_QUERY_DELIMETER.length() ) {
             client_queries_internal_str.erase(client_queries_internal_str.length() - CCT_MODULE_QUERY_DELIMETER.length());
         }
         std::string event = "json.set";
         if(client_keys_2_values[key].empty()){
             event = "del";
+            client_queries_internal_str = "";
         }
-        if (Add_Event_To_Stream(ctx, client_name_str, "json.set", key, client_keys_2_values[key], client_queries_internal_str) != REDISMODULE_OK) {
+        if (Add_Event_To_Stream(ctx, client_name_str, event, key, client_keys_2_values[key], client_queries_internal_str) != REDISMODULE_OK) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Snaphot failed to adding to the stream." );
             return ;
         }

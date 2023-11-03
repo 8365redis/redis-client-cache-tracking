@@ -73,7 +73,11 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
     for (auto & client_name : total_clients) {
         auto client_queries = client_to_queries_map[client_name];
         std::string client_queries_str;
-        for(auto const& e : client_queries) client_queries_str += (e + CCT_MODULE_QUERY_DELIMETER);
+        std::vector<std::string> client_queries_original;
+        for (auto q : client_queries) {
+            client_queries_original.push_back(Normalized_to_Original(q));
+        }
+        for(auto const& e : client_queries_original) client_queries_str += (e + CCT_MODULE_QUERY_DELIMETER);
         if(client_queries_str.length() > CCT_MODULE_QUERY_DELIMETER.length()){
             client_queries_str.erase(client_queries_str.length() - CCT_MODULE_QUERY_DELIMETER.length());
         }
