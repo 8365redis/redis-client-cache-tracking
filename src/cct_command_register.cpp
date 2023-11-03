@@ -60,6 +60,7 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
         std::string event = "json.set";
         if(client_keys_2_values[key].empty()){
             event = "del";
+            client_queries_internal_str = "";
         }
         if (Add_Event_To_Stream(ctx, client_name_str, event, key, client_keys_2_values[key], client_queries_internal_str) != REDISMODULE_OK) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Snaphot failed to adding to the stream." );
