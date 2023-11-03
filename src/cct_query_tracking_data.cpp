@@ -85,12 +85,20 @@ void Add_Tracking_Key(RedisModuleCtx *ctx, std::string key, std::string client) 
     }
 }
 
-void Add_Tracking_Key_Old_Value(RedisModuleCtx *ctx, std::string key, std::string value) {
+void Add_Tracking_Key_Old_Value(RedisModuleCtx *ctx, std::string key, std::string value, bool delete_old) {
     std::string old_key_with_prefix = CCT_MODULE_KEY_OLD_VALUE + key;
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Tracking_Key_Old_Value has called with key : " +  old_key_with_prefix);
-    RedisModuleString *old_key_str = RedisModule_CreateString(ctx, old_key_with_prefix.c_str() , old_key_with_prefix.length());
 
+    RedisModuleString *old_key_str = RedisModule_CreateString(ctx, old_key_with_prefix.c_str() , old_key_with_prefix.length());
     RedisModuleKey *old_key = RedisModule_OpenKey(ctx, old_key_str, REDISMODULE_WRITE);
+
+    if(delete_old) { // Key is delete we don't need the old value anymore
+        if( RedisModule_DeleteKey(old_key) == REDISMODULE_ERR ) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Deleting old valu key failed : " +  old_key_with_prefix);
+        }
+        return;
+    }
+
     RedisModuleString *value_str = RedisModule_CreateString(ctx, value.c_str() , value.length());
 
     if(RedisModule_StringSet(old_key, value_str) != REDISMODULE_OK){
@@ -130,13 +138,19 @@ int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std
     xadd_params[6] = RedisModule_CreateString(ctx, CCT_QUERIES.c_str(), strlen(CCT_QUERIES.c_str()));
     xadd_params[7] = RedisModule_CreateString(ctx, queries.c_str(), queries.length());
     if (send_old_value) {
-        //std::string old_value_key = CCT_MODULE_KEY_OLD_VALUE + key;
-        //RedisModuleCallReply *get_reply = RedisModule_Call(ctx,"GET","c", old_value_key.c_str());
-        //size_t len;
-        //const char *old_value = RedisModule_CallReplyStringPtr(get_reply, &len);
-        std::string old_value = "dummy";
+        std::string old_value_key = CCT_MODULE_KEY_OLD_VALUE + key;
+        RedisModuleCallReply *get_reply = RedisModule_Call(ctx,"GET","c", old_value_key.c_str());
+        std::string old_value = "";
+        if (RedisModule_CallReplyType(get_reply) == REDISMODULE_REPLY_ERROR){
+            old_value = "";
+        } else if ( RedisModule_CallReplyType(get_reply) == REDISMODULE_REPLY_NULL ) {
+            old_value = "";
+        } else {
+            size_t len;
+            old_value = RedisModule_CallReplyStringPtr(get_reply, &len);
+        }
         xadd_params[8] = RedisModule_CreateString(ctx, CCT_OLD_VALUE.c_str(), strlen(CCT_OLD_VALUE.c_str()));
-        xadd_params[9] = RedisModule_CreateString(ctx, old_value.c_str(), strlen(old_value.c_str()));        
+        xadd_params[9] = RedisModule_CreateString(ctx, old_value.c_str(), strlen(old_value.c_str()));  
     }
     int stream_add_resp = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params, (alloc_count/2));
     if (stream_add_resp != REDISMODULE_OK) {
@@ -145,7 +159,11 @@ int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std
     }
     // Now write new value to backup
     if (send_old_value) {
-        Add_Tracking_Key_Old_Value(ctx, key, value);
+        if(value.empty() || queries.empty()) {
+            Add_Tracking_Key_Old_Value(ctx, key, value, true);
+        } else {
+            Add_Tracking_Key_Old_Value(ctx, key, value, false);
+        } 
     }
     return REDISMODULE_OK;
 }
