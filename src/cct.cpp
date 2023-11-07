@@ -6,16 +6,19 @@
 #include "cct_command_search.h"
 #include "cct_command_heartbeat.h"
 #include "cct_offline_query_expire.h"
+#include "constants.h"
+#include "config_handler.h"
 #include "version.h"
 
 #ifndef CCT_MODULE_VERSION
 #define CCT_MODULE_VERSION "unknown"
 #endif
 
+CCT_Config cct_config;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 RedisModuleCtx *rdts_staticCtx;
 
@@ -26,17 +29,26 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     const char* version_string = { CCT_MODULE_VERSION " compiled at " __TIME__ " "  __DATE__  };
     LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "CCT_MODULE_VERSION : " + std::string(version_string));
 
-
-    if (RedisModule_Init(ctx,"CCT",version_int,REDISMODULE_APIVER_1) == REDISMODULE_ERR) {
-        return REDISMODULE_ERR;
-    }
-
     #ifdef _DEBUG
     LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "THIS IS A DEBUG BUILD." );
     #endif
     #ifdef NDEBUG
     LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "THIS IS A RELEASE BUILD." );
     #endif 
+
+    if (RedisModule_Init(ctx,"CCT",version_int,REDISMODULE_APIVER_1) == REDISMODULE_ERR) {
+        return REDISMODULE_ERR;
+    }
+
+    std::string config_file_path_str = "";
+    if (argc > 0) {
+        config_file_path_str = RedisModule_StringPtrLen(argv[0], NULL);
+    }
+    #ifdef _DEBUG
+    config_file_path_str = "non-existing-file";  // DEBUG version will always use hardcoded default DEBUG values
+    #endif
+    cct_config = Read_CCT_Config(ctx, config_file_path_str);
+
 
     //if ( Handle_Offline_Query_Expire(ctx) == REDISMODULE_ERR){
     //    return REDISMODULE_ERR;
