@@ -159,7 +159,7 @@ int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std
     }
     // Now write new value to backup
     if (send_old_value) {
-        if(value.empty() || queries.empty()) {
+        if(queries.empty()) {
             Add_Tracking_Key_Old_Value(ctx, key, value, true);
         } else {
             Add_Tracking_Key_Old_Value(ctx, key, value, false);
