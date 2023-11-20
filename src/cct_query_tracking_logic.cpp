@@ -24,23 +24,23 @@ int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string even
 
     std::vector<std::string> queries;
     nlohmann::json json_object = Get_JSON_Object(ctx, json_str);
-    if(json_object == NULL){
+    if(json_object == NULL) {
         return REDISMODULE_ERR;
     }
     Recursive_JSON_Iterate(json_object , "", queries);
-
-    for (auto & q : queries) {
+    std::set<std::string> permutations = Query_Permutations(queries);
+    for (auto & q : permutations) {
         std::string query_with_prefix = CCT_MODULE_QUERY_2_CLIENT + q;
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON check this query for tracking: " + query_with_prefix);
         RedisModuleCallReply *smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", query_with_prefix.c_str());
-        if (RedisModule_CallReplyType(smembers_reply) != REDISMODULE_REPLY_ARRAY ){
+        if (RedisModule_CallReplyType(smembers_reply) != REDISMODULE_REPLY_ARRAY ) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Get_Tracking_Clients_From_Changed_JSON failed while getting client names for query: " +  query_with_prefix);
             return REDISMODULE_ERR;
         } else {
             const size_t reply_length = RedisModule_CallReplyLength(smembers_reply);
             for (size_t i = 0; i < reply_length; i++) {
                 RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(smembers_reply, i);
-                if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING){
+                if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING) {
                     RedisModuleString *client = RedisModule_CreateStringFromCallReply(key_reply);
                     const char *client_str = RedisModule_StringPtrLen(client, NULL);
                     clients_to_update.push_back(std::string(client_str));

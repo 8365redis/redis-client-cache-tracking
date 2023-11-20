@@ -4,11 +4,24 @@
 void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::string client_name, const std::vector<std::string> &key_ids) {
     
     std::string query_str = RedisModule_StringPtrLen(query, NULL);
-    std::string query_term = Get_Query_Term(query_str);
-    std::string query_attribute = Get_Query_Attribute(query_str);
-    std::string query_tracking_key_str = CCT_MODULE_QUERY_2_CLIENT + query_term + CCT_MODULE_KEY_SEPERATOR + query_attribute;
+    //printf("Query : %s \n", query_str.c_str());
+    std::vector<std::string> query_split = Split_Query(query_str, ' ');
+    std::string query_term_attribute_normalized = "";
+    for(auto &q : query_split) {
+        //printf("Query item : %s \n", q.c_str());
+        std::string q_term = Get_Query_Term(q);
+        std::string q_attribute = Get_Query_Attribute(q);
+        query_term_attribute_normalized += q_term + CCT_MODULE_KEY_SEPERATOR + q_attribute + CCT_MODULE_QUERY_AND;
+    }
+    //printf("Query before Normalized : %s \n", query_term_attribute_normalized.c_str());
+    if(query_term_attribute_normalized.length() > CCT_MODULE_QUERY_AND.length()){ 
+        query_term_attribute_normalized.erase(query_term_attribute_normalized.length() - CCT_MODULE_QUERY_AND.length());
+    }
+    //printf("Query Normalized : %s \n", query_term_attribute_normalized.c_str());
+
 
     // Save the Query:{Clients}
+    std::string query_tracking_key_str = CCT_MODULE_QUERY_2_CLIENT + query_term_attribute_normalized;
     RedisModuleCallReply *sadd_reply_client_query_to_client = RedisModule_Call(ctx, "SADD", "cc", query_tracking_key_str.c_str()  , client_name.c_str());
     if (RedisModule_CallReplyType(sadd_reply_client_query_to_client) != REDISMODULE_REPLY_INTEGER ){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracking_Query failed while registering Query:{Clients} " +  query_tracking_key_str);
@@ -16,14 +29,13 @@ void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::stri
 
     // Save the Client:{Queries}
     std::string client_to_query_key_str = CCT_MODULE_CLIENT_2_QUERY + client_name;
-    std::string client_to_query_value_str = query_term + CCT_MODULE_KEY_SEPERATOR + query_attribute;
-    RedisModuleCallReply *sadd_reply_client_to_query = RedisModule_Call(ctx, "SADD", "cc", client_to_query_key_str.c_str()  , client_to_query_value_str.c_str());
+    RedisModuleCallReply *sadd_reply_client_to_query = RedisModule_Call(ctx, "SADD", "cc", client_to_query_key_str.c_str()  , query_term_attribute_normalized.c_str());
     if (RedisModule_CallReplyType(sadd_reply_client_to_query) != REDISMODULE_REPLY_INTEGER ){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracking_Query failed while registering Client:{Queries} " +  client_to_query_key_str);
     }
 
     // Save the Query:{Keys}
-    std::string query_client_key_name_str = CCT_MODULE_QUERY_2_KEY + query_term + CCT_MODULE_KEY_SEPERATOR + query_attribute ;
+    std::string query_client_key_name_str = CCT_MODULE_QUERY_2_KEY + query_term_attribute_normalized ;
     for (const auto& it : key_ids) {      
         RedisModuleCallReply *sadd_reply_key = RedisModule_Call(ctx, "SADD", "cc", query_client_key_name_str.c_str()  , it.c_str());
         if (RedisModule_CallReplyType(sadd_reply_key) != REDISMODULE_REPLY_INTEGER ){
@@ -32,17 +44,16 @@ void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::stri
     }
 
     // Save the Key:{Queries}
-    std::string query_name_as_value_str = query_term + CCT_MODULE_KEY_SEPERATOR + query_attribute ;
     for (const auto& it : key_ids) {
         std::string key_key_name_str = CCT_MODULE_KEY_2_QUERY + it;  
-        RedisModuleCallReply *sadd_reply_key = RedisModule_Call(ctx, "SADD", "cc", key_key_name_str.c_str()  , query_name_as_value_str.c_str());
+        RedisModuleCallReply *sadd_reply_key = RedisModule_Call(ctx, "SADD", "cc", key_key_name_str.c_str()  , query_term_attribute_normalized.c_str());
         if (RedisModule_CallReplyType(sadd_reply_key) != REDISMODULE_REPLY_INTEGER ){
-            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracking_Query failed while registering Key:{Queries} " +  query_name_as_value_str);
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracking_Query failed while registering Key:{Queries} " +  query_term_attribute_normalized);
         }
     }
 
     // Save the "Query:Client":1 Expire
-    std::string query_client_expire_key_name_str = CCT_MODULE_QUERY_CLIENT + query_term + CCT_MODULE_KEY_SEPERATOR + query_attribute + CCT_MODULE_KEY_SEPERATOR + client_name;
+    std::string query_client_expire_key_name_str = CCT_MODULE_QUERY_CLIENT + query_term_attribute_normalized + CCT_MODULE_KEY_SEPERATOR + client_name;
     RedisModuleString *query_client_expire_key_name = RedisModule_CreateString(ctx, query_client_expire_key_name_str.c_str() , query_client_expire_key_name_str.length());
     RedisModuleString *empty = RedisModule_CreateString(ctx, "1" , 1);
     RedisModuleKey *query_client_key = RedisModule_OpenKey(ctx, query_client_expire_key_name, REDISMODULE_WRITE);

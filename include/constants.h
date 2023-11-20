@@ -16,6 +16,7 @@ const std::string CCT_MODULE_KEY_SEPERATOR  = ":" ;
 const std::string CCT_MODULE_KEY_LEVEL = "." ;
 const std::string CCT_MODULE_KEY_LEVEL_WITH_ESCAPE = "\\." ;
 const std::string CCT_MODULE_QUERY_DELIMETER = "-CCT_DEL-";
+const std::string CCT_MODULE_QUERY_AND = "-CCT_AND-";
 const std::string CCT_MODULE_END_OF_SNAPSHOT = "-END_OF_SNAPSHOT-";
 const int CLIENT_OFFLINE = 0 ;
 
