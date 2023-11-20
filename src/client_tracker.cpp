@@ -107,7 +107,7 @@ void Client_TTL_Handler(RedisModuleCtx *ctx, std::unordered_map<std::string, uns
         std::vector<std::string> expire_client_list; 
         for(const auto &pair : client2ttl) {
             unsigned long long diff_in_ms = now_ms_value - pair.second;
-            if( diff_in_ms >= CCT_CLIENT_TTL ) {
+            if( diff_in_ms >= (unsigned long long)(cct_config.CCT_CLIENT_TTL_CHECK_INTERVAL_SECOND_CFG * MS_MULT * cct_config.CCT_CLIENT_TTL_HEARTBEAT_MISS_COUNT_CFG) ) {
                 LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Client_TTL_Handler , kill the client : " + pair.first );
                 expire_client_list.push_back(pair.first);
             }
@@ -126,7 +126,7 @@ void Set_Client_Query_TTL(RedisModuleCtx *ctx, std::string client, unsigned long
 
 unsigned long long Get_Client_Query_TTL(std::string client) {
     if(CCT_CLIENT_QUERY_TTL.count(client) == 0 ){
-        return CCT_QUERY_TTL;
+        return (cct_config.CCT_QUERY_TTL_SECOND_CFG * MS_MULT);
     }
     return CCT_CLIENT_QUERY_TTL[client];
 }

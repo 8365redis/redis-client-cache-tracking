@@ -1,5 +1,6 @@
 #include "redismodule.h"
 #include "logger.h"
+#include "config_handler.h"
 
 #include "cct_query_tracking_logic.h"
 #include "cct_command_register.h"
@@ -10,6 +11,8 @@
 #ifndef CCT_MODULE_VERSION
 #define CCT_MODULE_VERSION "unknown"
 #endif
+
+CCT_Config cct_config;
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +36,15 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     #ifdef NDEBUG
     LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "THIS IS A RELEASE BUILD." );
     #endif 
+
+    std::string config_file_path_str = "";
+    if (argc > 0) {
+        config_file_path_str = RedisModule_StringPtrLen(argv[0], NULL);
+    }
+    #ifdef _DEBUG
+    config_file_path_str = "non-existing-file";  // DEBUG version will always use hardcoded default DEBUG values
+    #endif
+    cct_config = Read_CCT_Config(ctx, config_file_path_str);
 
     //if ( Handle_Offline_Query_Expire(ctx) == REDISMODULE_ERR){
     //    return REDISMODULE_ERR;

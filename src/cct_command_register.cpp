@@ -125,7 +125,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
 
     // Update the client Query TTL
     if(client_query_ttl == 0 ) {
-        Set_Client_Query_TTL(ctx, client_name_str, CCT_QUERY_TTL);
+        Set_Client_Query_TTL(ctx, client_name_str, (cct_config.CCT_QUERY_TTL_SECOND_CFG * MS_MULT));
     } else {
         Set_Client_Query_TTL(ctx, client_name_str, client_query_ttl * MS_MULT); // Argument TTL is in second
     }
