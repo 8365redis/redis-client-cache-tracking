@@ -62,9 +62,13 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
             RedisModule_ReplyWithStringBuffer(ctx, it.at(0).c_str(), strlen(it.at(0).c_str()));
         }
         else {
-            RedisModule_ReplyWithArray(ctx , 2);
-            RedisModule_ReplyWithStringBuffer(ctx, it.at(0).c_str(), strlen(it.at(0).c_str()));
-            RedisModule_ReplyWithStringBuffer(ctx, it.at(1).c_str(), strlen(it.at(1).c_str()));
+            if (it.size() == 2) {
+                RedisModule_ReplyWithArray(ctx , 2);
+                RedisModule_ReplyWithStringBuffer(ctx, it.at(0).c_str(), strlen(it.at(0).c_str()));
+                RedisModule_ReplyWithStringBuffer(ctx, it.at(1).c_str(), strlen(it.at(1).c_str()));
+            }else {
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand inner response size is not expected size : " + std::to_string(it.size()) );
+            }
         }
     }
 
