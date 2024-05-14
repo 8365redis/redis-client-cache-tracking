@@ -100,7 +100,7 @@ def test_two_query_match_multi_doesnt():
     print(from_stream)
 
 def test_multi_match_after_update():
-    producer = connect_redis()
+    producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
     cct_prepare.create_index(producer)
 

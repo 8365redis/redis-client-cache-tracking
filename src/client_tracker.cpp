@@ -5,6 +5,8 @@
 std::unordered_map<std::string, bool> CCT_CLIENT_CONNECTION;
 std::unordered_map<std::string, unsigned long long> CCT_CLIENT_CONNECTION_TIMEOUT;
 std::unordered_map<std::string, unsigned long long> CCT_CLIENT_QUERY_TTL;
+std::unordered_map<std::string, std::set<std::string>> CCT_CLIENT_TRACK_GROUP_2_CLIENTS;
+std::unordered_map<std::string, std::string> CCT_CLIENT_2_CLIENT_TRACK_GROUP;
 
 void Handle_Client_Event(RedisModuleCtx *ctx, RedisModuleEvent eid,
                        uint64_t subevent, void *data) {
@@ -31,6 +33,29 @@ void Handle_Client_Event(RedisModuleCtx *ctx, RedisModuleEvent eid,
                 break;
         }
     }
+}
+
+void Add_To_Client_Tracking_Group(std::string client_tracking_group, std::string client){
+    if( CCT_CLIENT_TRACK_GROUP_2_CLIENTS.count(client_tracking_group) == 0 ) {
+        CCT_CLIENT_TRACK_GROUP_2_CLIENTS[client_tracking_group] = std::set<std::string>{client};
+    }else {
+        CCT_CLIENT_TRACK_GROUP_2_CLIENTS[client_tracking_group].insert(client);
+    }
+    CCT_CLIENT_2_CLIENT_TRACK_GROUP[client] = client_tracking_group;
+}
+
+const std::string Get_Client_Client_Tracking_Group(std::string client) {
+    if(CCT_CLIENT_2_CLIENT_TRACK_GROUP.count(client) == 0){
+        return "";
+    }
+    return CCT_CLIENT_2_CLIENT_TRACK_GROUP[client];
+}
+
+const std::set<std::string> Get_Client_Tracking_Group_Clients(std::string client_tracking_group) {
+    if(CCT_CLIENT_TRACK_GROUP_2_CLIENTS.count(client_tracking_group) == 0){
+        return std::set<std::string>{};
+    }
+    return CCT_CLIENT_TRACK_GROUP_2_CLIENTS[client_tracking_group];
 }
 
 void Connect_Client(std::string client) {

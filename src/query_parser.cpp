@@ -19,6 +19,25 @@ std::string Get_Query_Attribute(const std::string &s) {
     return Get_Str_Between(s, TAG_ATTRIBUTE_START, TAG_ATTRIBUTE_END);
 }
 
+std::string Get_Query_Normalized(const RedisModuleString *query) {
+    std::string query_str = RedisModule_StringPtrLen(query, NULL);
+    //printf("Query : %s \n", query_str.c_str());
+    std::vector<std::string> query_split = Split_Query(query_str, ' ');
+    std::string query_term_attribute_normalized = "";
+    for(auto &q : query_split) {
+        //printf("Query item : %s \n", q.c_str());
+        std::string q_term = Get_Query_Term(q);
+        std::string q_attribute = Get_Query_Attribute(q);
+        query_term_attribute_normalized += q_term + CCT_MODULE_KEY_SEPERATOR + q_attribute + CCT_MODULE_QUERY_AND;
+    }
+    //printf("Query before Normalized : %s \n", query_term_attribute_normalized.c_str());
+    if(query_term_attribute_normalized.length() > CCT_MODULE_QUERY_AND.length()){ 
+        query_term_attribute_normalized.erase(query_term_attribute_normalized.length() - CCT_MODULE_QUERY_AND.length());
+    }
+    //printf("Query Normalized : %s \n", query_term_attribute_normalized.c_str());
+    return query_term_attribute_normalized;
+}
+
 std::vector<std::string> Split_Query(const std::string &text, char sep) {
     std::vector<std::string> tokens;
     std::size_t start = 0, end = 0;
@@ -75,8 +94,8 @@ std::set<std::string> Query_Permutations(std::vector<std::string> &queries) {
             permutations.insert(permutation_query_str);
         }
     } while (std::next_permutation(queries.begin(), queries.end()));
-    for (auto q : permutations) {
+    /*for (auto q : permutations) {
         printf("Permutation query : %s\n" , q.c_str() );
-    }
+    }*/
     return permutations;
 }

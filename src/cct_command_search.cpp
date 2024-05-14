@@ -3,7 +3,7 @@
 
 int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     RedisModule_AutoMemory(ctx);
-    
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "FT_Search_RedisCommand is called");
     if (argc < 3) {
         return RedisModule_WrongArity(ctx);
     }
@@ -57,15 +57,19 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         }
     }
 
+    std::unordered_map<std::string, std::string> key_value_to_stream; 
+    std::string current_key_to_stream; 
     for (const auto& it : keys) {
         if ( it.size() == 1){
             RedisModule_ReplyWithStringBuffer(ctx, it.at(0).c_str(), strlen(it.at(0).c_str()));
+            current_key_to_stream = it.at(0);
         }
         else {
             if (it.size() == 2) {
                 RedisModule_ReplyWithArray(ctx , 2);
                 RedisModule_ReplyWithStringBuffer(ctx, it.at(0).c_str(), strlen(it.at(0).c_str()));
                 RedisModule_ReplyWithStringBuffer(ctx, it.at(1).c_str(), strlen(it.at(1).c_str()));
+                key_value_to_stream[current_key_to_stream] = it.at(1);
             }else {
                 LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand inner response size is not expected size : " + std::to_string(it.size()) );
             }
@@ -74,12 +78,18 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
 
     std::string client_name_str = Get_Client_Name(ctx);
     if ( client_name_str.empty()){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to get client name" );
         return REDISMODULE_ERR;
     }
-    
+    std::string client_tracking_group = Get_Client_Client_Tracking_Group(client_name_str);
+    if (client_tracking_group.empty()){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to get client tracking group" );
+        return REDISMODULE_ERR;
+    } 
+
     // Add tracked keys
     for (const auto& it : key_ids) {      
-        Add_Tracking_Key(ctx, it, client_name_str);          
+        Add_Tracking_Key(ctx, it, client_tracking_group);
     }
 
     // Save the Query for Tracking
@@ -88,7 +98,18 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         return REDISMODULE_ERR;
     }
 
-    Add_Tracking_Query(ctx, argv[2], client_name_str, key_ids);
+    Add_Tracking_Query(ctx, argv[2], client_tracking_group, key_ids);
 
+    // Write to other client tracking group members stream
+    std::set<std::string> members = Get_Client_Tracking_Group_Clients(client_tracking_group);
+    //members.erase(client_name_str); // delete self so dont send to itself
+    for (auto& client : members) {
+        for(auto& k_v : key_value_to_stream){
+            if( Add_Event_To_Stream(ctx, client, "query", k_v.first, k_v.second, Normalized_to_Original(Get_Query_Normalized(argv[2])), false) != REDISMODULE_OK) {
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to adding to the stream." );
+            }
+        }
+    }
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "FT_Search_RedisCommand is successfully finished");
     return REDISMODULE_OK;
 }

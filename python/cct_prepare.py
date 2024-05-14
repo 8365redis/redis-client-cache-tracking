@@ -11,6 +11,11 @@ TEST_APP_NAME_2 = "app2"
 TEST_APP_NAME_3 = "app3"
 TEST_APP_NAME_4 = "app4"
 
+TEST_GROUP_NAME_1 = "grp1"
+TEST_GROUP_NAME_2 = "grp2"
+TEST_GROUP_NAME_3 = "grp3"
+TEST_GROUP_NAME_4 = "grp4"
+
 DUPLICATE = "Duplicate"
 OK = "OK"
 
