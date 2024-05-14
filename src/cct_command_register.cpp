@@ -3,10 +3,16 @@
 void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string client_name_str) {
     RedisModule_AutoMemory(ctx);
 
-    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Send_Snapshot starts for client : " + client_name_str );
+    std::string client_tracking_group = Get_Client_Client_Tracking_Group(client_name_str);
+    if (client_tracking_group.empty()){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Send_Snapshot failed to get client tracking group" );
+        return ;
+    } 
+
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Send_Snapshot starts for client : " + client_name_str  + " with tracking group : " + client_tracking_group);
     // First get clients queries
     std::vector<std::string> client_queries;
-    std::string client_query_key_str = CCT_MODULE_CLIENT_2_QUERY + client_name_str;
+    std::string client_query_key_str = CCT_MODULE_CLIENT_2_QUERY + client_tracking_group;
     RedisModuleCallReply *c2q_smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", client_query_key_str.c_str());
     const size_t reply_length = RedisModule_CallReplyLength(c2q_smembers_reply);
     for (size_t i = 0; i < reply_length; i++) {
@@ -90,21 +96,13 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
 int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     RedisModule_AutoMemory(ctx);
     
-    if (argc < 2  || argc > 3) {
+    if (argc < 2  || argc > 4) {
         return RedisModule_WrongArity(ctx);
-    }
-
-    unsigned long long client_query_ttl = 0;
-    if (argc == 3) {
-        RedisModuleString *client_query_ttl_str = argv[2];
-        if(RedisModule_StringToULongLong(client_query_ttl_str, &client_query_ttl) == REDISMODULE_ERR ) {
-            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set client query TTL. Invalid TTL value." );
-            return RedisModule_ReplyWithError(ctx, strerror(errno));
-        }
     }
 
     // Get Client ID
     RedisModuleString *client_name = argv[1];
+    std::string client_name_str = RedisModule_StringPtrLen(client_name, NULL);
     unsigned long long client_id = RedisModule_GetClientId(ctx);
     
     // Set client name
@@ -113,8 +111,30 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         return RedisModule_ReplyWithError(ctx, strerror(errno));
     }
 
+    std::string client_tracking_group_str = "";
+    if (argc > 2) {
+        RedisModuleString *client_tracking_group = argv[2];
+        client_tracking_group_str = RedisModule_StringPtrLen(client_tracking_group, NULL);
+    }
+
+    if(client_tracking_group_str.empty()){
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand client tracking group name is not given using client name : " + client_name_str );
+        client_tracking_group_str = client_name_str;
+    }
+
+    Add_To_Client_Tracking_Group(client_tracking_group_str, client_name_str);
+
+    unsigned long long client_query_ttl = 0;
+    if (argc == 4) {
+        RedisModuleString *client_query_ttl_str = argv[3];
+        if(RedisModule_StringToULongLong(client_query_ttl_str, &client_query_ttl) == REDISMODULE_ERR ) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set client query TTL. Invalid TTL value." );
+            return RedisModule_ReplyWithError(ctx, strerror(errno));
+        }
+    }
+
+
     // Update client connection status
-    std::string client_name_str = RedisModule_StringPtrLen(client_name, NULL);
     Connect_Client(client_name_str);
 
     // Update the client TTL
@@ -125,9 +145,9 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
 
     // Update the client Query TTL
     if(client_query_ttl == 0 ) {
-        Set_Client_Query_TTL(ctx, client_name_str, CCT_QUERY_TTL);
+        Set_Client_Query_TTL(ctx, client_tracking_group_str, (cct_config.CCT_QUERY_TTL_SECOND_CFG * MS_MULT));
     } else {
-        Set_Client_Query_TTL(ctx, client_name_str, client_query_ttl * MS_MULT); // Argument TTL is in second
+        Set_Client_Query_TTL(ctx, client_tracking_group_str, client_query_ttl * MS_MULT); // Argument TTL is in second
     }
     
     // Check if the stream exists and delete if it is

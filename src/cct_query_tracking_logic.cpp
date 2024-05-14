@@ -31,7 +31,7 @@ int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string even
 
     for (auto & q : queries) {
         std::string query_with_prefix = CCT_MODULE_QUERY_2_CLIENT + q;
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON check this query for tracking: " + query_with_prefix);
+        //LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON check this query for tracking: " + query_with_prefix);
         RedisModuleCallReply *smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", query_with_prefix.c_str());
         if (RedisModule_CallReplyType(smembers_reply) != REDISMODULE_REPLY_ARRAY ){
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Get_Tracking_Clients_From_Changed_JSON failed while getting client names for query: " +  query_with_prefix);
@@ -54,6 +54,7 @@ int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string even
     return REDISMODULE_OK;
 }
 
+// In this context client = client_tracking_group
 int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString* r_key, std::vector<std::string> already_tracking_clients) {
     RedisModule_AutoMemory(ctx);
 
@@ -77,9 +78,13 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
         if(client_queries_str.length() > CCT_MODULE_QUERY_DELIMETER.length()){
             client_queries_str.erase(client_queries_str.length() - CCT_MODULE_QUERY_DELIMETER.length());
         }
-        if (Add_Event_To_Stream(ctx, client_name, event, key_str, json_str, client_queries_str) != REDISMODULE_OK) {
-            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to adding to the stream." );
-            return RedisModule_ReplyWithError(ctx, strerror(errno));
+
+        std::set<std::string> c_s = Get_Client_Tracking_Group_Clients(client_name);
+        for (auto &c : c_s) {
+            if (Add_Event_To_Stream(ctx, c, event, key_str, json_str, client_queries_str, true) != REDISMODULE_OK) {
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to adding to the stream." );
+                return RedisModule_ReplyWithError(ctx, strerror(errno));
+            }
         }
     }
     // Now delete the tracked keys which are not matching to our queries anymore

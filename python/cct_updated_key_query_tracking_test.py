@@ -371,3 +371,80 @@ def test_updated_key_match_same_queries_one_client_mixed_data():
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     print(from_stream)
 
+
+def test_updated_key_match_single_query_after_restart():
+    producer = connect_redis_with_start()
+    cct_prepare.flush_db(producer) # clean all db first
+    cct_prepare.create_index(producer)
+
+    # ADD INITIAL DATA
+    key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1)
+    passport_value_1 = "aaa"
+    d = cct_prepare.generate_single_object(1000 , 2000, passport_value_1)
+    producer.json().set(key_1, Path.root_path(), d)
+    
+
+    # FIRST CLIENT
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+
+    query_value = "1000"
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + query_value + "}") # match first
+
+    # UPDATE DATA
+    d = cct_prepare.generate_single_object(1000 , 2001, "bbb")
+    producer.json().set(key_1, Path.root_path(), d)
+
+    # Check key is in streams 
+    from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
+    print(from_stream)
+
+    #Kill Redis
+    kill_redis()
+
+    #Start Redis
+    start_redis()
+
+    # FIRST CLIENT
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+
+    # UPDATE DATA AGAIN
+    d = cct_prepare.generate_single_object(1000 , 2002, "ccc")
+    producer.json().set(key_1, Path.root_path(), d)
+
+    # Check key is in streams 
+    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    print(from_stream)
+
+
+def test_updated_key_matches_query_with_hyphen():
+    producer = connect_redis_with_start()
+    cct_prepare.flush_db(producer) # clean all db first
+    cct_prepare.create_index(producer)
+
+    # ADD INITIAL DATA
+    key = cct_prepare.TEST_INDEX_PREFIX + str(1)
+    passport_value = "aaa"
+    d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
+    producer.json().set(key, Path.root_path(), d)
+
+    # FIRST CLIENT
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    query_value = "b\-bb"
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+
+    # UPDATE DATA
+    d = cct_prepare.generate_single_object(1000 , 2001, query_value)
+    producer.json().set(key, Path.root_path(), d)
+
+    # Check key is in stream 
+    from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
+    assert key in str(from_stream[0][1])
+
+    # Check new key is tracked    
+    tracked_key = producer.sismember(CCT_K2C + key, cct_prepare.TEST_APP_NAME_1)
+    assert tracked_key 
+
+    

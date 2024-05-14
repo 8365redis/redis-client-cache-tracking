@@ -833,3 +833,49 @@ def test_empty_queries_in_snapshot():
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert key_1 in str(from_stream[0][1][0][1])
     assert query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
+
+def test_2_client_2_query_with_matching_queries():
+    producer = connect_redis_with_start()
+    cct_prepare.flush_db(producer) # clean all db first
+    cct_prepare.create_index(producer)
+
+    # ADD INITIAL DATA
+    passport_value_1 = "pass1"
+    id_value_1 = "id1"
+    passport_value_2 = "pass2"
+    id_value_2 = "id2"
+    d = cct_prepare.generate_single_object(id_value_1 , 2000, passport_value_1)
+    key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
+    producer.json().set(key_1, Path.root_path(), d)
+    query_normalized = "@User\\.PASSPORT:{aaa}"
+
+    # FIRST CLIENT
+    client1 = connect_redis()
+    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value_1 + "}") # RIC == PASSPORT
+    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(id_value_1) + "}") # MLP_ID == ID
+
+    # UPDATE KEYS
+    d = cct_prepare.generate_single_object(id_value_1 , 2000, passport_value_2)
+    producer.json().set(key_1, Path.root_path(), d)
+    d = cct_prepare.generate_single_object(id_value_2 , 2000, passport_value_1)
+    producer.json().set(key_1, Path.root_path(), d)
+
+    # Check stream is empty
+    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    assert CCT_EOS in from_stream[0][1][0][1]
+
+    # DISCONNECT CLIENT1
+    client1.connection_pool.disconnect()
+
+    # CONNECT CLIENT 2
+    client2 = connect_redis()
+    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    client2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value_1 + "}")
+    client2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(id_value_2) + "}")
+    time.sleep(0.2)
+
+    # Check stream content
+    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_2:0} )
+    print(from_stream)
+    assert cct_prepare.TEST_APP_NAME_2 in from_stream[0][0]
