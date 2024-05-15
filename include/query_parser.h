@@ -20,7 +20,6 @@ std::string Get_Query_Term(const std::string &s);
 std::string Get_Query_Attribute(const std::string &s);
 std::string Normalized_to_Original(const std::string normalized_query);
 std::vector<std::string> Split_Query(const std::string &text, char sep);
-std::set<std::string> Query_Permutations(std::vector<std::string> &queries);
 std::string Get_Query_Normalized(const RedisModuleString *query);
 
 #endif /* QUERY_PARSER_H */

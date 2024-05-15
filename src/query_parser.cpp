@@ -79,22 +79,3 @@ std::string Normalized_to_Original(const std::string normalized_query) {
     return original_query;
 }
 
-std::set<std::string> Query_Permutations(std::vector<std::string> &queries) {
-    std::set<std::string> permutations;
-    do {
-        for (size_t size = 1 ; size <= queries.size() ; size++){
-            std::string permutation_query_str = "";
-            for (size_t index = 0; index < size; index++) {
-                permutation_query_str += queries[index] + CCT_MODULE_QUERY_AND;
-            }
-            if(permutation_query_str.length() > CCT_MODULE_QUERY_AND.length()){ 
-                permutation_query_str.erase(permutation_query_str.length() - CCT_MODULE_QUERY_AND.length());
-            }
-            permutations.insert(permutation_query_str);
-        }
-    } while (std::next_permutation(queries.begin(), queries.end()));
-    /*for (auto q : permutations) {
-        printf("Permutation query : %s\n" , q.c_str() );
-    }*/
-    return permutations;
-}

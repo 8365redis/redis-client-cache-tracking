@@ -105,7 +105,7 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     //members.erase(client_name_str); // delete self so dont send to itself
     for (auto& client : members) {
         for(auto& k_v : key_value_to_stream){
-            if( Add_Event_To_Stream(ctx, client, "query", k_v.first, k_v.second, Normalized_to_Original(Get_Query_Normalized(argv[2])), false) != REDISMODULE_OK) {
+            if( Add_Event_To_Stream(ctx, client, "query", k_v.first, k_v.second, Normalized_to_Original(Get_Query_Normalized(argv[2]))) != REDISMODULE_OK) {
                 LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to adding to the stream." );
             }
         }

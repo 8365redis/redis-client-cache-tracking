@@ -81,7 +81,7 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
 
         std::set<std::string> c_s = Get_Client_Tracking_Group_Clients(client_name);
         for (auto &c : c_s) {
-            if (Add_Event_To_Stream(ctx, c, event, key_str, json_str, client_queries_str, true) != REDISMODULE_OK) {
+            if (Add_Event_To_Stream(ctx, c, event, key_str, json_str, client_queries_str) != REDISMODULE_OK) {
                 LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to adding to the stream." );
                 return RedisModule_ReplyWithError(ctx, strerror(errno));
             }
