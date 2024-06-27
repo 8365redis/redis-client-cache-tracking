@@ -1,0 +1,33 @@
+services:
+  redis:
+    hostname: redis
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./bin:/usr/src/app/bin
+      - ./src:/usr/src/app/src
+      - ./include:/usr/src/app/include
+    ports:
+      - "6379:6379"
+      - "1234:1234"
+    environment:
+      - REDIS_MODULE_PATH=/usr/local/lib/redis/modules/cct.so
+    networks:
+      - redis-network
+
+  redis-commander:
+    container_name: redis-commander
+    hostname: redis-commander
+    image: ghcr.io/joeferner/redis-commander:latest
+    restart: always
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    networks:
+      - redis-network
+
+networks:
+  redis-network:
+    driver: bridge
