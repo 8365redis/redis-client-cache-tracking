@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y  \
     gdbserver \
     gdb  \
     make  \
+    g++ \
     cmake && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /usr/src/app/bin/cct.so /usr/local/lib/redis/modules/cct.so
