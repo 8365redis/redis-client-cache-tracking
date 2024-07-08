@@ -936,3 +936,84 @@ def test_overwritten_value_not_matching_query_should_be_removed_form_tracked_sin
     from_stream = r1.xread(streams={client_1: 0})
     assert second_key != from_stream[0][1][0][1]['key']
     assert first_key == from_stream[0][1][0][1]['key']
+
+
+def test_add_events_should_be_reflected_in_snapshot_for_query():
+    r1 = connect_redis()
+    cct_prepare.flush_db(r1)
+    cct_prepare.create_index(r1)
+    client_1 = "test_add_delete_events_should_be_reflected_in_snapshot_for_query_1"
+
+    # Add data
+    passport_value = "aaa"
+    d1 = cct_prepare.generate_single_object(1001, 2001, passport_value)
+    d2 = cct_prepare.generate_single_object(1002, 2002, passport_value)
+    key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1)
+    key_2 = cct_prepare.TEST_INDEX_PREFIX + str(2)
+    r1.json().set(key_1, Path.root_path(), d1)
+    r1.json().set(key_2, Path.root_path(), d2)
+
+    r1 = connect_redis()
+    r1.execute_command("CCT.REGISTER " + client_1)
+
+    r1.execute_command(
+        "CCT.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + passport_value + "}")
+
+    key_6 = cct_prepare.TEST_INDEX_PREFIX + str(6)
+    d6 = cct_prepare.generate_single_object(1006, 2006, passport_value)
+    r1.json().set(key_6, Path.root_path(), d6)
+
+    # CHECK THE STREAM
+    from_stream = r1.xread(streams={client_1: 0})
+    assert from_stream[0][1][1][1]['key'] == key_6
+
+    r1.connection_pool.disconnect()
+    r1 = connect_redis()
+
+    r1.execute_command("CCT.REGISTER " + client_1)
+
+    from_stream = r1.xread(streams={client_1: 0})
+    assert from_stream[0][1][0][1]['key'] == key_6
+    assert from_stream[0][1][1][1]['key'] == key_2
+    assert from_stream[0][1][2][1]['key'] == key_1
+
+
+def test_delete_events_should_be_reflected_in_snapshot_for_query():
+    r1 = connect_redis()
+    cct_prepare.flush_db(r1)
+    cct_prepare.create_index(r1)
+    client_1 = "test_delete_events_should_be_reflected_in_snapshot_for_query_1"
+
+    # Add data
+    passport_value = "aaa"
+    d1 = cct_prepare.generate_single_object(1001, 2001, passport_value)
+    d2 = cct_prepare.generate_single_object(1002, 2002, passport_value)
+    d3 = cct_prepare.generate_single_object(1003, 2003, passport_value)
+    key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1)
+    key_2 = cct_prepare.TEST_INDEX_PREFIX + str(2)
+    key_3 = cct_prepare.TEST_INDEX_PREFIX + str(3)
+    r1.json().set(key_1, Path.root_path(), d1)
+    r1.json().set(key_2, Path.root_path(), d2)
+    r1.json().set(key_3, Path.root_path(), d3)
+
+    r1 = connect_redis()
+    r1.execute_command("CCT.REGISTER " + client_1)
+    r1.execute_command(
+        "CCT.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + passport_value + "}")
+
+    r1.delete(key_3)
+
+    # CHECK THE STREAM
+    from_stream = r1.xread(streams={client_1: 0})
+
+    assert from_stream[0][1][1][1]['operation'] == 'DELETE'
+    assert from_stream[0][1][1][1]['key'] == key_3
+
+    r1.connection_pool.disconnect()
+    r1 = connect_redis()
+
+    r1.execute_command("CCT.REGISTER " + client_1)
+
+    from_stream = r1.xread(streams={client_1: 0})
+    assert from_stream[0][1][0][1]['operation'] == 'DELETE'
+    assert from_stream[0][1][0][1]['key'] == key_3
