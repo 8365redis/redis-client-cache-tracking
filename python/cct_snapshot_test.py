@@ -847,7 +847,7 @@ def test_empty_queries_in_snapshot():
 
 
 def test_overwritten_value_not_matching_query_should_be_removed_form_tracked_multiple_clients():
-    r1 = connect_redis()
+    r1 = connect_redis_with_start()
     cct_prepare.flush_db(r1)  # clean all db first
     cct_prepare.create_index(r1)
     client_1 = "client1"
@@ -895,7 +895,7 @@ def test_overwritten_value_not_matching_query_should_be_removed_form_tracked_mul
 
 
 def test_overwritten_value_not_matching_query_should_be_removed_form_tracked_single_client():
-    r1 = connect_redis()
+    r1 = connect_redis_with_start()
     cct_prepare.flush_db(r1)  # clean all db first
     cct_prepare.create_index(r1)
     client_1 = "client1"
@@ -939,7 +939,7 @@ def test_overwritten_value_not_matching_query_should_be_removed_form_tracked_sin
 
 
 def test_add_events_should_be_reflected_in_snapshot_for_query():
-    r1 = connect_redis()
+    r1 = connect_redis_with_start()
     cct_prepare.flush_db(r1)
     cct_prepare.create_index(r1)
     client_1 = "test_add_delete_events_should_be_reflected_in_snapshot_for_query_1"
@@ -979,7 +979,7 @@ def test_add_events_should_be_reflected_in_snapshot_for_query():
 
 
 def test_delete_events_should_be_reflected_in_snapshot_for_query():
-    r1 = connect_redis()
+    r1 = connect_redis_with_start()
     cct_prepare.flush_db(r1)
     cct_prepare.create_index(r1)
     client_1 = "test_delete_events_should_be_reflected_in_snapshot_for_query_1"
