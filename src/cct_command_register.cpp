@@ -1,5 +1,6 @@
 #include "cct_command_register.h"
 
+
 void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string client_name_str) {
     RedisModule_AutoMemory(ctx);
 
@@ -104,7 +105,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     if (argc < 2  || argc > 4) {
         return RedisModule_WrongArity(ctx);
     }
-
+    
     // Get Client ID
     RedisModuleString *client_name = argv[1];
     std::string client_name_str = RedisModule_StringPtrLen(client_name, NULL);

@@ -1,4 +1,5 @@
 #include "cct_command_search.h"
+#include "cct_index_tracker.h"
 
 
 int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
@@ -6,6 +7,11 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "FT_Search_RedisCommand is called");
     if (argc < 3) {
         return RedisModule_WrongArity(ctx);
+    }
+
+    if(argv[1] == NULL || argv[2] == NULL){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to execute query because query is NULL.");
+        return REDISMODULE_ERR;
     }
 
     if (Is_Client_Connected(Get_Client_Name(ctx)) == false) {
@@ -85,30 +91,47 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     if (client_tracking_group.empty()){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to get client tracking group" );
         return REDISMODULE_ERR;
-    } 
-
-    // Add tracked keys
-    for (const auto& it : key_ids) {      
-        Add_Tracking_Key(ctx, it, client_tracking_group);
     }
 
-    // Save the Query for Tracking
-    if(argv[2] == NULL){
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to add query because query is NULL.");
-        return REDISMODULE_ERR;
+    bool is_wildcard_search = false;
+    RedisModuleString *index = argv[1];
+    RedisModuleString *query = argv[2];
+    std::string query_str = RedisModule_StringPtrLen(query, NULL);
+    if(query_str == WILDCARD_SEARCH) {
+        is_wildcard_search = true;
     }
-
-    Add_Tracking_Query(ctx, argv[2], client_tracking_group, key_ids);
+    std::string index_str = RedisModule_StringPtrLen(index, NULL);
+    std::string wildcard_query_str = index_str + CCT_MODULE_KEY_SEPERATOR + WILDCARD_SEARCH;
+    
+    if(is_wildcard_search) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "FT_Search_RedisCommand search is wildcard.");
+        Track_Index(index_str, client_tracking_group);
+        Add_Tracking_Wildcard_Query(ctx, wildcard_query_str, client_tracking_group);
+    } else {
+        // Add tracked keys
+        for (const auto& it : key_ids) {      
+            Add_Tracking_Key(ctx, it, client_tracking_group);
+        }
+        // Save the Query for Tracking
+        Add_Tracking_Query(ctx, argv[2], client_tracking_group, key_ids);
+    }
 
     // Write to other client tracking group members stream
     std::set<std::string> members = Get_Client_Tracking_Group_Clients(client_tracking_group);
-    //members.erase(client_name_str); // delete self so dont send to itself
+    members.erase(client_name_str); // delete self so dont send to itself
     for (auto& client : members) {
         for(auto& k_v : key_value_to_stream){
-            if( Add_Event_To_Stream(ctx, client, "query", k_v.first, k_v.second, Normalized_to_Original(Get_Query_Normalized(argv[2])), false) != REDISMODULE_OK) {
+            std::string queries;
+            if(is_wildcard_search){
+                queries = wildcard_query_str;
+            } else {
+                queries = Normalized_to_Original(Get_Query_Normalized(argv[2]));
+            }
+            if( Add_Event_To_Stream(ctx, client, "query", k_v.first, k_v.second, queries, false) != REDISMODULE_OK) {
                 LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to adding to the stream." );
             }
         }
+        
     }
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "FT_Search_RedisCommand is successfully finished");
     return REDISMODULE_OK;

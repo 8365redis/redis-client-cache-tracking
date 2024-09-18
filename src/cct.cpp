@@ -9,6 +9,8 @@
 #include "constants.h"
 #include "config_handler.h"
 #include "version.h"
+#include "cct_index_tracker.h"
+
 
 #ifndef CCT_MODULE_VERSION
 #define CCT_MODULE_VERSION "unknown"
@@ -95,6 +97,12 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         return RedisModule_ReplyWithError(ctx, strerror(errno));
     }    
     */
+
+    if (RedisModule_SubscribeToServerEvent(ctx, RedisModuleEvent_Loading,
+                                             OnRedisReady) != REDISMODULE_OK) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "RedisModule_OnLoad failed to SubscribeToServerEvent for RedisModuleEvent_Loading." );
+        return RedisModule_ReplyWithError(ctx, strerror(errno));
+    }  
 
     Start_Client_Handler(rdts_staticCtx);
   

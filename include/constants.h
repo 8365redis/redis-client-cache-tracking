@@ -20,6 +20,8 @@ const std::string CCT_MODULE_QUERY_AND = "-CCT_AND-";
 const std::string CCT_MODULE_END_OF_SNAPSHOT = "-END_OF_SNAPSHOT-";
 const int CLIENT_OFFLINE = 0 ;
 
+const std::string WILDCARD_SEARCH  = "*";
+
 const std::unordered_map<std::string, std::string> CCT_KEY_EVENTS = 
                                                                     {
                                                                         {"json.set", "UPDATE"},

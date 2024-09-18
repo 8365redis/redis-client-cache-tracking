@@ -1,5 +1,34 @@
 #include "cct_query_tracking_data.h"
 
+void Add_Tracking_Wildcard_Query(RedisModuleCtx *ctx, std::string query_str, std::string client_tracking_group) {
+    // Save the Query:{Clients}
+    std::string query_tracking_key_str = CCT_MODULE_QUERY_2_CLIENT + query_str;
+    RedisModuleCallReply *sadd_reply_client_query_to_client = RedisModule_Call(ctx, "SADD", "cc", query_tracking_key_str.c_str()  , client_tracking_group.c_str());
+    if (RedisModule_CallReplyType(sadd_reply_client_query_to_client) != REDISMODULE_REPLY_INTEGER ){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracking_Wildcard_Query failed while registering Query:{Clients} " +  query_tracking_key_str);
+    }
+
+    // Save the Client:{Queries}
+    std::string client_to_query_key_str = CCT_MODULE_CLIENT_2_QUERY + client_tracking_group;
+    RedisModuleCallReply *sadd_reply_client_to_query = RedisModule_Call(ctx, "SADD", "cc", client_to_query_key_str.c_str()  , query_str.c_str());
+    if (RedisModule_CallReplyType(sadd_reply_client_to_query) != REDISMODULE_REPLY_INTEGER ){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracking_Wildcard_Query failed while registering Client:{Queries} " +  client_to_query_key_str);
+    }
+
+    // Save the "Query:Client":1 Expire
+    std::string query_client_expire_key_name_str = CCT_MODULE_QUERY_CLIENT + query_str + CCT_MODULE_KEY_SEPERATOR + client_tracking_group;
+    RedisModuleString *query_client_expire_key_name = RedisModule_CreateString(ctx, query_client_expire_key_name_str.c_str() , query_client_expire_key_name_str.length());
+    RedisModuleString *empty = RedisModule_CreateString(ctx, "1" , 1);
+    RedisModuleKey *query_client_key = RedisModule_OpenKey(ctx, query_client_expire_key_name, REDISMODULE_WRITE);
+    if(RedisModule_StringSet(query_client_key, empty) != REDISMODULE_OK){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracking_Wildcard_Query failed while registering Query:Client:1 " +  query_client_expire_key_name_str);
+    }
+
+    if(RedisModule_SetExpire(query_client_key, Get_Client_Query_TTL(client_tracking_group)) != REDISMODULE_OK){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracking_Wildcard_Query failed set expire for Query:Client:1  " +  query_client_expire_key_name_str);
+    }
+}
+
 
 void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::string client_tracking_group, const std::vector<std::string> &key_ids) {
 

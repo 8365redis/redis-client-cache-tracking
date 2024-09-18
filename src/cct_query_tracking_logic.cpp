@@ -1,5 +1,5 @@
 #include "cct_query_tracking_logic.h"
-
+#include "cct_index_tracker.h"
 
 int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string event, RedisModuleString* r_key,
                                              std::vector<std::string> &clients_to_update, std::string &json_str, 
@@ -114,11 +114,11 @@ int Notify_Callback(RedisModuleCtx *ctx, int type, const char *event, RedisModul
     std::string event_str = event;
     std::string key_str = RedisModule_StringPtrLen(key, NULL);
 
-    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str);
+    //LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str);
 
     if( CCT_KEY_EVENTS.count(event) == 0 )
     {
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " not interested event." );
+        //LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " not interested event." );
         return REDISMODULE_OK;        
     }
 
@@ -134,7 +134,41 @@ int Notify_Callback(RedisModuleCtx *ctx, int type, const char *event, RedisModul
             return REDISMODULE_OK;
         }
     }
-   
+
+    // Check wildcard tracking
+    std::string tracked_index = Get_Tracked_Index_From_Key(key_str);
+    if( tracked_index != "" ) {
+        std::string json_str = "";
+        if(strcmp(event, "del") != 0) {
+            RedisModuleString *value = Get_JSON_Value(ctx, "" , key);
+            if (value == NULL){
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Notify_Callback for wildcard tracking failed while getting JSON value for key: " +  key_str);
+                return REDISMODULE_ERR;
+            }
+
+            json_str = RedisModule_StringPtrLen(value, NULL);
+            if ( json_str.empty() ){
+                LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback for wildcard tracking :  JSON value is empty for key: " + key_str);
+                return REDISMODULE_OK;
+            }
+        }
+
+        std::string wildcard_query_str = tracked_index + CCT_MODULE_KEY_SEPERATOR + WILDCARD_SEARCH;
+
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " is tracked by wildcard query for index " + tracked_index );
+        // iterate over all tracking clients and send them notification
+        for(const auto& client_group : Get_Tracked_Index_Clients(tracked_index)){
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event , wildcard handling sending update to client_group: " + client_group );
+            std::set<std::string> members = Get_Client_Tracking_Group_Clients(client_group);
+            for (auto &client : members) {
+                if (Add_Event_To_Stream(ctx, client, event, key_str, json_str, wildcard_query_str, false) != REDISMODULE_OK) {
+                    LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to adding to the stream." );
+                    return RedisModule_ReplyWithError(ctx, strerror(errno));
+                }
+            }
+        }
+    }
+    
     // Add prefix
     std::string key_with_prefix = CCT_MODULE_KEY_2_CLIENT + key_str;
 
