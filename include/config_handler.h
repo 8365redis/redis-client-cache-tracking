@@ -5,7 +5,7 @@
 #include "redismodule.h"
 #include "constants.h"
 
-const std::string DEFAULT_CONFIG_FILE_NAME  = "cct-config.ini";
+const std::string DEFAULT_CONFIG_FILE_NAME  = "cct2-config.ini";
 const std::string DEFAULT_CONFIG_SECTION  = "cct";
 
 const std::string CCT_QUERY_TTL_SECOND_CONFIG  = "CCT_QUERY_TTL_SECOND";

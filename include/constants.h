@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 
-const std::string CCT_MODULE_PREFIX  = "CCT:" ;
+const std::string CCT_MODULE_PREFIX  = "CCT2:" ;
 const std::string CCT_MODULE_KEY_2_CLIENT = CCT_MODULE_PREFIX + "K2C:" ;
 const std::string CCT_MODULE_KEY_2_QUERY = CCT_MODULE_PREFIX + "K2Q:" ;
 const std::string CCT_MODULE_QUERY_2_CLIENT = CCT_MODULE_PREFIX + "Q2C:" ;

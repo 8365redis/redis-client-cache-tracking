@@ -23,7 +23,7 @@ TEST_INDEX_PREFIX = "users:"
 BIG_STRING = "VGbVufdqNQNXIeWo2lgmqCmnaipxK9OExlIDuKlSCB3CnWaiMQ"
 
 def send_hb(client):
-    client.execute_command("CCT.HEARTBEAT")
+    client.execute_command("CCT2.HEARTBEAT")
     hb_sender = threading.Timer(120,send_hb, client)
     hb_sender.start()
 
@@ -66,7 +66,7 @@ def test_snapshot_after_lots_of_queries():
 
     # REGISTER CLIENT
     client1 = connect_redis()
-    resp = client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(resp)
 
     # SEND HB WITH INTERVAL
@@ -78,7 +78,7 @@ def test_snapshot_after_lots_of_queries():
     for _ in range(SEARCH_COUNT):
         index = "key"+ str(random.randint(0,INDEXED_KEY_COUNT))
         query_value = ''.join(random.choices(string.digits, k=INDEXED_KEY_LENGTH))
-        client1.execute_command("CCT.FT.SEARCH "+ TEST_INDEX_NAME +" @User\\." + index + ":{" + query_value + "}")
+        client1.execute_command("CCT2.FT.SEARCH "+ TEST_INDEX_NAME +" @User\\." + index + ":{" + query_value + "}")
     end_time = time.time()
     initial_query_latency = (end_time - start_time) * 1000 # time.time returns ns
     print("initial_query_latency:" + str(initial_query_latency) )
@@ -89,7 +89,7 @@ def test_snapshot_after_lots_of_queries():
     # RE-REGISTER
     client1 = connect_redis()
     start_time = time.time()
-    resp = client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     end_time = time.time()
     register_total_time = (end_time - start_time) * 1000 # time.time returns ns
     print("register_total_time:" + str(register_total_time) )

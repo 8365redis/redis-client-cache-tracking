@@ -14,7 +14,7 @@ def kill_redis():
 
 def start_redis():
     current_working_directory = os.getcwd()
-    module = current_working_directory + "/bin/cct.so"
+    module = current_working_directory + "/bin/cct2.so"
     bashCommand = "redis-stack-server --loadmodule " + module
     subprocess.Popen(bashCommand.split(), 
                     stdin=subprocess.DEVNULL,

@@ -28,8 +28,8 @@ def test_1_client_1_query_with_disconnect():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # Check stream is empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -40,7 +40,7 @@ def test_1_client_1_query_with_disconnect():
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     time.sleep(0.2)
 
@@ -67,12 +67,12 @@ def test_1_client_2_query_with_disconnect():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     #FIRST CLIENT SECOND QUERY
     query_value = 1000
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
 
     # Check stream is empty
     time.sleep(0.5)
@@ -84,7 +84,7 @@ def test_1_client_2_query_with_disconnect():
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # Check stream content
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -108,8 +108,8 @@ def test_1_client_1_query_without_disconnect():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # Check stream is empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -117,7 +117,7 @@ def test_1_client_1_query_without_disconnect():
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -141,12 +141,12 @@ def test_1_client_2_query_without_disconnect():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     #FIRST CLIENT SECOND QUERY
     query_value = 1000
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
 
     # Check stream is empty
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -154,7 +154,7 @@ def test_1_client_2_query_without_disconnect():
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # Check stream content
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -179,8 +179,8 @@ def test_1_client_1_query_1_key_multiple_update_still_match_query():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     d = cct_prepare.generate_single_object(1001 , 2001 ,passport_value)
     producer.json().set(key_1, Path.root_path(), d)
@@ -198,7 +198,7 @@ def test_1_client_1_query_1_key_multiple_update_still_match_query():
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # Check stream content
     time.sleep(0.1)
@@ -224,8 +224,8 @@ def test_1_client_1_query_1_key_multiple_update_doesnt_match_query():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     d = cct_prepare.generate_single_object(1001 , 2001 ,passport_value)
     producer.json().set(key_1, Path.root_path(), d)
@@ -247,7 +247,7 @@ def test_1_client_1_query_1_key_multiple_update_doesnt_match_query():
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -274,8 +274,8 @@ def test_1_client_1_query_multiple_key_multiple_update_still_match_query():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     d = cct_prepare.generate_single_object(1005 , 2000 ,passport_value)
     producer.json().set(key_1, Path.root_path(), d)
@@ -295,7 +295,7 @@ def test_1_client_1_query_multiple_key_multiple_update_still_match_query():
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # Check stream content
     time.sleep(0.1)
@@ -325,8 +325,8 @@ def test_1_client_1_query_multiple_key_multiple_update_doesnt_match_query():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     d = cct_prepare.generate_single_object(1001 , 2001 ,passport_value)
     producer.json().set(key_1, Path.root_path(), d)
@@ -353,7 +353,7 @@ def test_1_client_1_query_multiple_key_multiple_update_doesnt_match_query():
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -384,10 +384,10 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query(
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
     query_value = id_value
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1002 , 2003 ,passport_value) # match one 
@@ -413,7 +413,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query(
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -446,10 +446,10 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
     query_value = id_value
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1002 , 2003 ,passport_value) # match one 
@@ -471,7 +471,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     assert 7 == len(from_stream[0][1])
 
     # RE-REGISTER
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -504,13 +504,13 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
     
     time.sleep(CCT_QUERY_HALF_TTL)
 
     query_value = id_value
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1002 , 2003 ,passport_value) # match one 
@@ -535,7 +535,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -564,13 +564,13 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
     
     time.sleep(CCT_QUERY_HALF_TTL)
 
     query_value = id_value
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1002 , 2003 ,passport_value) # match one 
@@ -596,7 +596,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # Check stream content
     time.sleep(0.1)
@@ -626,13 +626,13 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
     
     time.sleep(CCT_QUERY_HALF_TTL)
 
     query_value = id_value
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1002 , 2003 ,passport_value) # match one 
@@ -661,7 +661,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -685,8 +685,8 @@ def test_1_client_1_query_key_expire():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # Check stream is empty
     time.sleep(0.2)
@@ -701,7 +701,7 @@ def test_1_client_1_query_key_expire():
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -725,8 +725,8 @@ def test_1_client_1_query_first_key_later_query_expire():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # Check stream is empty
     time.sleep(0.1)
@@ -744,7 +744,7 @@ def test_1_client_1_query_first_key_later_query_expire():
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -768,8 +768,8 @@ def test_1_client_1_query_first_query_later_key_expire():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # Check stream is empty
     time.sleep(1)
@@ -784,7 +784,7 @@ def test_1_client_1_query_first_query_later_key_expire():
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -805,14 +805,14 @@ def test_empty_queries_in_snapshot():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
     query_value = "non_existing_1"
     query_normalized_non_matching_1 = "User\\.PASSPORT:non_existing_1"
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # This will not match
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # This will not match
     query_value = "non_existing_2"
     query_normalized_non_matching_2 = "User\\.PASSPORT:non_existing_2"
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # This will not match
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # This will not match
 
     # Check stream is empty
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -823,7 +823,7 @@ def test_empty_queries_in_snapshot():
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     time.sleep(0.2)
 
@@ -851,9 +851,9 @@ def test_2_client_2_query_with_matching_queries():
 
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value_1 + "}") # RIC == PASSPORT
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(id_value_1) + "}") # MLP_ID == ID
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value_1 + "}") # RIC == PASSPORT
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(id_value_1) + "}") # MLP_ID == ID
 
     # UPDATE KEYS
     d = cct_prepare.generate_single_object(id_value_1 , 2000, passport_value_2)
@@ -870,9 +870,9 @@ def test_2_client_2_query_with_matching_queries():
 
     # CONNECT CLIENT 2
     client2 = connect_redis()
-    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
-    client2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value_1 + "}")
-    client2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(id_value_2) + "}")
+    client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    client2.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value_1 + "}")
+    client2.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(id_value_2) + "}")
     time.sleep(0.2)
 
     # Check stream content

@@ -35,7 +35,7 @@ BIG_STRING = "VGbVufdqNQNXIeWo2lgmqCmnaipxK9OExlIDuKlSCB3CnWaiMQ"
 
 def send_hb(clients):
     for c in clients:
-        c.execute_command("CCT.HEARTBEAT")
+        c.execute_command("CCT2.HEARTBEAT")
     hb_sender = threading.Timer(120,send_hb, [clients])
     hb_sender.start()
 
@@ -44,7 +44,7 @@ def send_cct_search(clients):
     for c in clients:
         index = "key"+ str(random.randint(0,INDEXED_KEY_COUNT))
         query_value = ''.join(random.choices(string.digits, k=INDEXED_KEY_LENGTH))
-        res = c.execute_command("CCT.FT.SEARCH "+ TEST_INDEX_NAME +" @User\\." + index + ":{" + query_value + "}")
+        res = c.execute_command("CCT2.FT.SEARCH "+ TEST_INDEX_NAME +" @User\\." + index + ":{" + query_value + "}")
     search_sender = threading.Timer(SEARCH_INTERVAL, send_cct_search, [clients])
     search_sender.start()
 
@@ -110,7 +110,7 @@ def test_search_with_module_while_no_set():
     client_no = 0
     for c in clients:
         client_name = client_prefix + str(client_no)
-        c.execute_command("CCT.REGISTER " + client_name )
+        c.execute_command("CCT2.REGISTER " + client_name )
         client_no = client_no + 1
 
     # SEND HB WITH INTERVAL
@@ -132,7 +132,7 @@ def test_search_with_module_while_no_set():
     # CCT_SEARCH
     start_time = time.time()
     query_value = "non_existing_key"
-    clients[0].execute_command("CCT.FT.SEARCH "+ TEST_INDEX_NAME +" @User\\.key0:{" + query_value + "}")
+    clients[0].execute_command("CCT2.FT.SEARCH "+ TEST_INDEX_NAME +" @User\\.key0:{" + query_value + "}")
     end_time = time.time()
     cct_search_latency = (end_time - start_time) * 1000 # time.time returns ns
     print("cct_search_latency:" + str(cct_search_latency) )
@@ -228,7 +228,7 @@ def test_search_with_module_with_set():
     client_no = 0
     for c in clients:
         client_name = client_prefix + str(client_no)
-        c.execute_command("CCT.REGISTER " + client_name )
+        c.execute_command("CCT2.REGISTER " + client_name )
         client_no = client_no + 1
 
     # SEND HB WITH INTERVAL
@@ -255,7 +255,7 @@ def test_search_with_module_with_set():
     # CCT_SEARCH
     start_time = time.time()
     query_value = "non_existing_key"
-    clients[0].execute_command("CCT.FT.SEARCH "+ TEST_INDEX_NAME +" @User\\.key0:{" + query_value + "}")
+    clients[0].execute_command("CCT2.FT.SEARCH "+ TEST_INDEX_NAME +" @User\\.key0:{" + query_value + "}")
     end_time = time.time()
     cct_search_latency = (end_time - start_time) * 1000 # time.time returns ns
     print("cct_search_latency:" + str(cct_search_latency) )

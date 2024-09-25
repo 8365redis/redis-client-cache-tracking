@@ -24,20 +24,20 @@ def test_basic_tracking_data():
     assert r.json().get(cct_prepare.TEST_INDEX_PREFIX + str(1))
 
     # REGISTER
-    resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_GROUP_NAME_1 )
+    resp = r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_GROUP_NAME_1 )
     assert cct_prepare.OK in str(resp)
     print(resp)
 
-    resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2 + " " + cct_prepare.TEST_GROUP_NAME_1 )
+    resp = r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2 + " " + cct_prepare.TEST_GROUP_NAME_1 )
     assert cct_prepare.OK in str(resp)
     print(resp)
 
     query_key_attr = "User\\.PASSPORT" + ":" + d["User"]["PASSPORT"]
     print("query_key_attr:" + query_key_attr)
     # SEARCH
-    resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + d["User"]["PASSPORT"] + "}")
+    resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + d["User"]["PASSPORT"] + "}")
     assert resp
-    print("CCT.FT.SEARCH Resp:" + str(resp))
+    print("CCT2.FT.SEARCH Resp:" + str(resp))
 
     #CHECK TRACKED QUERY
     tracked_query = r.sismember(CCT_Q2C + query_key_attr, cct_prepare.TEST_GROUP_NAME_1)
@@ -61,13 +61,13 @@ def test_basic_tracking_update_to_stream():
 
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_GROUP_NAME_1 )
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_GROUP_NAME_1 )
 
     client2 = connect_redis()
-    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2 + " " + cct_prepare.TEST_GROUP_NAME_1 )
+    client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2 + " " + cct_prepare.TEST_GROUP_NAME_1 )
 
     query_value = "bbb"
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1000 , 2000, query_value)
@@ -101,10 +101,10 @@ def test_basic_tracking_update_to_stream_multi_client():
     for i in range(20):
         client = connect_redis()
         clients.append(client)
-        client.execute_command("CCT.REGISTER app" + str(i) + " " + cct_prepare.TEST_GROUP_NAME_1 )
+        client.execute_command("CCT2.REGISTER app" + str(i) + " " + cct_prepare.TEST_GROUP_NAME_1 )
 
     query_value = "bbb"
-    client.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1000 , 2000, query_value)
@@ -135,13 +135,13 @@ def test_not_tracking_not_effected():
 
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_GROUP_NAME_1 )
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_GROUP_NAME_1 )
 
     client2 = connect_redis()
-    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2 + " " + cct_prepare.TEST_GROUP_NAME_2 )
+    client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2 + " " + cct_prepare.TEST_GROUP_NAME_2 )
 
     query_value = "bbb"
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1000 , 2000, query_value)

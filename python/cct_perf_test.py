@@ -19,11 +19,11 @@ def test_cct_search_latency_single_tag_search():
     cct_prepare.add_list(r, data)
 
     # REGISTER
-    r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # SEARCH WITH CCT
     start_time = time.time()
-    cct_resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "}")
+    cct_resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "}")
     end_time = time.time() 
     cct_latency = (end_time - start_time) * 1000 # time.time returns ns
     # SEARCH WITH DEFAULT
@@ -47,11 +47,11 @@ def test_cct_search_latency_multi_tag_search():
     cct_prepare.add_list(r, data)
 
     # REGISTER
-    r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     
     # SEARCH WITH CCT
     start_time = time.time()
-    cct_resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "\\|" + data[1]["User"]["ID"]  + "}")
+    cct_resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "\\|" + data[1]["User"]["ID"]  + "}")
     end_time = time.time() 
     cct_latency = (end_time - start_time) * 1000 # time.time returns ns
     # SEARCH WITH DEFAULT
@@ -76,13 +76,13 @@ def test_cct_search_latency_single_tag_search_multiple():
     cct_prepare.add_list(r, data)
 
     # REGISTER
-    r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     
     latencies = []
     for _ in range(100):
         # SEARCH WITH CCT
         start_time = time.time()
-        cct_resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "\\|" + data[1]["User"]["ID"]  + "}")
+        cct_resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "\\|" + data[1]["User"]["ID"]  + "}")
         end_time = time.time() 
         cct_latency = (end_time - start_time) * 1000 # time.time returns ns
         # SEARCH WITH DEFAULT
@@ -105,7 +105,7 @@ def test_cct_search_latency_multiple_tag_search_multiple():
     cct_prepare.add_list(r, data)
 
     # REGISTER
-    r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     
     latencies = []
     for _ in range(100):
@@ -116,7 +116,7 @@ def test_cct_search_latency_multiple_tag_search_multiple():
         cct_latency = (end_time - start_time) * 1000 # time.time returns ns
         # SEARCH WITH DEFAULT
         start_time = time.time()
-        cct_resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "\\|" + data[1]["User"]["ID"]  + "}")
+        cct_resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "\\|" + data[1]["User"]["ID"]  + "}")
         end_time = time.time()
         default_latency = (end_time - start_time) * 1000 # time.time returns ns
         assert cct_resp == default_resp

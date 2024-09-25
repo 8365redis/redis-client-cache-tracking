@@ -20,12 +20,12 @@ def test_unique_id_tracking_test_1():
 
     
     # REGISTER
-    resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     print(resp)
     
     # SEARCH
     print(data[0])
-    resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "}")
+    resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "}")
     print(resp)
 
     # CHANGE first item
@@ -45,17 +45,17 @@ def test_multi_register_handle_1():
     cct_prepare.flush_db(r) # clean all db first
 
     # REGISTER
-    resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(resp)
 
     # REGISTER 2. Attempt 
-    resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # REGISTER 3. Attempt
-    resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # REGISTER with different app name from same client
-    resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    resp = r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2)
 
 
 def test_ft_search_result_comparison_1():
@@ -66,17 +66,17 @@ def test_ft_search_result_comparison_1():
     cct_prepare.add_list(r, data)
 
     # REGISTER
-    resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(resp)
     
     # SEARCH WITH CCT
-    cct_resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "}")
+    cct_resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "}")
     # SEARCH WITH DEFAULT
     default_resp = r.execute_command("FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "}")
     assert cct_resp == default_resp
 
     # SEARCH WITH CCT MULTI
-    cct_resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "\\|" + data[1]["User"]["ID"]  + "}")
+    cct_resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "\\|" + data[1]["User"]["ID"]  + "}")
     print(cct_resp)
     # SEARCH WITH DEFAULT MULTI
     default_resp = r.execute_command("FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + data[0]["User"]["ID"] + "\\|" + data[1]["User"]["ID"]  + "}")

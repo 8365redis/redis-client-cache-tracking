@@ -25,9 +25,9 @@ def test_heartbeat_normal():
     cct_prepare.create_index(producer)
 
     client1 = connect_redis()
-    res = client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    res = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(res)
-    res = client1.execute_command("CCT.HEARTBEAT")
+    res = client1.execute_command("CCT2.HEARTBEAT")
     assert cct_prepare.OK in str(res)
 
 @pytest.mark.skipif(SKIP_HB_TEST ,
@@ -38,11 +38,11 @@ def test_heartbeat_client_expire():
     cct_prepare.create_index(producer)
 
     client1 = connect_redis()
-    res = client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    res = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(res)
     time.sleep(CCT_HEART_BEAT_INTERVAL * 3 + 1)
     try:
-        res = client1.execute_command("CCT.HEARTBEAT")
+        res = client1.execute_command("CCT2.HEARTBEAT")
     except redis.exceptions.ResponseError as e:
         assert CCT_NOT_REGISTERED_COMMAND_ERROR in str(e)
 
@@ -63,10 +63,10 @@ def test_expired_client_stream_empty():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     time.sleep(CCT_HEART_BEAT_INTERVAL * 4)
     try:
-        client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+        client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
     except redis.exceptions.ResponseError as e:
         assert CCT_NOT_REGISTERED_COMMAND_ERROR in str(e)
 
@@ -98,8 +98,8 @@ def test_expired_client_stream():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1001 , 2001 ,passport_value)
@@ -124,7 +124,7 @@ def test_expired_client_stream():
     assert not from_stream
 
     try:
-        client1.execute_command("CCT.HEARTBEAT")
+        client1.execute_command("CCT2.HEARTBEAT")
     except redis.exceptions.ResponseError as e:
         assert CCT_NOT_REGISTERED_COMMAND_ERROR in str(e)
 

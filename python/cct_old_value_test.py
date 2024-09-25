@@ -29,11 +29,11 @@ def test_backup_key_holding_value():
 
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # QUERY
     query_value = passport_value
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # CHECK OLD VAL
     old_val_key = CCT_OLD + key
@@ -99,11 +99,11 @@ def test_backup_key_holding_value_multi_key():
 
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # QUERY
     query_value = passport_value
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # CHECK OLD VAL
     old_val_key = CCT_OLD + key
@@ -151,11 +151,11 @@ def test_old_key_holding_value_after_delete():
     
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # QUERY
     query_value = passport_value
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # CHECK OLD VAL
     old_val_key = CCT_OLD + key
@@ -202,11 +202,11 @@ def test_old_key_holding_value_after_key_no_longer_interested():
     
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # QUERY
     query_value = passport_value
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # CHECK OLD VAL
     old_val_key = CCT_OLD + key
@@ -264,16 +264,16 @@ def test_old_key_holding_value_after_delete_2_clients():
     
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # SECOND CLIENT
     client2 = connect_redis()
-    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2)
 
     # QUERY
     query_value = passport_value
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
-    client2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client2.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # CHECK OLD VAL
     old_val_key = CCT_OLD + key
@@ -320,16 +320,16 @@ def test_old_key_holding_value_after_key_no_longer_interested_only_one_client():
     
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # SECOND CLIENT
     client2 = connect_redis()
-    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2)
 
     # QUERY
     query_value = passport_value
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
-    client2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(1000) + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client2.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(1000) + "}")
 
     # CHECK OLD VAL
     old_val_key = CCT_OLD + key

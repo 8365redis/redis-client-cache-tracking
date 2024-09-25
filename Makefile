@@ -22,7 +22,7 @@ SOURCES = $(shell echo src/*.cpp)
 HEADERS = $(shell echo include/*.h)
 OBJECTS = $(SOURCES:.cpp=.o)
 
-TARGET  = $(BINDIR)/cct.so
+TARGET  = $(BINDIR)/cct2.so
 
 all: $(TARGET)
 
@@ -37,7 +37,7 @@ clean:
 	rm -f dump.rdb
 
 load: 
-	redis-stack-server --loadmodule $(CURRENTDIR)/$(BINDIR)/cct.so
+	redis-stack-server --loadmodule $(CURRENTDIR)/$(BINDIR)/cct2.so 
 
 test:
 	pytest -rP

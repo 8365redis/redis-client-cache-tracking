@@ -30,7 +30,7 @@ make DEBUG=1
 To load the development module you can use these commands: 
 
 ```
-redis-server --loadmodule ./bin/cct.so
+redis-server --loadmodule ./bin/cct2.so
 ```
 
 or 
@@ -89,6 +89,6 @@ Server values such as TTL and other query tracking metadata string and values ar
  
 ## Commands
 
-* CCT.REGISTER 
-* CCT.FT.SEARCH
-* CCT.HEARTBEAT
+* CCT2.REGISTER 
+* CCT2.FT.SEARCH
+* CCT2.HEARTBEAT

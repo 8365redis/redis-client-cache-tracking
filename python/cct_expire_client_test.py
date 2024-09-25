@@ -25,9 +25,9 @@ def test_client_expire_normal():
     cct_prepare.create_index(producer)
 
     client1 = connect_redis()
-    res = client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    res = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(res)
-    res = client1.execute_command("CCT.HEARTBEAT")
+    res = client1.execute_command("CCT2.HEARTBEAT")
     assert cct_prepare.OK in str(res)
     time.sleep(CCT_HEART_BEAT_INTERVAL * 3 + 1)
     
@@ -43,7 +43,7 @@ def test_client_expire_with_no_heartbeat():
     cct_prepare.create_index(producer)
 
     client1 = connect_redis()
-    res = client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    res = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(res)
     time.sleep(CCT_HEART_BEAT_INTERVAL * 3 + 1)
 
@@ -67,10 +67,10 @@ def test_client_expire_after_some_heartbeat():
 
 
     client1 = connect_redis()
-    res = client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    res = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(res)
     query_value = passport_value
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
     
     time.sleep(CCT_HEART_BEAT_INTERVAL * 2)
 
@@ -83,7 +83,7 @@ def test_client_expire_after_some_heartbeat():
     print(from_stream)
     assert 2 == len(from_stream[0][1])
     
-    res = client1.execute_command("CCT.HEARTBEAT")
+    res = client1.execute_command("CCT2.HEARTBEAT")
     assert cct_prepare.OK in str(res)
 
     time.sleep(CCT_HEART_BEAT_INTERVAL * 2)
@@ -97,7 +97,7 @@ def test_client_expire_after_some_heartbeat():
     print(from_stream)
     assert 4 == len(from_stream[0][1])
 
-    res = client1.execute_command("CCT.HEARTBEAT")
+    res = client1.execute_command("CCT2.HEARTBEAT")
     assert cct_prepare.OK in str(res)
 
     time.sleep(CCT_HEART_BEAT_INTERVAL * 2)
@@ -110,7 +110,7 @@ def test_client_expire_after_some_heartbeat():
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert 4 == len(from_stream[0][1])
 
-    res = client1.execute_command("CCT.HEARTBEAT")
+    res = client1.execute_command("CCT2.HEARTBEAT")
     assert cct_prepare.OK in str(res)    
 
     time.sleep(CCT_HEART_BEAT_INTERVAL * 3 + 1)

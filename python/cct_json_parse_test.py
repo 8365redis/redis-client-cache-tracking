@@ -32,9 +32,9 @@ def test_json_with_special_chars_value():
 
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     query_value = "bbb"
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(id , addr_id, query_value)
@@ -63,9 +63,9 @@ def test_json_with_special_chars_search_query():
 
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     query_value = "\\^"
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(id , addr_id, query_value)
@@ -95,9 +95,9 @@ def test_json_with_special_chars_multi_search_query():
 
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     query_value = "\\^\\@\\#\\$\\%\\&\\*\\(\\(\\)\\_\\+"
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(id , addr_id, query_value)
@@ -127,8 +127,8 @@ def test_json_with_special_chars_in_snapshot():
     # FIRST CLIENT
     query_value = "SOMETHING"
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -139,7 +139,7 @@ def test_json_with_special_chars_in_snapshot():
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     time.sleep(0.2)
 
@@ -166,8 +166,8 @@ def test_json_with_special_chars_in_snapshot_with_hit():
     # FIRST CLIENT
     query_value = "FEIV3"
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @Key1\\.RIC:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @Key1\\.RIC:{" + query_value + "}")
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -178,7 +178,7 @@ def test_json_with_special_chars_in_snapshot_with_hit():
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     time.sleep(0.2)
 
@@ -188,7 +188,7 @@ def test_json_with_special_chars_in_snapshot_with_hit():
 
     #QUERY AGAIN
     key_val = "FEIV3\\^2"
-    res = client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @Key1\\.RIC:{" + key_val + "}")
+    res = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @Key1\\.RIC:{" + key_val + "}")
     print(res)
 
     get_redis_snapshot()

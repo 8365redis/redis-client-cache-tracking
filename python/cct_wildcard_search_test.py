@@ -27,11 +27,11 @@ def test_basic_wildcard_query_add_new_data():
         key = cct_prepare.TEST_INDEX_PREFIX + str(i)
         r.json().set(key, Path.root_path(), d)
 
-    r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
+    r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
     assert "2000" in str(resp)
 
-    key_exists = r.exists('CCT:QC:usersJsonIdx:*:app1')
+    key_exists = r.exists('CCT2:QC:usersJsonIdx:*:app1')
     assert key_exists == 1
 
     from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -57,11 +57,11 @@ def test_basic_wildcard_query_update_data():
         key = cct_prepare.TEST_INDEX_PREFIX + str(i)
         r.json().set(key, Path.root_path(), d)
 
-    r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
+    r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
     assert "2000" in str(resp)
 
-    key_exists = r.exists('CCT:QC:usersJsonIdx:*:app1')
+    key_exists = r.exists('CCT2:QC:usersJsonIdx:*:app1')
     assert key_exists == 1
 
     from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -87,11 +87,11 @@ def test_basic_wildcard_query_delete_data():
         key = cct_prepare.TEST_INDEX_PREFIX + str(i)
         r.json().set(key, Path.root_path(), d)
 
-    r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
+    r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
     assert "2000" in str(resp)
 
-    key_exists = r.exists('CCT:QC:usersJsonIdx:*:app1')
+    key_exists = r.exists('CCT2:QC:usersJsonIdx:*:app1')
     assert key_exists == 1
 
     from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -118,18 +118,18 @@ def test_wildcard_query_client_group_tracking():
 
     # CLIENTS
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_GROUP_NAME_1 )
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_GROUP_NAME_1 )
 
     client2 = connect_redis()
-    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2 + " " + cct_prepare.TEST_GROUP_NAME_1 )
+    client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2 + " " + cct_prepare.TEST_GROUP_NAME_1 )
 
     client3 = connect_redis()
-    client3.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_3 + " " + cct_prepare.TEST_GROUP_NAME_1 )
+    client3.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_3 + " " + cct_prepare.TEST_GROUP_NAME_1 )
 
-    resp = client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
+    resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
     assert "2000" in str(resp)
 
-    key_exists = r.exists('CCT:QC:usersJsonIdx:*:grp1')
+    key_exists = r.exists('CCT2:QC:usersJsonIdx:*:grp1')
     assert key_exists == 1
 
     from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -206,11 +206,11 @@ def test_wildcard_query_in_snapshot():
         r.json().set(key, Path.root_path(), d)
 
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    resp = client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
     assert "2000" in str(resp)
 
-    key_exists = client1.exists('CCT:QC:usersJsonIdx:*:app1')
+    key_exists = client1.exists('CCT2:QC:usersJsonIdx:*:app1')
     assert key_exists == 1
 
     # Check stream is empty
@@ -222,7 +222,7 @@ def test_wildcard_query_in_snapshot():
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     time.sleep(0.2)
 
@@ -243,17 +243,17 @@ def test_wildcard_query_in_snapshot_in_tracking_group():
 
     # CLIENTS
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_GROUP_NAME_1 )
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_GROUP_NAME_1 )
     client2 = connect_redis()
-    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2 + " " + cct_prepare.TEST_GROUP_NAME_1 )
+    client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2 + " " + cct_prepare.TEST_GROUP_NAME_1 )
     client3 = connect_redis()
-    client3.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_3 + " " + cct_prepare.TEST_GROUP_NAME_1 )
+    client3.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_3 + " " + cct_prepare.TEST_GROUP_NAME_1 )
 
 
-    resp = client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
+    resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
     assert "2000" in str(resp)
 
-    key_exists = client1.exists('CCT:QC:usersJsonIdx:*:grp1')
+    key_exists = client1.exists('CCT2:QC:usersJsonIdx:*:grp1')
     assert key_exists == 1
 
     # Check stream is empty
@@ -277,9 +277,9 @@ def test_wildcard_query_in_snapshot_in_tracking_group():
 
     # RE-REGISTER
     client2 = connect_redis()
-    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2 + " " + cct_prepare.TEST_GROUP_NAME_1)
+    client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2 + " " + cct_prepare.TEST_GROUP_NAME_1)
     client3 = connect_redis()
-    client3.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_3 + " " + cct_prepare.TEST_GROUP_NAME_1)
+    client3.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_3 + " " + cct_prepare.TEST_GROUP_NAME_1)
 
     time.sleep(0.2)
 
@@ -368,11 +368,11 @@ def test_basic_wildcard_query_add_new_data_with_multi_index():
         key = TEST_INDEX_PREFIX_2 + str(i)
         r.json().set(key, Path.root_path(), d)
 
-    r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    resp = r.execute_command("CCT.FT.SEARCH "+ TEST_INDEX_NAME_1 + " *")
+    r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = r.execute_command("CCT2.FT.SEARCH "+ TEST_INDEX_NAME_1 + " *")
     assert '''[3, 'index_1_prefix:0', ['$', '{"a":"0","b":"1000","c":"2000","d":"3000"}'], 'index_1_prefix:1', ['$', '{"a":"1","b":"1001","c":"2001","d":"3001"}'], 'index_1_prefix:2', ['$', '{"a":"2","b":"1002","c":"2002","d":"3002"}']]''' == str(resp)
 
-    key_exists = r.exists('CCT:QC:' + TEST_INDEX_NAME_1 + ':*:app1')
+    key_exists = r.exists('CCT2:QC:' + TEST_INDEX_NAME_1 + ':*:app1')
     assert key_exists == 1
 
     from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )

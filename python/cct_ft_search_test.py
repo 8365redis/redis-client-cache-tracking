@@ -29,8 +29,8 @@ def test_more_than_10_result():
     # FIRST CLIENT DEFAULT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") 
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") 
 
     # GET ALL KEYS
     keys = producer.smembers(CCT_Q2K + first_query_normalized)
@@ -42,7 +42,7 @@ def test_more_than_10_result():
     # FIRST CLIENT 20
     query_value = 1000
     limit = 20
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}" + " LIMIT 0 " + str(limit))
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}" + " LIMIT 0 " + str(limit))
 
     # GET ALL KEYS
     keys = producer.smembers(CCT_Q2K + second_query_normalized)

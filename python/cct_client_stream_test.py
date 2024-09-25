@@ -33,8 +33,8 @@ def test_client_get_update_while_connected():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # match first two item
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # match first two item
 
     # UPDATE DATA (K1)
     d = cct_prepare.generate_single_object(1000 , 2000, "ddd")
@@ -69,8 +69,8 @@ def test_client_get_update_while_disconnected():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # match first two item
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # match first two item
     first_query_normalized = "@User\\.PASSPORT:{aaa}"
 
     # DISCONNECT
@@ -92,7 +92,7 @@ def test_client_get_update_while_disconnected():
     assert not from_stream
     
     # REGISTER
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # Check stream 
     from_stream = producer.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )

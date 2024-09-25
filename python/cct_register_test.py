@@ -27,13 +27,13 @@ def test_1_client_normal_register():
 
     # FIRST CLIENT
     client1 = connect_redis()
-    resp = client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(resp)
     print(resp)
 
     client1.connection_pool.disconnect()
 
     client1 = connect_redis()
-    resp = client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(resp)
     print(resp)

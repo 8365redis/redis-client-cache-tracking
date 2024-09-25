@@ -35,8 +35,8 @@ def test_query_expired():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # match first two item
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # match first two item
 
     # PASS TIME
     time.sleep(CCT_QUERY_HALF_TTL)
@@ -44,8 +44,8 @@ def test_query_expired():
     # SECOND CLIENT
     query_value = 1001
     client2 = connect_redis()
-    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
-    client2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}") # match last two item
+    client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    client2.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}") # match last two item
 
     # CHECK TRACKED KEYS
     result = producer.sismember(CCT_K2C +  key_1 ,  cct_prepare.TEST_APP_NAME_1)
@@ -199,8 +199,8 @@ def test_1_client_1_query_1_key_expired():
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     query_normalized = "User\\.PASSPORT:aaa"
     # CHECK CCT_META_DATA 
@@ -225,14 +225,14 @@ def test_1_client_2_query_1_key_expired():
     # FIRST CLIENT FiRST QUERY
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     time.sleep(CCT_QUERY_HALF_TTL)
 
     #FIRST CLIENT SECOND QUERY
     query_value = 1000
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
 
     first_query_normalized = "User\\.PASSPORT:aaa"
     second_query_normalized = "User\\.ID:1000"
@@ -275,14 +275,14 @@ def test_1_client_2_query_2_key_expired():
     # FIRST CLIENT FiRST QUERY
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     time.sleep(CCT_QUERY_HALF_TTL)
 
     #FIRST CLIENT SECOND QUERY
     query_value = 1001
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
 
     first_query_normalized = "User\\.PASSPORT:aaa"
     second_query_normalized = "User\\.ID:1001"
@@ -323,13 +323,13 @@ def test_2_client_1_query_1_key_expired_same_time():
     # FIRST CLIENT FiRST QUERY
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
 
     #SECOND CLIENT SAME QUERY
     client2 = connect_redis()
-    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
-    client2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
+    client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    client2.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
 
     # CHECK CCT_META_DATA
     check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [True]*6 )
@@ -360,16 +360,16 @@ def test_2_client_1_query_1_key_expired_sequentially():
     # FIRST CLIENT FiRST QUERY
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
 
     # WAIT
     time.sleep(CCT_QUERY_HALF_TTL)
 
     # SECOND CLIENT SAME QUERY
     client2 = connect_redis()
-    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
-    client2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
+    client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    client2.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
 
     # CHECK CCT_META_DATA
     check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [True]*6 )
@@ -409,14 +409,14 @@ def test_2_client_2_query_1_key_expired_same_time():
     # FIRST CLIENT FiRST QUERY
     query_value = passport_value
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
 
     #SECOND CLIENT SECOND QUERY
     query_value = 1000
     client2 = connect_redis()
-    client2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
-    client2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.ID:{" + str(query_value) + "}")
+    client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    client2.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " @User\\.ID:{" + str(query_value) + "}")
 
     # CHECK CCT_META_DATA
     check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [True]*6)

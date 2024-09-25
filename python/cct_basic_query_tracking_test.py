@@ -24,16 +24,16 @@ def test_basic_query_tracking_test_1():
     assert r.json().get(cct_prepare.TEST_INDEX_PREFIX + str(1))
 
     # REGISTER
-    resp = r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(resp)
     print(resp)
 
     query_key_attr = "User\\.PASSPORT" + ":" + d["User"]["PASSPORT"]
     print("query_key_attr:" + query_key_attr)
     # SEARCH
-    resp = r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + d["User"]["PASSPORT"] + "}")
+    resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + d["User"]["PASSPORT"] + "}")
     assert resp
-    print("CCT.FT.SEARCH Resp:" + str(resp))
+    print("CCT2.FT.SEARCH Resp:" + str(resp))
 
     #CHECK TRACKED QUERY
     tracked_query = r.sismember(CCT_Q2C + query_key_attr, cct_prepare.TEST_APP_NAME_1)
@@ -70,13 +70,13 @@ def test_basic_query_tracking_test_2():
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
     first_key = cct_prepare.TEST_INDEX_PREFIX + str(1)
     r.json().set(first_key, Path.root_path(), d)
-    r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
+    r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
 
     ####### SECOND CLIENT
     r2 = connect_redis()
-    r2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
-    r2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
+    r2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    r2.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
     
     ####### THIRD CLIENT
     r3 = connect_redis()
@@ -112,13 +112,13 @@ def test_basic_query_tracking_test_3():
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
     first_key = cct_prepare.TEST_INDEX_PREFIX + str(1)
     r.json().set(first_key, Path.root_path(), d)
-    r.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    r.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
+    r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
 
     ####### SECOND CLIENT
     r2 = connect_redis()
-    r2.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_2)
-    r2.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
+    r2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    r2.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
     
     ####### THIRD CLIENT
     r3 = connect_redis()

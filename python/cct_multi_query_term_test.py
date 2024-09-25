@@ -26,13 +26,13 @@ def test_all_query_match():
 
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{aaa}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{aaa}")
 
-    client1.execute_command('CCT.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{aaa} @User\\.ID:{1000}')
+    client1.execute_command('CCT2.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{aaa} @User\\.ID:{1000}')
 
-    client1.execute_command('CCT.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{aaa} @User\\.ID:{1000} @User\\.Address\\.ID:{2000}')
+    client1.execute_command('CCT2.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{aaa} @User\\.ID:{1000} @User\\.Address\\.ID:{2000}')
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1000 , 2000, "aaa")
@@ -55,13 +55,13 @@ def test_one_query_match_multi_doesnt():
 
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{aaa}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{aaa}")
 
-    client1.execute_command('CCT.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{aaa} @User\\.ID:{1000}')
+    client1.execute_command('CCT2.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{aaa} @User\\.ID:{1000}')
 
-    client1.execute_command('CCT.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{aaa} @User\\.ID:{1000} @User\\.Address\\.ID:{2000}')
+    client1.execute_command('CCT2.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{aaa} @User\\.ID:{1000} @User\\.Address\\.ID:{2000}')
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1002 , 2002, "aaa")
@@ -83,13 +83,13 @@ def test_two_query_match_multi_doesnt():
 
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{aaa}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{aaa}")
 
-    client1.execute_command('CCT.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{aaa} @User\\.ID:{1000}')
+    client1.execute_command('CCT2.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{aaa} @User\\.ID:{1000}')
 
-    client1.execute_command('CCT.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{aaa} @User\\.ID:{1000} @User\\.Address\\.ID:{2000}')
+    client1.execute_command('CCT2.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{aaa} @User\\.ID:{1000} @User\\.Address\\.ID:{2000}')
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1000 , 2002, "aaa")
@@ -111,13 +111,13 @@ def test_multi_match_after_update():
 
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
-    client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{ccc}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{ccc}")
 
-    client1.execute_command('CCT.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{ccc} @User\\.ID:{1001}')
+    client1.execute_command('CCT2.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{ccc} @User\\.ID:{1001}')
 
-    client1.execute_command('CCT.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{aaa} @User\\.ID:{1000} @User\\.Address\\.ID:{2000}')
+    client1.execute_command('CCT2.FT.SEARCH' , cct_prepare.TEST_INDEX_NAME , '@User\\.PASSPORT:{aaa} @User\\.ID:{1000} @User\\.Address\\.ID:{2000}')
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1000 , 2000, "aaa")
@@ -157,9 +157,9 @@ def test_long_and_query():
 
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
-    res = client1.execute_command("CCT.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.key1:{key1} ")
+    res = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.key1:{key1} ")
     print(res)
 
     # UPDATE DATA
