@@ -9,7 +9,7 @@ RUN yum check-update || true && \
                    yum-utils \
                    gcc-c++ \
                    gdbserver \
-                   g++ \
+                   g++
 
 RUN crb enable
 
