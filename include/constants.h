@@ -16,18 +16,22 @@ const std::string CCT_MODULE_KEY_SEPERATOR  = ":" ;
 const std::string CCT_MODULE_KEY_LEVEL = "." ;
 const std::string CCT_MODULE_KEY_LEVEL_WITH_ESCAPE = "\\." ;
 const std::string CCT_MODULE_QUERY_DELIMETER = "-CCT_DEL-";
-const std::string CCT_MODULE_QUERY_AND = "-CCT_AND-";
 const std::string CCT_MODULE_END_OF_SNAPSHOT = "-END_OF_SNAPSHOT-";
 const int CLIENT_OFFLINE = 0 ;
 
 const std::string WILDCARD_SEARCH  = "*";
 
-const std::unordered_map<std::string, std::string> CCT_KEY_EVENTS = 
+const std::string CCT_UPDATE_EVENT = "UPDATE";
+const std::string CCT_DELETE_EVENT = "DELETE";
+const std::string CCT_EXPIRE_EVENT = "EXPIRE";
+const std::string CCT_NEW_QUERY_EVENT = "new_query";
+
+const std::unordered_map<std::string, std::string> CCT_KEY_EVENTS =
                                                                     {
-                                                                        {"json.set", "UPDATE"},
-                                                                        {"del", "DELETE"},
-                                                                        {"expired", "DELETE"},
-                                                                        {"query_expired", "EXPIRE"},
+                                                                        {"json.set", CCT_UPDATE_EVENT},
+                                                                        {"del", CCT_DELETE_EVENT},
+                                                                        {"expired", CCT_DELETE_EVENT},
+                                                                        {"query_expired", CCT_EXPIRE_EVENT},
                                                                         {"query", "new_query"}
                                                                     } ;
 
