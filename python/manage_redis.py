@@ -17,15 +17,16 @@ def kill_redis():
 
 
 def start_redis():
-    current_working_directory = os.getcwd()
-    module = current_working_directory + "/bin/cct2.so"
-    bashCommand = "redis-stack-server --loadmodule " + module
-    subprocess.Popen(bashCommand.split(), 
-                    stdin=subprocess.DEVNULL,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    start_new_session=True)
-    time.sleep(2)
+    if not REMOTE_REDIS_CONNECTION:
+        current_working_directory = os.getcwd()
+        module = current_working_directory + "/bin/cct2.so"
+        bashCommand = "redis-stack-server --loadmodule " + module
+        subprocess.Popen(bashCommand.split(),
+                        stdin=subprocess.DEVNULL,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        start_new_session=True)
+        time.sleep(2)
 
 
 def start_redis_without_module():
