@@ -29,8 +29,7 @@ int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string even
         return REDISMODULE_ERR;
     }
     Recursive_JSON_Iterate(json_object , "", queries);
-    std::set<std::string> permutations = Query_Permutations(queries);
-    for (auto & q : permutations) {
+    for (auto & q : queries) {
         current_queries.insert(q);
         std::string query_with_prefix = CCT_MODULE_QUERY_2_CLIENT + q;
         //LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON check this query for tracking: " + query_with_prefix);
