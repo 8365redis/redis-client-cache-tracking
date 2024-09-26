@@ -30,10 +30,12 @@ int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string even
     }
     Recursive_JSON_Iterate(json_object , "", queries);
     for (auto & q : queries) {
-        current_queries.insert(q);
-        std::string query_with_prefix = CCT_MODULE_QUERY_2_CLIENT + q;
-        //LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON check this query for tracking: " + query_with_prefix);
+        std::string escaped_query = Escape_FtQuery(q);
+        current_queries.insert(escaped_query);
+        std::string query_with_prefix = CCT_MODULE_QUERY_2_CLIENT + escaped_query;
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON check this query for tracking: " + query_with_prefix);
         RedisModuleCallReply *smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", query_with_prefix.c_str());
+
         if (RedisModule_CallReplyType(smembers_reply) != REDISMODULE_REPLY_ARRAY ) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Get_Tracking_Clients_From_Changed_JSON failed while getting client names for query: " +  query_with_prefix);
             return REDISMODULE_ERR;
@@ -45,10 +47,10 @@ int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string even
                     RedisModuleString *client = RedisModule_CreateStringFromCallReply(key_reply);
                     const char *client_str = RedisModule_StringPtrLen(client, NULL);
                     clients_to_update.push_back(std::string(client_str));
-                    client_to_queries_map[std::string(client_str)].push_back(q);
+                    client_to_queries_map[std::string(client_str)].push_back(escaped_query);
                     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON query matched to this client(app): " + (std::string)client_str);
                     Add_Tracking_Key(ctx, key_str, client_str);
-                    Update_Tracking_Query(ctx, q, key_str);
+                    Update_Tracking_Query(ctx, escaped_query, key_str);
                 }
             }
         }

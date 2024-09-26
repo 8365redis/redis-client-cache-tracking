@@ -18,5 +18,7 @@ std::string Get_Query_Term(const std::string &s);
 std::string Get_Query_Attribute(const std::string &s);
 std::string Normalized_to_Original(const std::string normalized_query);
 std::string Get_Query_Normalized(const RedisModuleString *query);
+std::string Escape_Special_Chars(const std::string &input);
+std::string Escape_FtQuery(const std::string &input);
 
 #endif /* QUERY_PARSER_H */

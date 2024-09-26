@@ -6,6 +6,8 @@ import cct_prepare
 from constants import CCT_QUERIES, CCT_VALUE, CCT_QUERY_HALF_TTL, CCT_QUERY_TTL, CCT_EOS
 from cct_test_utils import check_query_meta_data
 import json
+from redis.commands.search.field import TagField
+from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 
 
 @pytest.fixture(autouse=True)
@@ -893,7 +895,7 @@ def test_2_client_2_query_with_matching_queries():
 
 
 def test_overwritten_value_not_matching_query_should_be_removed_form_tracked_multiple_clients():
-    r1 = connect_redis()
+    r1 = connect_redis_with_start()
     cct_prepare.flush_db(r1)  # clean all db first
     cct_prepare.create_index(r1)
     client_1 = "client1"
@@ -1113,3 +1115,104 @@ def test_delete_events_should_be_reflected_in_snapshot_for_query_for_multiple_cl
     from_stream = r2.xread(streams={client_2: 0})
     assert from_stream[0][1][0][1]['operation'] == 'DELETE'
     assert from_stream[0][1][0][1]['key'] == key_3
+
+
+def test_special_chars_multiple_clients_should_get_notified_before_and_after_query():
+    r1 = connect_redis_with_start()
+    cct_prepare.flush_db(r1)
+    cct_prepare.create_index(r1)
+    client_1 = "client1"
+    client_2 = "client2"
+
+    passport_value = "bbb"
+    addr_id = "20-00"
+    d1 = cct_prepare.generate_single_object(1, addr_id, passport_value)
+    first_key = cct_prepare.TEST_INDEX_PREFIX + str(1)
+
+    r1 = connect_redis()
+    r1.execute_command("CCT2.REGISTER " + client_1)
+    r1.execute_command(
+        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.Address\\.ID:{20\\-00}")
+
+    r1.json().set(first_key, Path.root_path(), d1)
+
+    r2 = connect_redis()
+    r2.execute_command("CCT2.REGISTER " + client_2)
+
+    r2.execute_command(
+        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.Address\\.ID:{20\\-00}")
+
+    new_passport_value = 'aaa'
+    d1["User"]["PASSPORT"] = new_passport_value
+    r1.json().set(first_key, Path.root_path(), d1)
+
+    from_stream_1 = r1.xread(streams={client_1: 0})
+    from_stream_2 = r1.xread(streams={client_2: 0})
+    assert len(from_stream_1[0][1]) == 3
+    assert from_stream_1[0][1][2][1]['key'] == first_key
+    assert from_stream_1[0][1][2][1]['queries'] == '@User\\.Address\\.ID:{20\\-00}'
+    assert json.loads(from_stream_1[0][1][2][1]['value'])['User']['PASSPORT'] == new_passport_value
+    assert len(from_stream_2[0][1]) == 2
+    assert from_stream_2[0][1][1][1]['key'] == first_key
+    assert from_stream_2[0][1][1][1]['queries'] == '@User\\.Address\\.ID:{20\\-00}'
+    assert json.loads(from_stream_2[0][1][1][1]['value'])['User']['PASSPORT'] == new_passport_value
+
+
+def test_special_chars_overwritten_value_not_matching_query_should_be_removed_from_q2_and_remain_on_q1():
+    r1 = connect_redis_with_start()
+    cct_prepare.flush_db(r1)  # clean all db first
+    cct_prepare.create_index(r1)
+    client_1 = "client1"
+
+    passport_value = "2JRUX4-G5"
+    passport_value_2 = "bbb"
+    passport_value_3 = "ccc"
+    addr_id = "2000"
+    d1 = cct_prepare.generate_single_object(1, addr_id, passport_value)
+    d2 = cct_prepare.generate_single_object(2, addr_id, passport_value_2)
+    d3 = cct_prepare.generate_single_object(3, addr_id, passport_value_3)
+    first_key = cct_prepare.TEST_INDEX_PREFIX + str(1)
+    second_key = cct_prepare.TEST_INDEX_PREFIX + str(2)
+    third_key = cct_prepare.TEST_INDEX_PREFIX + str(3)
+    r1.json().set(first_key, Path.root_path(), d1)
+    r1.json().set(second_key, Path.root_path(), d2)
+    r1.json().set(third_key, Path.root_path(), d3)
+
+    # CLIENT
+    r1 = connect_redis()
+    r1.execute_command("CCT2.REGISTER " + client_1)
+    r1.execute_command(
+        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{2JRUX4\\-G5}")
+    r1.execute_command(
+        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.Address\\.ID:{" + addr_id + "}")
+
+    new_addr_id = "3000"
+
+    # Overwrite Address
+    d1["User"]["Address"]["ID"] = new_addr_id
+
+    r1.json().set(first_key, Path.root_path(), d1)
+
+    r1.execute_command(
+        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.Address\\.ID:{" + new_addr_id + "}")
+
+    # CHECK THE STREAM
+    from_stream = r1.xread(streams={client_1: 0})
+
+    assert from_stream[0][1][1][1]['queries'] == '@User\\.PASSPORT:{2JRUX4\\-G5}'
+    assert from_stream[0][1][1][1]['key'] == first_key
+
+    r1.connection_pool.disconnect()
+    r1 = connect_redis()
+
+    r1.execute_command("CCT2.REGISTER " + client_1)
+
+    from_stream = r1.xread(streams={client_1: 0})
+
+    assert len(from_stream[0][1]) == 4
+    assert from_stream[0][1][0][1]['key'] == third_key
+    assert from_stream[0][1][0][1]['queries'] == '@User\\.Address\\.ID:{2000}'
+    assert from_stream[0][1][1][1]['key'] == second_key
+    assert from_stream[0][1][1][1]['queries'] == '@User\\.Address\\.ID:{2000}'
+    assert from_stream[0][1][2][1]['key'] == first_key
+    assert from_stream[0][1][2][1]['queries'] == '@User\\.PASSPORT:{2JRUX4\\-G5}-CCT_DEL-@User\\.Address\\.ID:{3000}'
