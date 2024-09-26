@@ -21,12 +21,17 @@ const int CLIENT_OFFLINE = 0 ;
 
 const std::string WILDCARD_SEARCH  = "*";
 
-const std::unordered_map<std::string, std::string> CCT_KEY_EVENTS = 
+const std::string CCT_UPDATE_EVENT = "UPDATE";
+const std::string CCT_DELETE_EVENT = "DELETE";
+const std::string CCT_EXPIRE_EVENT = "EXPIRE";
+const std::string CCT_NEW_QUERY_EVENT = "new_query";
+
+const std::unordered_map<std::string, std::string> CCT_KEY_EVENTS =
                                                                     {
-                                                                        {"json.set", "UPDATE"},
-                                                                        {"del", "DELETE"},
-                                                                        {"expired", "DELETE"},
-                                                                        {"query_expired", "EXPIRE"},
+                                                                        {"json.set", CCT_UPDATE_EVENT},
+                                                                        {"del", CCT_DELETE_EVENT},
+                                                                        {"expired", CCT_DELETE_EVENT},
+                                                                        {"query_expired", CCT_EXPIRE_EVENT},
                                                                         {"query", "new_query"}
                                                                     } ;
 

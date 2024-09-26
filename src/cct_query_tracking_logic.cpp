@@ -48,6 +48,7 @@ int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string even
                     client_to_queries_map[std::string(client_str)].push_back(q);
                     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON query matched to this client(app): " + (std::string)client_str);
                     Add_Tracking_Key(ctx, key_str, client_str);
+                    Update_Tracking_Query(ctx, q, key_str);
                 }
             }
         }
@@ -107,47 +108,50 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
             return REDISMODULE_ERR;
         }
     }
-    // Get all the queries that we track for the key
-    std::set<std::string> tracked_queries_for_key;
-    std::string k2q_key = CCT_MODULE_KEY_2_QUERY + key_str;
-    RedisModuleCallReply *k2q_smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", k2q_key.c_str());
-    const size_t reply_length = RedisModule_CallReplyLength(k2q_smembers_reply);
-    for (size_t i = 0; i < reply_length; i++) {
-        RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(k2q_smembers_reply, i);
-        if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING) {
-            RedisModuleString *query_name = RedisModule_CreateStringFromCallReply(key_reply);
-            const char *query_name_str = RedisModule_StringPtrLen(query_name, NULL);
-            tracked_queries_for_key.insert(std::string(query_name_str));
-        }
-    }
 
-    // Compute all tracked queries that no longer match the new JSON value (tracked_queries_for_key - current_queries_for_key)
-    std::set<std::string> queries_no_longer_matching_value;
-    std::set_difference(tracked_queries_for_key.begin(), tracked_queries_for_key.end(),
-                        current_queries_for_key.begin(), current_queries_for_key.end(),
-                        std::inserter(queries_no_longer_matching_value, queries_no_longer_matching_value.begin()));
+    //For updates, compute and delete CCT metadata for queries that no longer match our new JSON value
+	if (CCT_KEY_EVENTS.at(event) == CCT_UPDATE_EVENT) {
+	    // Get all the queries that we track for the key
+	    std::set<std::string> tracked_queries_for_key;
+	    std::string k2q_key = CCT_MODULE_KEY_2_QUERY + key_str;
+	    RedisModuleCallReply *k2q_smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", k2q_key.c_str());
+	    const size_t reply_length = RedisModule_CallReplyLength(k2q_smembers_reply);
+	    for (size_t i = 0; i < reply_length; i++) {
+	        RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(k2q_smembers_reply, i);
+	        if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING) {
+	            RedisModuleString *query_name = RedisModule_CreateStringFromCallReply(key_reply);
+	            const char *query_name_str = RedisModule_StringPtrLen(query_name, NULL);
+	            tracked_queries_for_key.insert(std::string(query_name_str));
+	        }
+	    }
+		// Compute all tracked queries that no longer match the new JSON value (tracked_queries_for_key - current_queries_for_key)
+    	std::set<std::string> queries_no_longer_matching_value;
+    	std::set_difference(tracked_queries_for_key.begin(), tracked_queries_for_key.end(),
+                        	current_queries_for_key.begin(), current_queries_for_key.end(),
+                        	std::inserter(queries_no_longer_matching_value, queries_no_longer_matching_value.begin()));
 
-    // Delete all the tracked queries that no longer match the JSON value
-    for (auto &query_to_delete : queries_no_longer_matching_value) {
-        std::string q2k_key = CCT_MODULE_QUERY_2_KEY + query_to_delete;
-        RedisModuleCallReply *q2k_srem_key_reply = RedisModule_Call(ctx, "SREM", "cc", q2k_key.c_str(), key_str.c_str());
-        if (RedisModule_CallReplyType(q2k_srem_key_reply) != REDISMODULE_REPLY_INTEGER) {
-            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check (Query:{Keys}) failed while deleting key: " +  key_str);
-            return REDISMODULE_ERR;
-        } else if ( RedisModule_CallReplyInteger(q2k_srem_key_reply) == 0 ) {
-            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check (Query:{Keys}) failed while deleting key (non existing key): " +  key_str);
-            return REDISMODULE_ERR;
-        }
-        std::string k2q_key = CCT_MODULE_KEY_2_QUERY + key_str;
-        RedisModuleCallReply *k2q_srem_key_reply = RedisModule_Call(ctx, "SREM", "cc", k2q_key.c_str(), query_to_delete.c_str());
-        if (RedisModule_CallReplyType(k2q_srem_key_reply) != REDISMODULE_REPLY_INTEGER){
-            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check (Key:{Queries}) failed while deleting query: " +  query_to_delete);
-            return REDISMODULE_ERR;
-        } else if ( RedisModule_CallReplyInteger(k2q_srem_key_reply) == 0 ) {
-            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check (Key:{Queries}) failed while deleting query (non existing key): " +  query_to_delete);
-            return REDISMODULE_ERR;
-        }
-    }
+    	// Delete all the tracked queries that no longer match the JSON value
+    	for (auto &query_to_delete : queries_no_longer_matching_value) {
+            std::string q2k_key = CCT_MODULE_QUERY_2_KEY + query_to_delete;
+            RedisModuleCallReply *q2k_srem_key_reply = RedisModule_Call(ctx, "SREM", "cc", q2k_key.c_str(), key_str.c_str());
+            if (RedisModule_CallReplyType(q2k_srem_key_reply) != REDISMODULE_REPLY_INTEGER) {
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check (Query:{Keys}) failed while deleting key: " +  key_str);
+                return REDISMODULE_ERR;
+            } else if ( RedisModule_CallReplyInteger(q2k_srem_key_reply) == 0 ) {
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check (Query:{Keys}) failed while deleting key (non existing key): " +  key_str);
+                return REDISMODULE_ERR;
+            }
+            std::string k2q_key = CCT_MODULE_KEY_2_QUERY + key_str;
+            RedisModuleCallReply *k2q_srem_key_reply = RedisModule_Call(ctx, "SREM", "cc", k2q_key.c_str(), query_to_delete.c_str());
+            if (RedisModule_CallReplyType(k2q_srem_key_reply) != REDISMODULE_REPLY_INTEGER){
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check (Key:{Queries}) failed while deleting query: " +  query_to_delete);
+                return REDISMODULE_ERR;
+            } else if ( RedisModule_CallReplyInteger(k2q_srem_key_reply) == 0 ) {
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check (Key:{Queries}) failed while deleting query (non existing key): " +  query_to_delete);
+                return REDISMODULE_ERR;
+            }
+    	}
+	}
 
     return REDISMODULE_OK;
 }

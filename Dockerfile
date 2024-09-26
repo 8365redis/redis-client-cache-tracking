@@ -7,7 +7,9 @@ RUN yum check-update || true && \
                    gcc \
                    epel-release \
                    yum-utils \
-                   gcc-c++
+                   gcc-c++ \
+                   gdbserver \
+                   g++ \
 
 RUN crb enable
 
