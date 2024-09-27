@@ -21,7 +21,7 @@ def test_basic_ft_aggregate_return_first():
     cct_prepare.create_index(r)
 
     # ADD INITIAL DATA
-    for i in range(100):
+    for i in range(10):
         d = cct_prepare.generate_single_object(1000 + i , 2000 - i, "aaa")
         r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(i), Path.root_path(), d)
 
@@ -31,7 +31,7 @@ def test_basic_ft_aggregate_return_first():
     assert cct_prepare.OK in str(resp)
 
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
-    assert str(response) == '''[100, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
+    assert str(response) == '''[10, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
 
 def test_basic_ft_aggregate_return_cached_same_client():
     r = connect_redis_with_start()

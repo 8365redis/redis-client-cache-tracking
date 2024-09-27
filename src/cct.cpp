@@ -112,6 +112,8 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     }  
 
     Start_Client_Handler(rdts_staticCtx);
+
+    Start_Aggregate_Handler(rdts_staticCtx);
   
     return REDISMODULE_OK;
 }
