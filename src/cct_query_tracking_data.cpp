@@ -81,6 +81,22 @@ void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::stri
 
 }
 
+void Update_Tracking_Query(RedisModuleCtx *ctx, const std::string query_str, const std::string new_key) {
+    // Update Query:{Keys}
+    std::string query_key_key_name_str = CCT_MODULE_QUERY_2_KEY + query_str;
+    RedisModuleCallReply *sadd_reply_qk = RedisModule_Call(ctx, "SADD", "cc", query_key_key_name_str.c_str(), new_key.c_str());
+    if (RedisModule_CallReplyType(sadd_reply_qk) != REDISMODULE_REPLY_INTEGER ) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Update_Tracking_Query failed while registering query Query:{Keys} " +  query_key_key_name_str);
+    }
+
+    // Update the Key:{Queries}
+    std::string key_key_name_str = CCT_MODULE_KEY_2_QUERY + new_key;
+    RedisModuleCallReply *sadd_reply_kq = RedisModule_Call(ctx, "SADD", "cc", key_key_name_str.c_str(), query_str.c_str());
+    if (RedisModule_CallReplyType(sadd_reply_kq) != REDISMODULE_REPLY_INTEGER ) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracking_Query failed while registering Key:{Queries} " +  query_str);
+    }
+}
+
 void Add_Tracking_Key(RedisModuleCtx *ctx, std::string key, std::string client_tracking_group) {
     // Save the Key:{Clients} Expire
     std::string key_with_prefix = CCT_MODULE_KEY_2_CLIENT + key;

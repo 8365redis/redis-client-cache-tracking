@@ -2,6 +2,8 @@ import pytest
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis, start_redis
 import cct_prepare
+import json
+import time
 from constants import CCT_K2C, CCT_Q_DELI, CCT_EOS
 from redis.commands.json.path import Path
 from redis.commands.search.field import TextField, NumericField, TagField
@@ -13,6 +15,7 @@ def before_and_after_test():
     yield
     kill_redis()
     print("End")
+
 
 def test_updated_key_added_no_affect():
     producer = connect_redis_with_start()
@@ -29,7 +32,7 @@ def test_updated_key_added_no_affect():
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     query_value = "bbb"
-    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1000 , 2000, "ccc")
@@ -42,6 +45,7 @@ def test_updated_key_added_no_affect():
     # Check new key is not tracked    
     tracked_key = producer.sismember(CCT_K2C + cct_prepare.TEST_INDEX_PREFIX + str(2), cct_prepare.TEST_APP_NAME_1)
     assert not tracked_key 
+
 
 def test_updated_key_matches_query():
     producer = connect_redis_with_start()
@@ -58,7 +62,7 @@ def test_updated_key_matches_query():
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     query_value = "bbb"
-    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1000 , 2000, query_value)
@@ -71,6 +75,7 @@ def test_updated_key_matches_query():
     # Check new key is tracked    
     tracked_key = producer.sismember(CCT_K2C + key, cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
+
 
 def test_updated_key_doesnt_match_any_query():
     producer = connect_redis_with_start()
@@ -87,7 +92,7 @@ def test_updated_key_doesnt_match_any_query():
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     query_value = passport_value
-    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
 
     # UPDATE DATA
     not_matching_data = "ccc"
@@ -118,13 +123,13 @@ def test_updated_key_doesnt_match_old_query_but_match_new_query():
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     query_value = "aaa"
-    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
 
     # SECOND CLIENT
     client2 = connect_redis()
     client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2)
     new_value = "bbb"
-    client2.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + new_value + "}")   
+    client2.execute_command("CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + new_value + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1000 , 2000, new_value)
@@ -145,6 +150,7 @@ def test_updated_key_doesnt_match_old_query_but_match_new_query():
     # Add More data to stream
     d = cct_prepare.generate_single_object(1001 , 2001, new_value)
     producer.json().set(key, Path.root_path(), d)
+
 
 def test_updated_key_match_new_query_while_not_mathing_old_matching_query():
     producer = connect_redis_with_start()
@@ -167,10 +173,12 @@ def test_updated_key_match_new_query_while_not_mathing_old_matching_query():
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     query_value = "1000"
-    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + query_value + "}") # match first
+    client1.execute_command(
+        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.ID:{" + query_value + "}")  # match first
 
     query_value = "bbb"
-    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # match second
+    client1.execute_command(
+        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")  # match second
 
     # UPDATE DATA
     new_value = "bbb"
@@ -219,10 +227,12 @@ def test_updated_key_match_multiple_queries_one_client():
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     query_value = "1000"
-    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + query_value + "}") # match first
+    client1.execute_command(
+        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.ID:{" + query_value + "}")  # match first
 
     query_value = "bbb"
-    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}") # match second    
+    client1.execute_command(
+        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")  # match second
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1000 , 2002, "bbb")
@@ -256,12 +266,13 @@ def test_updated_key_match_same_queries_one_client_multi_result_with_base():
     for i in range(1,20) :
         key = cct_prepare.TEST_INDEX_PREFIX + str(i)
         producer.json().set(key, Path.root_path(), d)
-    
+
     # SEARCH
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     query_value = "a_data"
-    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @user\\.a:{" + query_value + "}" + " LIMIT 0 100") # match first
+    client1.execute_command(
+        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @user\\.a:{" + query_value + "}" + " LIMIT 0 100")  # match first
 
     #UPDATE DATA
     d = { "user" : {"a" : "a_data" , "b" : "b_data2" , "c" : "c_data2", "d" : "d_data2" } }
@@ -270,6 +281,7 @@ def test_updated_key_match_same_queries_one_client_multi_result_with_base():
 
     # Check key is in streams 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+
 
 def test_updated_key_match_same_queries_one_client_multi_result():
     producer = connect_redis_with_start()
@@ -287,12 +299,13 @@ def test_updated_key_match_same_queries_one_client_multi_result():
     for i in range(1,20) :
         key = cct_prepare.TEST_INDEX_PREFIX + str(i)
         producer.json().set(key, Path.root_path(), d)
-    
+
     # SEARCH
     client1 = connect_redis_with_start()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     query_value = "a_data"
-    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @a:{" + query_value + "}" + " LIMIT 0 100") # match first
+    client1.execute_command(
+        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @a:{" + query_value + "}" + " LIMIT 0 100")  # match first
 
     #UPDATE DATA
     d = { "a" : "a_data" , "b" : "b_data2" , "c" : "c_data2", "d" : "d_data2"}
@@ -318,12 +331,13 @@ def test_updated_key_match_same_queries_one_client_no_root():
     d = { "a" : "a_data" , "b" : "b_data" , "c" : "c_data", "d" : "d_data"}
     key = cct_prepare.TEST_INDEX_PREFIX + str(1)
     producer.json().set(key, Path.root_path(), d)
-    
+
     # SEARCH
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     query_value = "a_data"
-    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @a:{" + query_value + "}" + " LIMIT 0 100") # match first
+    client1.execute_command(
+        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @a:{" + query_value + "}" + " LIMIT 0 100")  # match first
 
     #UPDATE DATA
     d = { "a" : "a_data" , "b" : "b_data2" , "c" : "c_data2", "d" : "d_data2"}
@@ -349,12 +363,13 @@ def test_updated_key_match_same_queries_one_client_mixed_data():
     d = { "a" : "a_data" , "b" : "b_data" , "c" : "c_data", "d" : { "d_1" : "d_1_data" , "d_2" : "d_2_data" }}
     key = cct_prepare.TEST_INDEX_PREFIX + str(1)
     producer.json().set(key, Path.root_path(), d)
-    
+
     # SEARCH
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     query_value = "d_1_data"
-    res = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @d\\.d_1:{" + query_value + "}" + " LIMIT 0 100") # match first
+    res = client1.execute_command(
+        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @d\\.d_1:{" + query_value + "}" + " LIMIT 0 100")  # match first
     print(res)
 
     #UPDATE DATA
@@ -377,7 +392,7 @@ def test_updated_key_match_single_query_after_restart():
     passport_value_1 = "aaa"
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value_1)
     producer.json().set(key_1, Path.root_path(), d)
-    
+
 
     # FIRST CLIENT
     client1 = connect_redis()
@@ -390,7 +405,7 @@ def test_updated_key_match_single_query_after_restart():
     d = cct_prepare.generate_single_object(1000 , 2001, "bbb")
     producer.json().set(key_1, Path.root_path(), d)
 
-    # Check key is in streams 
+    # Check key is in streams
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
     print(from_stream)
 
@@ -408,7 +423,7 @@ def test_updated_key_match_single_query_after_restart():
     d = cct_prepare.generate_single_object(1000 , 2002, "ccc")
     producer.json().set(key_1, Path.root_path(), d)
 
-    # Check key is in streams 
+    # Check key is in streams
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     print(from_stream)
 
@@ -434,12 +449,11 @@ def test_updated_key_matches_query_with_hyphen():
     d = cct_prepare.generate_single_object(1000 , 2001, query_value)
     producer.json().set(key, Path.root_path(), d)
 
-    # Check key is in stream 
+    # Check key is in stream
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert key in str(from_stream[0][1])
 
-    # Check new key is tracked    
+    # Check new key is tracked
     tracked_key = producer.sismember(CCT_K2C + key, cct_prepare.TEST_APP_NAME_1)
-    assert tracked_key 
+    assert tracked_key
 
-    

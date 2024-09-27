@@ -7,6 +7,7 @@ from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 from manage_redis import connect_redis, connect_redis_with_start, kill_redis
 from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
                 CCT_K2Q, CCT_DELI, CCT_Q2K, CCT_QC, I2C, CCT_EOS
+from constants import SKIP_PERF_TEST
 
 
 @pytest.fixture(autouse=True)
@@ -16,6 +17,8 @@ def before_and_after_test():
     kill_redis()
     print("End")
 
+@pytest.mark.skipif(SKIP_PERF_TEST ,
+                    reason="Only run manually")
 def test_wildcard_with_many_clients_many_key():
     r = connect_redis_with_start()
     time.sleep(1)
@@ -58,6 +61,8 @@ def test_wildcard_with_many_clients_many_key():
     #print(str(from_stream))
 
 
+@pytest.mark.skipif(SKIP_PERF_TEST ,
+                    reason="Only run manually")
 def test_wildcard_with_many_clients_many_key_data_change():
     r = connect_redis_with_start()
     time.sleep(1)

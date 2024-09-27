@@ -3,6 +3,7 @@ import pytest
 import cct_prepare
 from statistics import mean
 from manage_redis import connect_redis_with_start, kill_redis
+from constants import SKIP_PERF_TEST
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -11,6 +12,8 @@ def before_and_after_test():
     kill_redis()
     print("End")
 
+@pytest.mark.skipif(SKIP_PERF_TEST ,
+                    reason="Only run manually")
 def test_cct_search_latency_single_tag_search():
     r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
@@ -39,6 +42,8 @@ def test_cct_search_latency_single_tag_search():
     print("DEFAULT LATENCY : " + str(default_latency))
     print("DIFF : " + str(diff_micron))
 
+@pytest.mark.skipif(SKIP_PERF_TEST ,
+                    reason="Only run manually")
 def test_cct_search_latency_multi_tag_search():
     r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
@@ -67,7 +72,8 @@ def test_cct_search_latency_multi_tag_search():
     print("DEFAULT LATENCY : " + str(default_latency))
     print("DIFF : " + str(diff_micron))
 
-
+@pytest.mark.skipif(SKIP_PERF_TEST ,
+                    reason="Only run manually")
 def test_cct_search_latency_single_tag_search_multiple():
     r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
@@ -97,6 +103,8 @@ def test_cct_search_latency_single_tag_search_multiple():
 
     print("Latency diff average : " + str(mean(latencies)))
 
+@pytest.mark.skipif(SKIP_PERF_TEST ,
+                    reason="Only run manually")
 def test_cct_search_latency_multiple_tag_search_multiple():
     r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first

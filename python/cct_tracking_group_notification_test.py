@@ -2,6 +2,7 @@ import redis
 import pytest
 from redis.commands.json.path import Path
 import cct_prepare
+import json
 from manage_redis import connect_redis, connect_redis_with_start, kill_redis
 from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
                 CCT_K2Q, CCT_DELI, CCT_Q2K, CCT_QC
@@ -149,10 +150,14 @@ def test_not_tracking_not_effected():
 
     # Check key is in stream for client 1
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
+    print('stream 1')
+    print(json.dumps(from_stream))
     assert key in str(from_stream[0][1])
 
     # Check key is not stream for client 2
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_2:0} )
+    print('stream 2')
+    print(json.dumps(from_stream))
     assert key not in str(from_stream[0][1])
 
     # Check new key is tracked    
