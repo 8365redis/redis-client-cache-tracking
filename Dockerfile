@@ -29,8 +29,11 @@ FROM redis/redis-stack:latest
 RUN apt-get update && apt-get install -y  \
     gdbserver \
     gdb  \
+    gcc \
     make  \
-    cmake && rm -rf /var/lib/apt/lists/*
+    clang \
+    clang-tools \
+    cmake
 
 # Copy the built module from the builder stage
 COPY --from=builder /usr/src/app/bin/cct2.so /usr/local/lib/redis/modules/cct2.so
