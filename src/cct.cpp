@@ -81,7 +81,13 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         return REDISMODULE_ERR;
     } else {
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.FT.AGGREGATE command created successfully.");
-    }    
+    }
+
+    if (RedisModule_CreateCommand(ctx,"CCT2.INVALIDATE", Invalidate_RedisCommand , "readonly", 0, 0, 0) == REDISMODULE_ERR) {
+        return REDISMODULE_ERR;
+    } else {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.INVALIDATE command created successfully.");
+    }
 
     // Subscribe to key space events
     if ( RedisModule_SubscribeToKeyspaceEvents(ctx, REDISMODULE_NOTIFY_GENERIC | REDISMODULE_NOTIFY_SET | REDISMODULE_NOTIFY_STRING |

@@ -58,6 +58,9 @@ def test_basic_ft_aggregate_handler_basic():
 
     time.sleep(1.1)
 
+    res = client1.execute_command("CCT2.HEARTBEAT")
+    assert str(res) == '''OK'''
+
     # REQUEST
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
     assert str(response) == '''[6, ['User.ID', '1'], ['User.ID', '10'], ['User.ID', '1001']]'''
@@ -109,6 +112,9 @@ def test_basic_ft_aggregate_handler_multi_request_single_client():
     assert str(response) == '''[5, ['User.ID', '1000'], ['User.ID', '1001']]'''
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 1")
     assert str(response) == '''[5, ['User.ID', '1000']]'''
+
+    res = client1.execute_command("CCT2.HEARTBEAT")
+    assert str(res) == '''OK'''
 
     time.sleep(1.1)
 

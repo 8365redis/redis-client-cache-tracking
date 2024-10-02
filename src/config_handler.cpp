@@ -78,7 +78,29 @@ CCT_Config Read_CCT_Config(RedisModuleCtx *ctx, std::string config_file_path_str
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value [CCT_SEND_OLD_VALUE_CFG] : " + std::to_string(cct_config.CCT_SEND_OLD_VALUE_CFG));
         } else {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value [CCT_SEND_OLD_VALUE_CFG] is not found in config file using default.");
-        }  
+        }
+
+        if( !config[DEFAULT_CONFIG_SECTION][CCT_AGGREGATE_HANDLER_CONFIG].empty() ) {
+            try{
+                cct_config.CCT_AGGREGATE_HANDLER_CFG = std::stoi(config[DEFAULT_CONFIG_SECTION][CCT_AGGREGATE_HANDLER_CONFIG]);
+            } catch (std::invalid_argument const& ex) {
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value " + CCT_AGGREGATE_HANDLER_CONFIG  + " has failed to read value.");
+            }
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value [CCT_AGGREGATE_HANDLER_CFG] : " + std::to_string(cct_config.CCT_AGGREGATE_HANDLER_CFG));
+        } else {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value [CCT_AGGREGATE_HANDLER_CFG] is not found in config file using default.");
+        }
+
+        if( !config[DEFAULT_CONFIG_SECTION][CCT_AGGREGATE_HANDLER_INTERVAL_SECOND_CONFIG].empty() ) {
+            try{
+                cct_config.CCT_AGGREGATE_HANDLER_INTERVAL_SECOND_CFG = std::stoi(config[DEFAULT_CONFIG_SECTION][CCT_AGGREGATE_HANDLER_INTERVAL_SECOND_CONFIG]);
+            } catch (std::invalid_argument const& ex) {
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value " + CCT_AGGREGATE_HANDLER_INTERVAL_SECOND_CONFIG  + " has failed to read value.");
+            }
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value [CCT_AGGREGATE_HANDLER_INTERVAL_SECOND_CFG] : " + std::to_string(cct_config.CCT_AGGREGATE_HANDLER_INTERVAL_SECOND_CFG));
+        } else {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value [CCT_AGGREGATE_HANDLER_INTERVAL_SECOND_CFG] is not found in config file using default.");
+        }
 
 
     }

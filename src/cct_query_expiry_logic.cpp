@@ -21,7 +21,7 @@ int Handle_Query_Expire(RedisModuleCtx *ctx , std::string key) {
     if (RedisModule_CallReplyType(q2c_srem_key_reply) != REDISMODULE_REPLY_INTEGER){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Query_Expire (Query:{Clients}) failed while deleting client: " +  client_name);
         return REDISMODULE_ERR;
-    } else if ( RedisModule_CallReplyInteger(q2c_srem_key_reply) == 0 ) { 
+    } else if ( RedisModule_CallReplyInteger(q2c_srem_key_reply) == 0 ) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Query_Expire (Query:{Clients}) failed while deleting client (non existing key): " +  client_name);
         return REDISMODULE_ERR;
     }

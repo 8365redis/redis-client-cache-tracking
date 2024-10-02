@@ -17,8 +17,6 @@ def before_and_after_test():
     kill_redis()
     print("End")
 
-@pytest.mark.skipif(SKIP_UNSTABLE_TEST ,
-                    reason="Only run manually")
 def test_basic_wildcard_query_add_new_data():
     r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
@@ -46,11 +44,10 @@ def test_basic_wildcard_query_add_new_data():
     r.json().set(key, Path.root_path(), d)
 
     from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert '''{'operation': 'UPDATE', 'key': 'users:10000', 'value': '{"User":{"ID":"9999","PASSPORT":"aaa","Address":{"ID":"9999"}}}', 'queries': 'usersJsonIdx:*'}''' in str(from_stream)
+    print(from_stream[0][1][1][1])
+    assert '''{'operation': 'UPDATE', 'key': 'users:10000', 'value': '{"User":{"ID":"9999","PASSPORT":"aaa","Address":{"ID":"9999"}}}', 'queries': 'usersJsonIdx:*'}''' == str(from_stream[0][1][1][1])
 
 
-@pytest.mark.skipif(SKIP_UNSTABLE_TEST ,
-                    reason="Only run manually")
 def test_basic_wildcard_query_update_data():
     r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
@@ -80,9 +77,6 @@ def test_basic_wildcard_query_update_data():
     from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert '''{'operation': 'UPDATE', 'key': 'users:50', 'value': '{"User":{"ID":"9999","PASSPORT":"aaa","Address":{"ID":"9999"}}}', 'queries': 'usersJsonIdx:*'}''' in str(from_stream)
 
-
-@pytest.mark.skipif(SKIP_UNSTABLE_TEST ,
-                    reason="Only run manually")
 def test_basic_wildcard_query_delete_data():
     r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
@@ -111,9 +105,6 @@ def test_basic_wildcard_query_delete_data():
     from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert '''{'operation': 'DELETE', 'key': 'users:5', 'value': '', 'queries': 'usersJsonIdx:*'}''' in str(from_stream)
 
-
-@pytest.mark.skipif(SKIP_UNSTABLE_TEST ,
-                    reason="Only run manually")
 def test_wildcard_query_client_group_tracking():
     r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
@@ -239,9 +230,6 @@ def test_wildcard_query_in_snapshot():
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert ''' {'operation': 'UPDATE', 'key': '', 'value': '', 'queries': '@usersJsonIdx:{*}'}''' in str(from_stream)
 
-
-@pytest.mark.skipif(SKIP_UNSTABLE_TEST ,
-                    reason="Only run manually")
 def test_wildcard_query_in_snapshot_in_tracking_group():
     r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
