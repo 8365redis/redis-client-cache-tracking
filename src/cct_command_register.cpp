@@ -1,3 +1,15 @@
+#include <errno.h>
+#include <string.h>
+#include <vector>
+#include <string>
+#include <unordered_map>
+
+#include "logger.h"
+#include "query_parser.h"
+#include "constants.h"
+#include "cct_query_tracking_data.h"
+#include "json_handler.h"
+#include "client_tracker.h"
 #include "cct_command_register.h"
 
 
@@ -93,10 +105,12 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
     xadd_params_for_eos[0] = RedisModule_CreateString(ctx, CCT_MODULE_END_OF_SNAPSHOT.c_str(), CCT_MODULE_END_OF_SNAPSHOT.length());
     xadd_params_for_eos[1] = RedisModule_CreateString(ctx, CCT_MODULE_END_OF_SNAPSHOT.c_str(), CCT_MODULE_END_OF_SNAPSHOT.length());
     int stream_add_resp_eos = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params_for_eos, 1);
+    RedisModule_Free(xadd_params_for_eos);
     if (stream_add_resp_eos != REDISMODULE_OK) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Send_Snapshot failed to write end of snapshot." );
         return ;
-    }    
+    }
+    
 }
 
 int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
@@ -114,7 +128,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     // Set client name
     if (RedisModule_SetClientNameById(client_id, client_name) != REDISMODULE_OK){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set client name." );
-        return RedisModule_ReplyWithError(ctx, strerror(errno));
+        return RedisModule_ReplyWithError(ctx, "Setting client name has failed");
     }
 
     std::string client_tracking_group_str = "";
@@ -135,10 +149,9 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         RedisModuleString *client_query_ttl_str = argv[3];
         if(RedisModule_StringToULongLong(client_query_ttl_str, &client_query_ttl) == REDISMODULE_ERR ) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set client query TTL. Invalid TTL value." );
-            return RedisModule_ReplyWithError(ctx, strerror(errno));
+            return RedisModule_ReplyWithError(ctx, "Setting query TTL has failed");
         }
     }
-
 
     // Update client connection status
     Connect_Client(client_name_str);
@@ -146,7 +159,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     // Update the client TTL
     if ( Update_Client_TTL(ctx , true) == false ) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set TTL.");
-        return RedisModule_ReplyWithError(ctx, "Setting TTL Failed");
+        return RedisModule_ReplyWithError(ctx, "Setting client TTL has failed");
     }
 
     // Update the client Query TTL
@@ -161,7 +174,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
         if (RedisModule_DeleteKey(stream_key) != REDISMODULE_OK ) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to delete the stream." );
-            return RedisModule_ReplyWithError(ctx, strerror(errno));
+            return RedisModule_ReplyWithError(ctx, "Failed to delete client stream");
         }
     }
 
@@ -172,9 +185,10 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     xadd_params[0] = RedisModule_CreateString(ctx, dummy, strlen(dummy));
     xadd_params[1] = RedisModule_CreateString(ctx, dummy, strlen(dummy));
     int stream_add_resp = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params, 1);
+    RedisModule_Free(xadd_params);
     if (stream_add_resp != REDISMODULE_OK) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to create the stream." );
-        return RedisModule_ReplyWithError(ctx, strerror(errno));
+        return RedisModule_ReplyWithError(ctx, "Failed to create client stream");
     }
     RedisModule_StreamTrimByLength(stream_key, 0, 0);  // Clear the stream
 

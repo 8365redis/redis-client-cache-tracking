@@ -1,5 +1,6 @@
 #include "json_handler.h"
 #include "logger.h"
+#include "constants.h"
 
 RedisModuleString * Get_JSON_Value(RedisModuleCtx *ctx, std::string event_str, RedisModuleString* r_key) {
     RedisModule_AutoMemory(ctx);
@@ -22,6 +23,7 @@ RedisModuleString * Get_JSON_Value(RedisModuleCtx *ctx, std::string event_str, R
 }
 
 RedisModuleString * Get_JSON_Value(RedisModuleCtx *ctx, std::string key_str) {
+    RedisModule_AutoMemory(ctx);
     RedisModuleString *value;
     RedisModuleString *r_key = RedisModule_CreateString(ctx, key_str.c_str() , key_str.length());
     RedisModuleCallReply *json_get_reply = RedisModule_Call(ctx, "JSON.GET", "s", r_key);

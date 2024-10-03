@@ -5,11 +5,11 @@
 #include "redismodule.h"
 #include "constants.h"
 
-#define TERM_START "@"
-#define TERM_END ":"
+const std::string TERM_START = "@";
+const std::string TERM_END = ":";
 
-#define TAG_ATTRIBUTE_START "{"
-#define TAG_ATTRIBUTE_END "}"
+const std::string TAG_ATTRIBUTE_START = "{";
+const std::string TAG_ATTRIBUTE_END = "}";
 
 std::string Get_Str_Between(const std::string &s,
         const std::string &start_delim,

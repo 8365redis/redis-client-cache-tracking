@@ -1,5 +1,6 @@
+#include <string>
+#include <iostream>
 #include "version.h"
-
 int Get_Module_Version(const char* version_string) {
     int major = 0;
     int minor = 0;

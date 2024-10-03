@@ -11,6 +11,7 @@
 #include "config_handler.h"
 #include "version.h"
 #include "cct_index_tracker.h"
+#include "client_tracker.h"
 
 
 #ifndef CCT_MODULE_VERSION
@@ -94,13 +95,13 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
             REDISMODULE_NOTIFY_EVICTED | REDISMODULE_NOTIFY_EXPIRED | REDISMODULE_NOTIFY_LOADED | REDISMODULE_NOTIFY_NEW | REDISMODULE_NOTIFY_MODULE ,
              Notify_Callback) != REDISMODULE_OK ) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "RedisModule_OnLoad failed to SubscribeToKeyspaceEvents." );
-        return RedisModule_ReplyWithError(ctx, strerror(errno));
+        return RedisModule_ReplyWithError(ctx, "SubscribeToKeyspaceEvents has failed");
     }
 
     if (RedisModule_SubscribeToServerEvent(ctx, RedisModuleEvent_ClientChange,
                                              Handle_Client_Event) != REDISMODULE_OK) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "RedisModule_OnLoad failed to SubscribeToServerEvent for RedisModuleEvent_ClientChange." );
-        return RedisModule_ReplyWithError(ctx, strerror(errno));
+        return RedisModule_ReplyWithError(ctx, "SubscribeToServerEvent to ClientChange has failed");
     }
 
     /*
@@ -114,7 +115,7 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     if (RedisModule_SubscribeToServerEvent(ctx, RedisModuleEvent_Loading,
                                              OnRedisReady) != REDISMODULE_OK) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "RedisModule_OnLoad failed to SubscribeToServerEvent for RedisModuleEvent_Loading." );
-        return RedisModule_ReplyWithError(ctx, strerror(errno));
+        return RedisModule_ReplyWithError(ctx, "SubscribeToServerEvent to Loading has failed");
     }  
 
     Start_Client_Handler(rdts_staticCtx);

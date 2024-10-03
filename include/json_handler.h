@@ -3,7 +3,6 @@
 
 #include "redismodule.h"
 #include "json.hpp"
-#include "constants.h"
 #include <string>
 #include <vector>
 

@@ -1,18 +1,12 @@
 #ifndef CCT_QUERY_TRACKING_LOGIC_H
 #define CCT_QUERY_TRACKING_LOGIC_H
 
-#include <errno.h>
-#include <string.h>
 #include <vector>
 #include <string>
 #include <set>
-
+#include <set>
+#include <unordered_map>
 #include "redismodule.h"
-#include "logger.h"
-#include "constants.h"
-#include "json_handler.h"
-#include "cct_query_tracking_data.h"
-#include "cct_query_expiry_logic.h"
 
 int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string event, RedisModuleString* r_key,
                                              std::vector<std::string> &clients_to_update, std::string &json_str, 

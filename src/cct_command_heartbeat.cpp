@@ -1,4 +1,14 @@
+#include <errno.h>
+#include <string.h>
+#include <vector>
+#include <string>
+#include <unordered_map>
+
 #include "cct_command_heartbeat.h"
+#include "logger.h"
+#include "constants.h"
+#include "client_tracker.h"
+#include "cct_query_tracking_data.h"
 
 int Heartbeat_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     RedisModule_AutoMemory(ctx);
@@ -10,7 +20,7 @@ int Heartbeat_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     std::string client_name = Get_Client_Name(ctx);
 
     if (Is_Client_Connected(client_name) == false) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Heartbeat_RedisCommand failed : Client is not registered" );
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Heartbeat_RedisCommand failed : Client is not registered : " + client_name );
         return RedisModule_ReplyWithError(ctx, "Not registered client");
     }
 
@@ -22,7 +32,7 @@ int Heartbeat_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
 
     // Check if we have to trim the stream
     if (argc == 2) {
-        if ( Trim_From_Stream(ctx, argv[1], client_name) == REDISMODULE_ERR ){
+        if ( Trim_Stream_By_ID(ctx, argv[1], client_name) == REDISMODULE_ERR ){
             return RedisModule_ReplyWithError(ctx, "Trim with given Stream ID failed");
         }
     } 

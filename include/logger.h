@@ -3,9 +3,6 @@
 
 #include "redismodule.h"
 #include <string>
-#include <cstring>
-#include <chrono>
-
 
 #ifdef _DEBUG
 #define LOG(ctx, level, log) Log_Std_Output(ctx, level, log)

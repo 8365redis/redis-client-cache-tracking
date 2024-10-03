@@ -17,7 +17,7 @@ def before_and_after_test():
 
 
 def test_aggregate_invalid_multi_request_single_client():
-    r = connect_redis()
+    r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
 

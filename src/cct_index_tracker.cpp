@@ -17,6 +17,7 @@ void OnRedisReady(RedisModuleCtx *ctx, RedisModuleEvent event, uint64_t subevent
 
 
 std::set<std::string> Get_All_Indexes(RedisModuleCtx *ctx) {
+    RedisModule_AutoMemory(ctx);
     std::set<std::string> indexes;
     RedisModuleCallReply *ft_list_reply = RedisModule_Call(ctx, "FT._LIST", "");
     if (ft_list_reply == NULL || RedisModule_CallReplyType(ft_list_reply) == REDISMODULE_REPLY_ERROR) {
@@ -44,6 +45,7 @@ std::set<std::string> Get_All_Indexes(RedisModuleCtx *ctx) {
 }
 
 void Get_Index_Prefixes(RedisModuleCtx *ctx, std::set<std::string> indexes) {
+    RedisModule_AutoMemory(ctx);
     for(const auto& index : indexes){
         RedisModuleCallReply *info_reply = RedisModule_Call(ctx, "FT.INFO", "c", index.c_str());
         if (info_reply == NULL || RedisModule_CallReplyType(info_reply) == REDISMODULE_REPLY_ERROR) {
@@ -90,11 +92,11 @@ const std::set<std::string> Get_Tracked_Index_Clients(std::string index){
     return CCT_TRACKED_INDEX_2_CLIENTS[index];
 }
 
-void UnTrack_Index(std::string index, std::string client_name) { // TODO
+void UnTrack_Index(std::string index, std::string client_name) { 
     TRACKED_INDEXES.erase(index);
 }
 
-bool Is_Tracked_Index(std::string index){
+bool Is_Index_Tracked(std::string index){
     return TRACKED_INDEXES.find(index) != TRACKED_INDEXES.end();
 }
 
@@ -110,7 +112,7 @@ std::string Get_Tracked_Index_From_Prefix(std::string prefix) {
     if ( index == ""){
         return "";
     } 
-    if( Is_Tracked_Index(index) ) {
+    if( Is_Index_Tracked(index) ) {
         return index;
     }
     return "";

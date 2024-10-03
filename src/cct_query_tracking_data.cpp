@@ -1,6 +1,16 @@
+#include <errno.h>
+#include <string.h>
+#include <vector>
+
+#include "logger.h"
+#include "constants.h"
+#include "query_parser.h"
+#include "client_tracker.h"
+#include "json_handler.h"
 #include "cct_query_tracking_data.h"
 
 void Add_Tracking_Wildcard_Query(RedisModuleCtx *ctx, std::string query_str, std::string client_tracking_group) {
+    RedisModule_AutoMemory(ctx);
     // Save the Query:{Clients}
     std::string query_tracking_key_str = CCT_MODULE_QUERY_2_CLIENT + query_str;
     RedisModuleCallReply *sadd_reply_client_query_to_client = RedisModule_Call(ctx, "SADD", "cc", query_tracking_key_str.c_str()  , client_tracking_group.c_str());
@@ -31,8 +41,8 @@ void Add_Tracking_Wildcard_Query(RedisModuleCtx *ctx, std::string query_str, std
 
 
 void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::string client_tracking_group, const std::vector<std::string> &key_ids) {
-
-   std::string query_term_attribute_normalized = Get_Query_Normalized(query);
+    RedisModule_AutoMemory(ctx);
+    std::string query_term_attribute_normalized = Get_Query_Normalized(query);
 
     // Save the Query:{Clients}
     std::string query_tracking_key_str = CCT_MODULE_QUERY_2_CLIENT + query_term_attribute_normalized;
@@ -82,6 +92,7 @@ void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::stri
 }
 
 void Update_Tracking_Query(RedisModuleCtx *ctx, const std::string query_str, const std::string new_key) {
+    RedisModule_AutoMemory(ctx);
     // Update Query:{Keys}
     std::string query_key_key_name_str = CCT_MODULE_QUERY_2_KEY + query_str;
     RedisModuleCallReply *sadd_reply_qk = RedisModule_Call(ctx, "SADD", "cc", query_key_key_name_str.c_str(), new_key.c_str());
@@ -98,6 +109,7 @@ void Update_Tracking_Query(RedisModuleCtx *ctx, const std::string query_str, con
 }
 
 void Add_Tracking_Key(RedisModuleCtx *ctx, std::string key, std::string client_tracking_group) {
+    RedisModule_AutoMemory(ctx);
     // Save the Key:{Clients} Expire
     std::string key_with_prefix = CCT_MODULE_KEY_2_CLIENT + key;
     RedisModuleCallReply *sadd_key_reply = RedisModule_Call(ctx, "SADD", "cc", key_with_prefix.c_str()  , client_tracking_group.c_str());
@@ -127,6 +139,7 @@ void Add_Tracking_Key(RedisModuleCtx *ctx, std::string key, std::string client_t
 }
 
 void Add_Tracking_Key_Old_Value(RedisModuleCtx *ctx, std::string key, std::string value, bool delete_old) {
+    RedisModule_AutoMemory(ctx);
     std::string old_key_with_prefix = CCT_MODULE_KEY_OLD_VALUE + key;
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Tracking_Key_Old_Value has called with key : " +  old_key_with_prefix);
 
@@ -151,7 +164,7 @@ void Add_Tracking_Key_Old_Value(RedisModuleCtx *ctx, std::string key, std::strin
 }
 
 int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std::string event, const std::string key, const std::string value, const std::string queries, bool send_old_value ) { 
-
+    RedisModule_AutoMemory(ctx);
     if( Is_Client_Connected(client) == false) {
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream skipping offline client : " + client);
         return REDISMODULE_OK;
@@ -194,6 +207,7 @@ int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std
         xadd_params[9] = RedisModule_CreateString(ctx, old_value.c_str(), strlen(old_value.c_str()));  
     }
     int stream_add_resp = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params, (alloc_count/2));
+    RedisModule_Free(xadd_params);
     if (stream_add_resp != REDISMODULE_OK) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Event_To_Stream failed to add the stream.");
         return REDISMODULE_ERR;
@@ -210,10 +224,11 @@ int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std
 }
 
 
-int Trim_From_Stream(RedisModuleCtx *ctx, RedisModuleString *last_read_id, std::string client_name) {
+int Trim_Stream_By_ID(RedisModuleCtx *ctx, RedisModuleString *last_read_id, std::string client_name) {
+    RedisModule_AutoMemory(ctx);
     RedisModuleStreamID minid;
     if (RedisModule_StringToStreamID(last_read_id, &minid) != REDISMODULE_OK) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Trim_From_Stream:  Provided Stream ID is not valid.");
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Trim_Stream_By_ID:  Provided Stream ID is not valid.");
         return REDISMODULE_ERR;
     }
 
@@ -223,7 +238,7 @@ int Trim_From_Stream(RedisModuleCtx *ctx, RedisModuleString *last_read_id, std::
     RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name_r, REDISMODULE_WRITE);
 
     if (RedisModule_StreamTrimByID(stream_key, 0, &minid) < 0) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Trim_From_Stream:  Trim with given Stream ID failed.");
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Trim_Stream_By_ID:  Trim with given Stream ID failed.");
         return REDISMODULE_ERR;
     }
 

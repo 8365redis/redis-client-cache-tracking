@@ -1,5 +1,18 @@
+#include <errno.h>
+#include <string.h>
+#include <vector>
+#include <string>
+#include <set>
+
 #include "cct_query_tracking_logic.h"
+#include "query_parser.h"
+#include "client_tracker.h"
 #include "cct_index_tracker.h"
+#include "logger.h"
+#include "constants.h"
+#include "json_handler.h"
+#include "cct_query_tracking_data.h"
+#include "cct_query_expiry_logic.h"
 
 int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string event, RedisModuleString* r_key,
                                              std::vector<std::string> &clients_to_update, std::string &json_str, 

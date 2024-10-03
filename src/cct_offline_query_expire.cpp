@@ -1,21 +1,24 @@
+#include <vector>
+#include <set>
+#include <algorithm>
+
+#include "logger.h"
+#include "constants.h"
+#include "cct_query_expiry_logic.h"
 #include "cct_offline_query_expire.h"
 
 void Handle_RDB_Event(RedisModuleCtx *ctx, RedisModuleEvent eid, uint64_t subevent, void *data) {
-    
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Handle_RDB_Event called");
-
     if (eid.id == REDISMODULE_EVENT_LOADING) {
-        switch (subevent) {
-            case REDISMODULE_SUBEVENT_LOADING_ENDED: 
-                LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Handle_Client_Event REDISMODULE_SUBEVENT_PERSISTENCE_ENDED ");
-                Handle_Offline_Query_Expire(ctx);
-                break;
+        if (subevent == REDISMODULE_SUBEVENT_LOADING_ENDED) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Handle_Client_Event REDISMODULE_SUBEVENT_PERSISTENCE_ENDED ");
+            Handle_Offline_Query_Expire(ctx);
         }
     }
 }
 
 int Handle_Offline_Query_Expire(RedisModuleCtx *ctx) {
-    
+    RedisModule_AutoMemory(ctx);
     // Get Existing Queries
     std::string pattern_existing = CCT_MODULE_QUERY_CLIENT + "*";
     RedisModuleCallReply *existing_keys_reply = RedisModule_Call(ctx, "KEYS", "c", pattern_existing.c_str());
@@ -85,5 +88,4 @@ int Handle_Offline_Query_Expire(RedisModuleCtx *ctx) {
     }
 
     return REDISMODULE_OK;
-
 }

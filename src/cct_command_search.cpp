@@ -1,3 +1,13 @@
+#include <errno.h>
+#include <string.h>
+#include <vector>
+#include <string>
+
+#include "logger.h"
+#include "constants.h"
+#include "query_parser.h"
+#include "cct_query_tracking_data.h"
+#include "client_tracker.h"
 #include "cct_command_search.h"
 #include "cct_index_tracker.h"
 
@@ -40,6 +50,9 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
 
     std::vector<std::string> key_ids;
     std::vector<std::vector<std::string>> keys;
+    key_ids.reserve(reply_length);
+    keys.reserve(reply_length);
+
     for (size_t i = 1; i < reply_length; i++) {   // Starting from 1 as first one count
         RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(reply, i);
         if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING){
@@ -128,7 +141,7 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
                 queries = Normalized_to_Original(Get_Query_Normalized(argv[2]));
             }
             if( Add_Event_To_Stream(ctx, client, "query", k_v.first, k_v.second, queries, false) != REDISMODULE_OK) {
-                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to adding to the stream." );
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to adding to the stream : " + client );
             }
         }
         
