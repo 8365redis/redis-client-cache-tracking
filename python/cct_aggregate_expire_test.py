@@ -239,7 +239,7 @@ def test_aggregate_expire_multi_request_multi_client():
     response = client3.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 1")
     assert str(response) == '''[5, ['User.ID', '10']]'''
 
-# Need to check logs 
+
 def test_basic_ft_aggregate_expire_metadata():
     r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
@@ -263,23 +263,21 @@ def test_basic_ft_aggregate_expire_metadata():
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 1")
     assert str(response) == '''[10, ['User.ID', '1000']]'''
 
-    query_normalized_1 = '''usersJsonIdx*SORTBY1@User.IDLIMIT03'''
-    query_normalized_2 = '''usersJsonIdx*SORTBY1@User.IDLIMIT02'''
-    query_normalized_3 = '''usersJsonIdx*SORTBY1@User.IDLIMIT01'''
+    response = client1.execute_command("KEYS *")
 
-    is_member = client1.execute_command("SISMEMBER CCT2:CACHED_QUERIES " + query_normalized_1)
-    assert is_member == 1
-    is_member = client1.execute_command("SISMEMBER CCT2:CACHED_QUERIES " + query_normalized_2)
-    assert is_member == 1
-    is_member = client1.execute_command("SISMEMBER CCT2:CACHED_QUERIES " + query_normalized_3)
-    assert is_member == 1
+    assert client1.exists('CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT01') == True
+    assert client1.exists('CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT02') == True
+    assert client1.exists('CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT03') == True
+
+    print("Current time:")
+    print(time.time())
+    print("Expire times:")
+    print(client1.get("CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT01"))
+    print(client1.get("CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT02"))
+    print(client1.get("CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT03"))
 
     time.sleep(3.1)
 
-    is_member = client1.execute_command("SISMEMBER CCT2:CACHED_QUERIES " + query_normalized_1)
-    assert is_member == 0
-    is_member = client1.execute_command("SISMEMBER CCT2:CACHED_QUERIES " + query_normalized_2)
-    assert is_member == 0
-    is_member = client1.execute_command("SISMEMBER CCT2:CACHED_QUERIES " + query_normalized_3)
-    assert is_member == 0
-
+    assert client1.exists('CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT01') == False
+    assert client1.exists('CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT02') == False
+    assert client1.exists('CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT03') == False

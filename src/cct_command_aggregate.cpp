@@ -56,22 +56,32 @@ bool Is_Query_Expired(RedisModuleCtx *ctx, std::string query_str) {
     return false;
 }
 
-void Cache_Query(RedisModuleCtx *ctx, std::vector<RedisModuleString*> query, RedisModuleCallReply *reply, unsigned long long ttl) {
+void Cache_Query(RedisModuleCtx *ctx, std::vector<RedisModuleString*> query, RedisModuleCallReply *reply, unsigned long long ttl) { // ttl is ms
     if (is_handler_running) {
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG, "Cache_Query handler is running skipping caching operation for query: " + Query_2_String(query));
         return;
     }
+    unsigned long long current_ms = Get_Current_Ms();
     std::string query_str = Query_2_String(query);
     CCT_AGGREGATE_CACHED_QUERIES[query_str] = reply;
     for (std::size_t i=0; i< query.size(); i++){
         CCT_AGGREGATE_CACHED_QUERIES_STR[query_str].push_back(query[i]);
     }
-    CCT_AGGREGATE_CACHED_QUERIES_LAST_USAGE[query_str] = Get_Current_Ms(); // Update the Query last usage in first usage
+    CCT_AGGREGATE_CACHED_QUERIES_LAST_USAGE[query_str] = current_ms; // Update the Query last usage in first usage
     CCT_AGGREGATE_CACHED_QUERIES_TTL[query_str] = ttl;
 
-    RedisModuleCallReply *sadd_reply_key = RedisModule_Call(ctx, "SADD", "cc", CCT_MODULE_CACHED_QUERIES.c_str()  , query_str.c_str());
-    if (RedisModule_CallReplyType(sadd_reply_key) != REDISMODULE_REPLY_INTEGER ){
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Cache_Query failed while saving the cached query to CCT_MODULE_CACHED_QUERIES : " +  query_str);
+    // Now write cached query data to Redis for visibility
+    std::string cached_query_key_name_str = CCT_MODULE_CACHED_QUERY + query_str;
+    RedisModuleString *cached_query_key_name = RedisModule_CreateString(ctx, cached_query_key_name_str.c_str() , cached_query_key_name_str.length());
+    RedisModuleKey *cached_query_key = RedisModule_OpenKey(ctx, cached_query_key_name, REDISMODULE_WRITE);
+    unsigned long long query_expire_time = current_ms + ttl;
+    std::string query_expire_time_str = std::to_string(query_expire_time);
+    RedisModuleString *expire_time = RedisModule_CreateString(ctx, query_expire_time_str.c_str() , query_expire_time_str.length());
+    if(RedisModule_StringSet(cached_query_key, expire_time) != REDISMODULE_OK){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Cache_Query failed while caching : " +  cached_query_key_name_str);
+    }
+    if(RedisModule_SetExpire(cached_query_key, ttl) != REDISMODULE_OK){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Cache_Query failed set expire for " +  cached_query_key_name_str);
     }
 
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG, "Cache_Query caching the query : " + query_str);
@@ -138,7 +148,6 @@ void Aggregate_Handler(RedisModuleCtx *ctx, std::unordered_map<std::string, Redi
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG, "Aggregate_Handler started");
         is_handler_running = true;
 
-        
         //Expire Queries
         std::vector<std::string> queries_2_expire;
         for(const auto &c_q : cached_queries){
@@ -163,16 +172,8 @@ void Aggregate_Handler(RedisModuleCtx *ctx, std::unordered_map<std::string, Redi
         }
         invalidate_all_cache = false;
 
-        RedisModule_ThreadSafeContextLock(ctx);
-        // Now delete the metadata of the not cached anymore queries
-        for(const auto &q_2_e : queries_2_expire) {
-            RedisModuleCallReply *srem_key_reply = RedisModule_Call(ctx, "SREM", "cc", CCT_MODULE_CACHED_QUERIES.c_str()  , q_2_e.c_str());
-            if (RedisModule_CallReplyType(srem_key_reply) != REDISMODULE_REPLY_INTEGER ){
-                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Aggregate_Handler failed while deleting cached query from metadata: " +  q_2_e);
-            }            
-        }
-
         if(cct_config.CCT_AGGREGATE_HANDLER_CFG != 0){
+            RedisModule_ThreadSafeContextLock(ctx);
             // Now run the cached queries and update the cache
             for(const auto &c_q : cached_queries){
                 std::vector<RedisModuleString*> query = cached_queries_str[c_q.first];
@@ -191,8 +192,8 @@ void Aggregate_Handler(RedisModuleCtx *ctx, std::unordered_map<std::string, Redi
                 }
                 Update_Cache(ctx, c_q.first, reply);
             }
+            RedisModule_ThreadSafeContextUnlock(ctx);
         }
-        RedisModule_ThreadSafeContextUnlock(ctx);
 
         is_handler_running = false;
         
