@@ -119,15 +119,17 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     if(is_wildcard_search) {
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "FT_Search_RedisCommand search is wildcard.");
         Track_Index(index_str, client_tracking_group);
-        Add_Tracking_Wildcard_Query(ctx, wildcard_query_str, client_tracking_group);
-    } else {
-        // Add tracked keys
-        for (const auto& it : key_ids) {      
-            Add_Tracking_Key(ctx, it, client_tracking_group);
-        }
         // Save the Query for Tracking
-        Add_Tracking_Query(ctx, argv[2], client_tracking_group, key_ids);
+        Add_Tracking_Query(ctx, query, client_tracking_group, key_ids, index_str, true);
+    } else {
+        // Save the Query for Tracking
+        Add_Tracking_Query(ctx, query, client_tracking_group, key_ids, index_str);
     }
+     
+    // Add tracked keys
+    for (const auto& it : key_ids) {      
+        Add_Tracking_Key(ctx, it, client_tracking_group);
+    }    
 
     // Write to other client tracking group members stream
     std::set<std::string> members = Get_Client_Tracking_Group_Clients(client_tracking_group);

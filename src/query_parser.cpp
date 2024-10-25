@@ -23,10 +23,10 @@ std::string Get_Query_Attribute(const std::string &s) {
 std::string Get_Query_Normalized(const RedisModuleString *query) {
     const std::string query_str = RedisModule_StringPtrLen(query, NULL);
     //printf("Query : %s \n", query_str.c_str());
-    std::string query_term_attribute_normalized;
+    //std::string query_term_attribute_normalized;
     const std::string q_term = Get_Query_Term(query_str);
     const std::string q_attribute = Get_Query_Attribute(query_str);
-    query_term_attribute_normalized += q_term + CCT_MODULE_KEY_SEPERATOR + q_attribute;
+    std::string query_term_attribute_normalized = q_term + CCT_MODULE_KEY_SEPERATOR + q_attribute;
     //printf("Query before Normalized : %s \n", query_term_attribute_normalized.c_str());
     //printf("Query Normalized : %s \n", query_term_attribute_normalized.c_str());
     return query_term_attribute_normalized;
@@ -34,7 +34,7 @@ std::string Get_Query_Normalized(const RedisModuleString *query) {
 
 std::string Normalized_to_Original(const std::string normalized_query) {
     if(normalized_query.find(CCT_MODULE_KEY_SEPERATOR) == std::string::npos) {
-        return "";
+        return normalized_query;
     }
     const std::string query = normalized_query.substr(0, normalized_query.find(CCT_MODULE_KEY_SEPERATOR));
     const std::string attribute = normalized_query.substr(normalized_query.find(CCT_MODULE_KEY_SEPERATOR) + 1, normalized_query.length() - normalized_query.find(CCT_MODULE_KEY_SEPERATOR));

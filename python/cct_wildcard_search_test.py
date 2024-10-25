@@ -9,6 +9,7 @@ from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
                 CCT_K2Q, CCT_DELI, CCT_Q2K, CCT_QC, I2C, CCT_EOS
 import time
 from constants import SKIP_UNSTABLE_TEST
+from cct_test_utils import get_redis_snapshot
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -40,7 +41,7 @@ def test_basic_wildcard_query_add_new_data():
 
     # ADD A NEW DATA
     d = cct_prepare.generate_single_object(9999 , 9999, passport_value)
-    key = cct_prepare.TEST_INDEX_PREFIX + str(10000)
+    key = cct_prepare.TEST_INDEX_PREFIX + str(10000)    
     r.json().set(key, Path.root_path(), d)
 
     from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -228,6 +229,7 @@ def test_wildcard_query_in_snapshot():
     time.sleep(0.2)
 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    print(from_stream)
     assert ''' {'operation': 'UPDATE', 'key': '', 'value': '', 'queries': '@usersJsonIdx:{*}'}''' in str(from_stream)
 
 def test_wildcard_query_in_snapshot_in_tracking_group():
@@ -391,3 +393,155 @@ def test_basic_wildcard_query_add_new_data_with_multi_index():
     assert from_stream == []
 
 
+def test_basic_wildcard_query_1():
+    r = connect_redis_with_start()
+    cct_prepare.flush_db(r) # clean all db first
+    cct_prepare.create_index(r)
+
+    passport_value = "aaa"
+    for i in range(3):
+        d = cct_prepare.generate_single_object(1000 - i  , 2000 + i, passport_value)
+        key = cct_prepare.TEST_INDEX_PREFIX + str(i)
+        r.json().set(key, Path.root_path(), d)
+
+    r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
+    print(resp)
+    assert "2000" in str(resp)
+
+    get_redis_snapshot()
+
+    key_exists = r.exists('CCT2:QC:*:app1')
+    assert key_exists == 1
+
+    from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
+    assert "usersJsonIdx:*" not in str(from_stream)
+
+    # ADD A NEW DATA
+    d = cct_prepare.generate_single_object(9999 , 9999, passport_value)
+    key = cct_prepare.TEST_INDEX_PREFIX + str(10000)
+    r.json().set(key, Path.root_path(), d)
+
+    from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
+    assert '''{'operation': 'UPDATE', 'key': 'users:10000', 'value': '{"User":{"ID":"9999","PASSPORT":"aaa","Address":{"ID":"9999"}}}', 'queries': '*', 'old_value': ''}''' == str(from_stream[0][1][1][1])
+
+
+def test_basic_wildcard_query_snapshot_1():
+    r = connect_redis_with_start()
+    cct_prepare.flush_db(r) # clean all db first
+    cct_prepare.create_index(r)
+
+    passport_value = "aaa"
+    for i in range(3):
+        d = cct_prepare.generate_single_object(1000 - i  , 2000 + i, passport_value)
+        key = cct_prepare.TEST_INDEX_PREFIX + str(i)
+        r.json().set(key, Path.root_path(), d)
+
+    client1 = connect_redis()
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
+    print(resp)
+    assert "2000" in str(resp)
+
+    get_redis_snapshot()
+
+    key_exists = r.exists('CCT2:QC:*:app1')
+    assert key_exists == 1
+
+    from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
+    assert "usersJsonIdx:*" not in str(from_stream)
+
+    # DISCONNECT
+    client1.connection_pool.disconnect()
+
+    time.sleep(0.2)
+
+    # RE-REGISTER
+    client1 = connect_redis()
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+
+    time.sleep(0.2)
+
+    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    print(from_stream)
+
+
+
+def test_basic_wildcard_query_snapshot_2():
+    r = connect_redis_with_start()
+    cct_prepare.flush_db(r) # clean all db first
+    cct_prepare.create_index(r)
+
+    passport_value = "aaa"
+    for i in range(20):
+        d = cct_prepare.generate_single_object(1000 - i  , 2000 + i, passport_value)
+        key = cct_prepare.TEST_INDEX_PREFIX + str(i)
+        r.json().set(key, Path.root_path(), d)
+
+    client1 = connect_redis()
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
+    print(resp)
+    assert "2000" in str(resp)
+
+    #get_redis_snapshot()
+
+    key_exists = r.exists('CCT2:QC:*:app1')
+    assert key_exists == 1
+
+    from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
+    assert "usersJsonIdx:*" not in str(from_stream)
+
+    # DISCONNECT
+    client1.connection_pool.disconnect()
+
+    time.sleep(0.2)
+
+    # RE-REGISTER
+    client1 = connect_redis()
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+
+    time.sleep(0.2)
+
+    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    print(from_stream)
+
+
+def test_basic_wildcard_query_snapshot_doesn_not_include_update_from_not_result_in_snapshot():
+    r = connect_redis_with_start()
+    cct_prepare.flush_db(r) # clean all db first
+    cct_prepare.create_index(r)
+
+    passport_value = "aaa"
+    for i in range(4):
+        d = cct_prepare.generate_single_object(1000 - i  , 2000 + i, passport_value)
+        key = cct_prepare.TEST_INDEX_PREFIX + str(i)
+        r.json().set(key, Path.root_path(), d)
+
+    client1 = connect_redis()
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " * LIMIT 0 1")
+    print(resp)
+    assert "2000" in str(resp)
+
+    #get_redis_snapshot()
+
+    key_exists = r.exists('CCT2:QC:*:app1')
+    assert key_exists == 1
+
+    from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
+    assert "usersJsonIdx:*" not in str(from_stream)
+
+    # DISCONNECT
+    client1.connection_pool.disconnect()
+
+    time.sleep(0.2)
+
+    # RE-REGISTER
+    client1 = connect_redis()
+    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+
+    time.sleep(0.2)
+
+    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    print(from_stream)
