@@ -1,4 +1,5 @@
 #include <unordered_map>
+#include <thread>
 #include "cct_index_tracker.h"
 #include "logger.h"
 
@@ -10,13 +11,21 @@ std::unordered_map<std::string, std::set<std::string>> CCT_TRACKED_INDEX_2_CLIEN
 void OnRedisReady(RedisModuleCtx *ctx, RedisModuleEvent event, uint64_t subevent, void *data) {
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "OnRedisReady event : " + std::to_string(event.id) + " subevent : " + std::to_string(subevent) );
     if (event.id == REDISMODULE_EVENT_LOADING && subevent == REDISMODULE_SUBEVENT_LOADING_ENDED) {
-        std::set<std::string> indexes = Get_All_Indexes(ctx);
-        Get_Index_Prefixes(ctx , indexes);
+        auto& index_manager = Redis_Index_Manager::Instance();
+        std::set<std::string> indexes = index_manager.Get_All_Indexes(ctx);
+        index_manager.Get_Index_Prefixes(ctx , indexes);
     }
 }
 
+void Redis_Index_Manager::Set_Index_Change(bool change){
+    active_index_change = change;
+}
 
-std::set<std::string> Get_All_Indexes(RedisModuleCtx *ctx) {
+bool Redis_Index_Manager::Get_Index_Change() const{
+    return active_index_change;
+}
+
+std::set<std::string> Redis_Index_Manager::Get_All_Indexes(RedisModuleCtx *ctx) {
     RedisModule_AutoMemory(ctx);
     std::set<std::string> indexes;
     RedisModuleCallReply *ft_list_reply = RedisModule_Call(ctx, "FT._LIST", "");
@@ -44,7 +53,7 @@ std::set<std::string> Get_All_Indexes(RedisModuleCtx *ctx) {
     return indexes;
 }
 
-void Get_Index_Prefixes(RedisModuleCtx *ctx, std::set<std::string> indexes) {
+void Redis_Index_Manager::Get_Index_Prefixes(RedisModuleCtx *ctx, std::set<std::string> indexes) {
     RedisModule_AutoMemory(ctx);
     for(const auto& index : indexes){
         RedisModuleCallReply *info_reply = RedisModule_Call(ctx, "FT.INFO", "c", index.c_str());
@@ -134,4 +143,22 @@ std::string Get_Index_From_Key(std::string key) {
         }
     }
     return "";    
+}
+
+void Start_Index_Change_Handler(RedisModuleCtx *ctx) {
+    std::thread index_checker_thread(Index_Change_Handler, ctx);
+    index_checker_thread.detach();    
+}
+
+void Index_Change_Handler(RedisModuleCtx *ctx) {
+    auto& index_manager = Redis_Index_Manager::Instance();
+    while(true) {
+        if(index_manager.Get_Index_Change()) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Index_Change_Handler index change scan started" );
+            std::set<std::string> indexes = index_manager.Get_All_Indexes(ctx);
+            index_manager.Get_Index_Prefixes(ctx , indexes);
+            index_manager.Set_Index_Change(false);
+        }   
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // Check every second
+    }
 }

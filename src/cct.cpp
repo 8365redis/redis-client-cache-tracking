@@ -12,6 +12,7 @@
 #include "version.h"
 #include "cct_index_tracker.h"
 #include "client_tracker.h"
+#include "cct_command_filter.h"
 
 
 #ifndef CCT_MODULE_VERSION
@@ -118,9 +119,13 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         return RedisModule_ReplyWithError(ctx, "SubscribeToServerEvent to Loading has failed");
     }  
 
+    RedisModule_RegisterCommandFilter(ctx, Command_Filter_Callback, REDISMODULE_CMDFILTER_NOSELF);
+
     Start_Client_Handler(rdts_staticCtx);
 
     Start_Aggregate_Handler(rdts_staticCtx);
+
+    Start_Index_Change_Handler(rdts_staticCtx);
   
     return REDISMODULE_OK;
 }
