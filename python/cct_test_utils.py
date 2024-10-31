@@ -2,7 +2,7 @@ import json
 from manage_redis import connect_redis
 from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
                 CCT_K2Q, CCT_DELI, CCT_Q2K, CCT_QC, \
-                CCT_MODULE_PREFIX
+                CCT_MODULE_PREFIX, CCT_OLD
 
 from redis.commands.json.path import Path
 from redis.commands.search.field import TextField, NumericField, TagField
@@ -43,7 +43,7 @@ def get_redis_snapshot():
     for key in all_keys:
         if CCT_MODULE_PREFIX not in key :
             continue
-        if CCT_QC in key : 
+        if CCT_QC in key or CCT_OLD in key: 
             print(key + "=" + client.get(key))
         else:
             print(key + "=" + str(client.smembers(key)))

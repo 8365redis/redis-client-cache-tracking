@@ -73,19 +73,19 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
         auto client_queries_internal = client_keys_2_query[key];
         std::vector<std::string> client_queries_internal_original;
         for (auto q : client_queries_internal) {
-            client_queries_internal_original.push_back(Normalized_to_Original(q));
+            client_queries_internal_original.push_back(Normalized_to_Original_With_Index(q));
         }
         std::string client_queries_internal_str;
         for(auto const& e : client_queries_internal_original) client_queries_internal_str += (e + CCT_MODULE_QUERY_DELIMETER);
         if(client_queries_internal_str.length() > CCT_MODULE_QUERY_DELIMETER.length() ) {
             client_queries_internal_str.erase(client_queries_internal_str.length() - CCT_MODULE_QUERY_DELIMETER.length());
         }
-        std::string event = "json.set";
+        std::string event = REDIS_JSON_SET_EVENT;
         if(client_keys_2_values[key].empty()){
-            event = "del";
+            event = REDIS_DEL_EVENT;
             client_queries_internal_str = "";
         }
-        if (Add_Event_To_Stream(ctx, client_name_str, event, key, client_keys_2_values[key], client_queries_internal_str) != REDISMODULE_OK) {
+        if (Add_Event_To_Stream(ctx, client_name_str, event, key, client_keys_2_values[key], client_queries_internal_str, cct_config.CCT_SEND_OLD_VALUE_CFG) != REDISMODULE_OK) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Snaphot failed to adding to the stream." );
             return ;
         }
@@ -93,7 +93,7 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
 
     // Write empty queries to client stream  
     for (auto k : empty_queries) {
-        std::string original_query = Normalized_to_Original(k);
+        std::string original_query = Normalized_to_Original_With_Index(k);
         if (Add_Event_To_Stream(ctx, client_name_str, "json.set", "", "", original_query) != REDISMODULE_OK) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Snaphot failed to adding to the stream for empty queries." );
             return ;

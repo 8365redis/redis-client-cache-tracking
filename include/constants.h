@@ -22,6 +22,10 @@ const int CLIENT_OFFLINE = 0 ;
 
 const std::string WILDCARD_SEARCH  = "*";
 
+const std::string REDIS_JSON_SET_EVENT = "json.set";
+const std::string REDIS_DEL_EVENT = "del";
+const std::string REDIS_EXPIRED_EVENT = "expired";
+
 const std::string CCT_UPDATE_EVENT = "UPDATE";
 const std::string CCT_DELETE_EVENT = "DELETE";
 const std::string CCT_EXPIRE_EVENT = "EXPIRE";
@@ -29,11 +33,11 @@ const std::string CCT_NEW_QUERY_EVENT = "new_query";
 
 const std::unordered_map<std::string, std::string> CCT_KEY_EVENTS =
                                                                     {
-                                                                        {"json.set", CCT_UPDATE_EVENT},
-                                                                        {"del", CCT_DELETE_EVENT},
-                                                                        {"expired", CCT_DELETE_EVENT},
+                                                                        {REDIS_JSON_SET_EVENT, CCT_UPDATE_EVENT},
+                                                                        {REDIS_DEL_EVENT, CCT_DELETE_EVENT},
+                                                                        {REDIS_EXPIRED_EVENT, CCT_DELETE_EVENT},
                                                                         {"query_expired", CCT_EXPIRE_EVENT},
-                                                                        {"query", "new_query"}
+                                                                        {"query", CCT_NEW_QUERY_EVENT}
                                                                     } ;
 
 const int MS_MULT = 1000 ;

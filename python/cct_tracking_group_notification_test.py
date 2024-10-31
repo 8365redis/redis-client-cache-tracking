@@ -9,10 +9,10 @@ from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 def test_basic_tracking_data():
     r = connect_redis_with_start()
@@ -27,21 +27,23 @@ def test_basic_tracking_data():
     # REGISTER
     resp = r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_GROUP_NAME_1 )
     assert cct_prepare.OK in str(resp)
-    print(resp)
+    #print(resp)
 
     resp = r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2 + " " + cct_prepare.TEST_GROUP_NAME_1 )
     assert cct_prepare.OK in str(resp)
-    print(resp)
+    #print(resp)
 
     query_key_attr = "User\\.PASSPORT" + ":" + d["User"]["PASSPORT"]
-    print("query_key_attr:" + query_key_attr)
+    #print("query_key_attr:" + query_key_attr)
     # SEARCH
     resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + d["User"]["PASSPORT"] + "}")
     assert resp
-    print("CCT2.FT.SEARCH Resp:" + str(resp))
+    #print("CCT2.FT.SEARCH Resp:" + str(resp))
+
+    query = cct_prepare.TEST_INDEX_NAME + CCT_DELI + query_key_attr
 
     #CHECK TRACKED QUERY
-    tracked_query = r.sismember(CCT_Q2C + query_key_attr, cct_prepare.TEST_GROUP_NAME_1)
+    tracked_query = r.sismember(CCT_Q2C + query, cct_prepare.TEST_GROUP_NAME_1)
     assert tracked_query
 
     #CHECK TRACKED KEY
@@ -150,14 +152,14 @@ def test_not_tracking_not_effected():
 
     # Check key is in stream for client 1
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print('stream 1')
-    print(json.dumps(from_stream))
+    #print('stream 1')
+    #print(json.dumps(from_stream))
     assert key in str(from_stream[0][1])
 
     # Check key is not stream for client 2
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_2:0} )
-    print('stream 2')
-    print(json.dumps(from_stream))
+    #print('stream 2')
+    #print(json.dumps(from_stream))
     assert key not in str(from_stream[0][1])
 
     # Check new key is tracked    

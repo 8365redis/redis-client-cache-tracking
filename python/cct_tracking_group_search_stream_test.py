@@ -9,10 +9,10 @@ from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 
 def test_basic_tracking_update_to_stream():

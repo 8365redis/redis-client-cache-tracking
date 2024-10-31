@@ -10,10 +10,10 @@ from cct_test_utils import check_query_meta_data, get_redis_snapshot
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 @pytest.mark.skipif(True ,
                     reason="Feature is disabled")

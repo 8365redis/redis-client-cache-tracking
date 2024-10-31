@@ -12,10 +12,10 @@ import constants
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 @pytest.mark.skipif(SKIP_HB_TEST ,
                     reason="Not sending HB in other tests")
@@ -80,7 +80,7 @@ def test_client_expire_after_some_heartbeat():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
     assert 2 == len(from_stream[0][1])
     
     res = client1.execute_command("CCT2.HEARTBEAT")
@@ -94,7 +94,7 @@ def test_client_expire_after_some_heartbeat():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
     assert 4 == len(from_stream[0][1])
 
     res = client1.execute_command("CCT2.HEARTBEAT")

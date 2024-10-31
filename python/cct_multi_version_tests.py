@@ -7,10 +7,10 @@ from constants import CCT_K2C, CCT_Q2C, SKIP_MULTI_VERSION_TEST
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 
 #to run this test you need to load cctv1 module and run the redis manually

@@ -2,7 +2,7 @@ import pytest
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis, start_redis
 import cct_prepare
-from constants import CCT_OLD
+from constants import CCT_OLD, SKIP_OLD_VALUE_TEST
 from redis.commands.json.path import Path
 from redis.commands.search.field import TextField, NumericField, TagField
 from redis.commands.search.indexDefinition import IndexDefinition, IndexType
@@ -11,11 +11,13 @@ from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
+@pytest.mark.skipif(SKIP_OLD_VALUE_TEST ,
+                    reason="Set config and run the test")
 def test_backup_key_holding_value():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
@@ -52,7 +54,7 @@ def test_backup_key_holding_value():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1002 , 2000, "aaa")
@@ -66,7 +68,7 @@ def test_backup_key_holding_value():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1003 , 2000, "aaa")
@@ -80,8 +82,10 @@ def test_backup_key_holding_value():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
+@pytest.mark.skipif(SKIP_OLD_VALUE_TEST ,
+                    reason="Set config and run the test")
 def test_backup_key_holding_value_multi_key():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
@@ -122,7 +126,7 @@ def test_backup_key_holding_value_multi_key():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
     # UPDATE DATA KEY2
     d = cct_prepare.generate_single_object(1001 , 2000, "aaa")
@@ -136,8 +140,10 @@ def test_backup_key_holding_value_multi_key():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
+@pytest.mark.skipif(SKIP_OLD_VALUE_TEST ,
+                    reason="Set config and run the test")
 def test_old_key_holding_value_after_delete():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
@@ -169,13 +175,13 @@ def test_old_key_holding_value_after_delete():
     # CHECK OLD VAL
     old_val_key = CCT_OLD + key
     old_val = producer.get(old_val_key)
-    print(old_val)
+    #print(old_val)
     old_val_dict = eval(old_val)
     assert old_val_dict["User"]["ID"] == d["User"]["ID"]
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
     # DELETE DATA 
     producer.delete(key)
@@ -187,8 +193,10 @@ def test_old_key_holding_value_after_delete():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
+@pytest.mark.skipif(SKIP_OLD_VALUE_TEST ,
+                    reason="Set config and run the test")
 def test_old_key_holding_value_after_key_no_longer_interested():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
@@ -220,13 +228,13 @@ def test_old_key_holding_value_after_key_no_longer_interested():
     # CHECK OLD VAL
     old_val_key = CCT_OLD + key
     old_val = producer.get(old_val_key)
-    print(old_val)
+    #print(old_val)
     old_val_dict = eval(old_val)
     assert old_val_dict["User"]["ID"] == d["User"]["ID"]
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
 
     # UPDATE DATA 
@@ -240,7 +248,7 @@ def test_old_key_holding_value_after_key_no_longer_interested():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
     # UPDATE DATA 
     d = cct_prepare.generate_single_object(1002 , 2002, "bbb")
@@ -251,6 +259,8 @@ def test_old_key_holding_value_after_key_no_longer_interested():
     old_val = producer.get(old_val_key)
     assert old_val == None
 
+@pytest.mark.skipif(SKIP_OLD_VALUE_TEST ,
+                    reason="Set config and run the test")
 def test_old_key_holding_value_after_delete_2_clients():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
@@ -287,13 +297,13 @@ def test_old_key_holding_value_after_delete_2_clients():
     # CHECK OLD VAL
     old_val_key = CCT_OLD + key
     old_val = producer.get(old_val_key)
-    print(old_val)
+    #print(old_val)
     old_val_dict = eval(old_val)
     assert old_val_dict["User"]["ID"] == d["User"]["ID"]
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
     # DELETE DATA 
     producer.delete(key)
@@ -305,8 +315,10 @@ def test_old_key_holding_value_after_delete_2_clients():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
+@pytest.mark.skipif(SKIP_OLD_VALUE_TEST ,
+                    reason="Set config and run the test")
 def test_old_key_holding_value_after_key_no_longer_interested_only_one_client():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
@@ -343,13 +355,13 @@ def test_old_key_holding_value_after_key_no_longer_interested_only_one_client():
     # CHECK OLD VAL
     old_val_key = CCT_OLD + key
     old_val = producer.get(old_val_key)
-    print(old_val)
+    #print(old_val)
     old_val_dict = eval(old_val)
     assert old_val_dict["User"]["ID"] == d["User"]["ID"]
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
 
     # UPDATE DATA 
@@ -362,14 +374,14 @@ def test_old_key_holding_value_after_key_no_longer_interested_only_one_client():
     assert old_val != None
 
     # Check stream 
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print("Client1 stream :")
-    print(from_stream)
+    #from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    #print("Client1 stream :")
+    #print(from_stream)
 
     # Check stream 
-    from_stream = client2.xread( streams={cct_prepare.TEST_APP_NAME_2:0} )
-    print("Client2 stream :")
-    print(from_stream)
+    #from_stream = client2.xread( streams={cct_prepare.TEST_APP_NAME_2:0} )
+    #print("Client2 stream :")
+    #print(from_stream)
 
     # UPDATE DATA 
     d = cct_prepare.generate_single_object(1002 , 2002, "bbb")

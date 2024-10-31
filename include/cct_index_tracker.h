@@ -12,5 +12,6 @@ std::string Get_Tracked_Index_From_Key(std::string key);
 const std::set<std::string> Get_Tracked_Index_Clients(std::string index);
 void Track_Index(std::string index, std::string client_name);
 void UnTrack_Index(std::string index, std::string client_name);
+std::string Get_Index_From_Key(std::string key);
 
 #endif /* CCT_INDEX_TRACKER_H */

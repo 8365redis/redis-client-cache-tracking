@@ -2,14 +2,14 @@ import pytest
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
-from constants import CCT_K2C, CCT_Q2C, CCT_EOS
+from constants import CCT_K2C, CCT_Q2C, CCT_EOS, CCT_DELI
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 def test_key_deleted_no_affect():
     producer = connect_redis_with_start()
@@ -42,7 +42,7 @@ def test_key_deleted_no_affect():
     assert not tracked_key 
 
     # Check query is tracked    
-    query_part = "User\\.PASSPORT:" + passport_value 
+    query_part = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.PASSPORT:" + passport_value 
     tracked_query = producer.sismember(CCT_Q2C + query_part, cct_prepare.TEST_APP_NAME_1)
     assert tracked_query 
 
@@ -76,10 +76,10 @@ def test_key_affects_query():
 
     # Check key is in streams 
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
     assert key in str(from_stream[0][1])    
 
     # Check query is tracked    
-    query_part = "User\\.PASSPORT:" + passport_value 
+    query_part = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.PASSPORT:" + passport_value 
     tracked_query = producer.sismember(CCT_Q2C + query_part, cct_prepare.TEST_APP_NAME_1)
     assert tracked_query 

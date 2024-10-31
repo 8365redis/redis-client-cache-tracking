@@ -6,14 +6,14 @@ import cct_prepare
 from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
                 CCT_K2Q, CCT_DELI, CCT_Q2K, CCT_QC, \
                 CCT_QUERY_HALF_TTL, CCT_QUERY_TTL, CCT_MODULE_PREFIX
-from cct_test_utils import check_query_meta_data
+from cct_test_utils import check_query_meta_data , get_redis_snapshot
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 def test_query_expired():
     producer = connect_redis_with_start()
@@ -66,37 +66,40 @@ def test_query_expired():
     d = cct_prepare.generate_single_object(1001 , 2001, "aaa")
     producer.json().set(key_2, Path.root_path(), d)
 
-    print("#########STREAMS AFTER NON EXPIRED K2 UPDATED ############")
+    #print("#########STREAMS AFTER NON EXPIRED K2 UPDATED ############")
 
     # CHECK STREAM
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    ##print(from_stream)
     from_stream = client2.xread( streams={cct_prepare.TEST_APP_NAME_2:0} )
-    print(from_stream)
+    #print(from_stream)
+
+    query_1 = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.PASSPORT:aaa"
+    query_2 = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.ID:1001"
 
     # CHECK BEFORE EXPIRE
-    result = producer.exists(CCT_QC + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1)
+    result = producer.exists(CCT_QC + query_1 + CCT_DELI + cct_prepare.TEST_APP_NAME_1)
     assert result
-    result = producer.exists(CCT_QC + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2)
-    assert result  
+    result = producer.exists(CCT_QC + query_2 + CCT_DELI + cct_prepare.TEST_APP_NAME_2)
+    assert result
 
-    result = producer.sismember(CCT_Q2C +  "User\\.PASSPORT:aaa" ,  cct_prepare.TEST_APP_NAME_1)
+    result = producer.sismember(CCT_Q2C +  query_1 ,  cct_prepare.TEST_APP_NAME_1)
     assert result
-    result = producer.sismember(CCT_Q2C +"User\\.ID:1001" , cct_prepare.TEST_APP_NAME_2)
-    assert result  
+    result = producer.sismember(CCT_Q2C + query_2 , cct_prepare.TEST_APP_NAME_2)
+    assert result
 
     # PASS TIME (Q1 expires after this)
     time.sleep(CCT_QUERY_HALF_TTL)
 
     # CHECK EXPIRE Q1
-    result = producer.exists(CCT_QC + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1)
+    result = producer.exists(CCT_QC + query_1 + CCT_DELI + cct_prepare.TEST_APP_NAME_1)
     assert not result
-    result = producer.exists(CCT_QC + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2)
+    result = producer.exists(CCT_QC + query_2 + CCT_DELI + cct_prepare.TEST_APP_NAME_2)
     assert result
 
-    result = producer.sismember(CCT_Q2C +  "User\\.PASSPORT:aaa" ,  cct_prepare.TEST_APP_NAME_1)
+    result = producer.sismember(CCT_Q2C + query_1 ,  cct_prepare.TEST_APP_NAME_1)
     assert not result
-    result = producer.sismember(CCT_Q2C +"User\\.ID:1001" , cct_prepare.TEST_APP_NAME_2)
+    result = producer.sismember(CCT_Q2C + query_2 , cct_prepare.TEST_APP_NAME_2)
     assert result
 
     result = producer.exists(CCT_K2C + key_1)
@@ -111,38 +114,38 @@ def test_query_expired():
     d = cct_prepare.generate_single_object(1001 , 2000, "ccc")
     producer.json().set(key_2, Path.root_path(), d)
 
-    print("#########STREAMS AFTER Q1 EXPIRE K2 UPDATED ############")
+    #print("#########STREAMS AFTER Q1 EXPIRE K2 UPDATED ############")
 
     # CHECK STREAM
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
     from_stream = client2.xread( streams={cct_prepare.TEST_APP_NAME_2:0} )
-    print(from_stream)
+    #print(from_stream)
 
     # UPDATE DATA (K2)
     d = cct_prepare.generate_single_object(1001 , 2000, "ddd")
     producer.json().set(cct_prepare.TEST_INDEX_PREFIX + str(2), Path.root_path(), d)
 
-    print("#########STREAMS AFTER Q1 EXPIRE K2 UPDATED AGAIN ############")
+    #print("#########STREAMS AFTER Q1 EXPIRE K2 UPDATED AGAIN ############")
 
     # CHECK STREAM
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
     from_stream = client2.xread( streams={cct_prepare.TEST_APP_NAME_2:0} )
-    print(from_stream)
+    #print(from_stream)
 
     # PASS TIME (Q2 expires after this)
     time.sleep(CCT_QUERY_HALF_TTL)
 
     # CHECK EXPIRE Q2
-    result = producer.exists(CCT_QC + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1)
+    result = producer.exists(CCT_QC + query_1 + cct_prepare.TEST_APP_NAME_1)
     assert not result
-    result = producer.exists(CCT_QC + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2)
+    result = producer.exists(CCT_QC + query_2 + cct_prepare.TEST_APP_NAME_2)
     assert not result  
 
-    result = producer.sismember(CCT_Q2C +  "User\\.PASSPORT:aaa" ,  cct_prepare.TEST_APP_NAME_1)
+    result = producer.sismember(CCT_Q2C + query_1 ,  cct_prepare.TEST_APP_NAME_1)
     assert not result
-    result = producer.sismember(CCT_Q2C +"User\\.ID:1001" , cct_prepare.TEST_APP_NAME_2)
+    result = producer.sismember(CCT_Q2C + query_2 , cct_prepare.TEST_APP_NAME_2)
     assert not result  
 
     result = producer.exists(CCT_K2C + key_1)
@@ -156,25 +159,25 @@ def test_query_expired():
     d = cct_prepare.generate_single_object(1001 , 2000, "eee")
     producer.json().set(key_2, Path.root_path(), d)
 
-    print("#########STREAMS AFTER Q1&Q2 EXPIRE K2 UPDATED ############")
+    #print("#########STREAMS AFTER Q1&Q2 EXPIRE K2 UPDATED ############")
 
     # CHECK STREAM
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
     from_stream = client2.xread( streams={cct_prepare.TEST_APP_NAME_2:0} )
-    print(from_stream)    
+    #print(from_stream)    
 
     # UPDATE DATA (K2)
     d = cct_prepare.generate_single_object(1001 , 2000, "fff")
     producer.json().set(key_2, Path.root_path(), d)
 
-    print("#########STREAMS AFTER Q1&Q2 EXPIRE K2 UPDATED AGAIN############")
+    #print("#########STREAMS AFTER Q1&Q2 EXPIRE K2 UPDATED AGAIN############")
 
     # CHECK STREAM
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
     from_stream = client2.xread( streams={cct_prepare.TEST_APP_NAME_2:0} )
-    print(from_stream)        
+    #print(from_stream)        
 
 
     result = producer.exists(CCT_K2C + key_1)
@@ -202,7 +205,7 @@ def test_1_client_1_query_1_key_expired():
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
-    query_normalized = "User\\.PASSPORT:aaa"
+    query_normalized = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.PASSPORT:aaa"
     # CHECK CCT_META_DATA 
     check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, query_normalized, key_1, [True]*6 )
 
@@ -234,8 +237,8 @@ def test_1_client_2_query_1_key_expired():
     query_value = 1000
     client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
 
-    first_query_normalized = "User\\.PASSPORT:aaa"
-    second_query_normalized = "User\\.ID:1000"
+    first_query_normalized = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.PASSPORT:aaa"
+    second_query_normalized = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.ID:1000"
 
     # CHECK CCT_META_DATA 
 
@@ -284,8 +287,8 @@ def test_1_client_2_query_2_key_expired():
     query_value = 1001
     client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(query_value) + "}")
 
-    first_query_normalized = "User\\.PASSPORT:aaa"
-    second_query_normalized = "User\\.ID:1001"
+    first_query_normalized = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.PASSPORT:aaa"
+    second_query_normalized = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.ID:1001"
 
     # CHECK CCT_META_DATA
 
@@ -318,7 +321,7 @@ def test_2_client_1_query_1_key_expired_same_time():
     key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
     producer.json().set(key_1, Path.root_path(), d)
 
-    first_query_normalized = "User\\.PASSPORT:aaa"
+    first_query_normalized = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.PASSPORT:aaa"
 
     # FIRST CLIENT FiRST QUERY
     query_value = passport_value
@@ -355,7 +358,7 @@ def test_2_client_1_query_1_key_expired_sequentially():
     key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
     producer.json().set(key_1, Path.root_path(), d)
 
-    first_query_normalized = "User\\.PASSPORT:aaa"
+    first_query_normalized = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.PASSPORT:aaa"
 
     # FIRST CLIENT FiRST QUERY
     query_value = passport_value
@@ -403,8 +406,8 @@ def test_2_client_2_query_1_key_expired_same_time():
     key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
     producer.json().set(key_1, Path.root_path(), d)
 
-    first_query_normalized = "User\\.PASSPORT:aaa"
-    second_query_normalized = "User\\.ID:1000"
+    first_query_normalized = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.PASSPORT:aaa"
+    second_query_normalized = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.ID:1000"
 
     # FIRST CLIENT FiRST QUERY
     query_value = passport_value

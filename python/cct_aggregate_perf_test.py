@@ -9,10 +9,10 @@ import time
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 @pytest.mark.skipif(SKIP_PERF_TEST ,
                     reason="Only run manually")

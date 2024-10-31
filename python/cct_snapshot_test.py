@@ -3,8 +3,8 @@ import time
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
-from constants import CCT_QUERIES, CCT_VALUE, CCT_QUERY_HALF_TTL, CCT_QUERY_TTL, CCT_EOS
-from cct_test_utils import check_query_meta_data
+from constants import CCT_QUERIES, CCT_VALUE, CCT_QUERY_HALF_TTL, CCT_QUERY_TTL, CCT_EOS, CCT_DELI
+from cct_test_utils import check_query_meta_data , get_redis_snapshot
 import json
 from redis.commands.search.field import TagField
 from redis.commands.search.indexDefinition import IndexDefinition, IndexType
@@ -12,10 +12,10 @@ from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 
 def test_1_client_1_query_with_disconnect():
@@ -47,7 +47,9 @@ def test_1_client_1_query_with_disconnect():
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
-    time.sleep(0.2)
+    time.sleep(0.1)
+
+    #print(get_redis_snapshot())
 
     # Check stream content
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1: 0})
@@ -211,7 +213,7 @@ def test_1_client_1_query_1_key_multiple_update_still_match_query():
     # Check stream content
     time.sleep(0.1)
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1: 0})
-    print(from_stream)
+    #print(from_stream)
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert key_1 in str(from_stream[0][1][0][1])
     assert query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
@@ -260,7 +262,7 @@ def test_1_client_1_query_1_key_multiple_update_doesnt_match_query():
 
     # Check stream content
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1: 0})
-    print(from_stream)
+    #print(from_stream)
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert key_1 not in str(from_stream[0][1][0][1])
     assert query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
@@ -369,7 +371,7 @@ def test_1_client_1_query_multiple_key_multiple_update_doesnt_match_query():
 
     # Check stream content
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1: 0})
-    print(json.dumps(from_stream))
+    #print(json.dumps(from_stream))
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert key_2 in str(from_stream[0][1][0][1])
     assert key_1 in str(from_stream[0][1][1][1])
@@ -392,14 +394,17 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query(
     d = cct_prepare.generate_single_object(1001, 2001, passport_value)
     key_2 = cct_prepare.TEST_INDEX_PREFIX + str(2)
     producer.json().set(key_2, Path.root_path(), d)
-    first_query_normalized = "@User\\.PASSPORT:{aaa}"
-    second_query_normalized = "@User\\.ID:{1001}"
+    first_query_normalized = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "@User\\.PASSPORT:{aaa}"
+    second_query_normalized = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "@User\\.ID:{1001}"
 
     # FIRST CLIENT
     query_value = passport_value
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     client1.execute_command("CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
+
+    #print(get_redis_snapshot())
+
     query_value = id_value
     client1.execute_command("CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.ID:{" + str(query_value) + "}")
 
@@ -417,6 +422,8 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query(
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1: 0})
     assert 5 == len(from_stream[0][1])
 
+    #print(get_redis_snapshot())
+
     # DISCONNECT
     client1.connection_pool.disconnect()
 
@@ -424,9 +431,11 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query(
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
+    #print(get_redis_snapshot())
+
     # Check stream content
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1: 0})
-    print(json.dumps(from_stream))
+    #print(json.dumps(from_stream))
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert 3 == len(from_stream[0][1])
     assert key_2 in str(from_stream[0][1][0][1])
@@ -479,7 +488,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     # Check stream content
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1: 0})
-    print(json.dumps(from_stream))
+    #print(json.dumps(from_stream))
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert 3 == len(from_stream[0][1])
     assert key_2 in str(from_stream[0][1][0][1])
@@ -543,7 +552,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
 
     # Check stream content
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1: 0})
-    print(from_stream)
+    #print(from_stream)
     assert 2 == len(from_stream[0][1])
     assert key_2 in str(from_stream[0][1][0][1])
     assert second_query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
@@ -590,7 +599,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
     # Check stream is not empty
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1: 0})
     assert 5 == len(from_stream[0][1])
-    print(from_stream)
+    #print(from_stream)
 
     # THIS WILL EXPIRE FIRST QUERY 
     time.sleep(CCT_QUERY_HALF_TTL)
@@ -650,7 +659,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
 
     # Check stream is not empty
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1: 0})
-    print(from_stream)
+    #print(from_stream)
     assert 4 == len(from_stream[0][0])
 
     # THIS WILL EXPIRE FIRST QUERY 
@@ -838,7 +847,7 @@ def test_empty_queries_in_snapshot():
 
     # Check stream content
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1: 0})
-    print(from_stream)
+    #print(from_stream)
     assert cct_prepare.TEST_APP_NAME_1 in from_stream[0][0]
     assert key_1 in str(from_stream[0][1][0][1])
     assert query_normalized in from_stream[0][1][0][1][CCT_QUERIES]
@@ -890,7 +899,7 @@ def test_2_client_2_query_with_matching_queries():
 
     # Check stream content
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_2: 0})
-    print(from_stream)
+    #print(from_stream)
     assert cct_prepare.TEST_APP_NAME_2 in from_stream[0][0]
 
 
@@ -974,7 +983,7 @@ def test_overwritten_value_not_matching_query_should_be_removed_form_tracked_sin
 
     # CHECK THE STREAM
     from_stream = r1.xread(streams={client_1: 0})
-    print(json.dumps(from_stream))
+    #print(json.dumps(from_stream))
 
     r1.connection_pool.disconnect()
     r1 = connect_redis()
@@ -1017,14 +1026,16 @@ def test_add_events_should_be_reflected_in_snapshot_for_query_for_multiple_clien
     r2 = connect_redis()
     r2.execute_command("CCT2.REGISTER " + client_2)
 
-    r1.execute_command(
-        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + passport_value + "}")
-    r2.execute_command(
-        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + passport_value + "}")
+    r1.execute_command("CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + passport_value + "}")
+    r2.execute_command("CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + passport_value + "}")
+
+    #print(get_redis_snapshot())
 
     key_6 = cct_prepare.TEST_INDEX_PREFIX + str(6)
     d6 = cct_prepare.generate_single_object(1006, 2006, passport_value)
     r1.json().set(key_6, Path.root_path(), d6)
+
+    #print(get_redis_snapshot())
 
     # CHECK THE STREAM
     from_stream = r1.xread(streams={client_1: 0})
@@ -1034,14 +1045,20 @@ def test_add_events_should_be_reflected_in_snapshot_for_query_for_multiple_clien
     assert from_stream[0][1][1][1]['key'] == key_6
 
     r1.connection_pool.disconnect()
-    r1 = connect_redis()
     r2.connection_pool.disconnect()
+
+    #time.sleep(0.1)
+    
+    r1 = connect_redis()
     r2 = connect_redis()
+
+    #time.sleep(0.1)
 
     r1.execute_command("CCT2.REGISTER " + client_1)
     r2.execute_command("CCT2.REGISTER " + client_2)
 
     from_stream = r1.xread(streams={client_1: 0})
+    #print(from_stream)
     assert from_stream[0][1][0][1]['key'] == key_6
     assert from_stream[0][1][1][1]['key'] == key_5
     assert from_stream[0][1][2][1]['key'] == key_4
@@ -1131,30 +1148,31 @@ def test_special_chars_multiple_clients_should_get_notified_before_and_after_que
 
     r1 = connect_redis()
     r1.execute_command("CCT2.REGISTER " + client_1)
-    r1.execute_command(
-        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.Address\\.ID:{20\\-00}")
+    r1.execute_command("CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.Address\\.ID:{20\\-00}")
+
+    #print(get_redis_snapshot())
 
     r1.json().set(first_key, Path.root_path(), d1)
 
     r2 = connect_redis()
     r2.execute_command("CCT2.REGISTER " + client_2)
 
-    r2.execute_command(
-        "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.Address\\.ID:{20\\-00}")
+    r2.execute_command("CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.Address\\.ID:{20\\-00}")
 
     new_passport_value = 'aaa'
     d1["User"]["PASSPORT"] = new_passport_value
     r1.json().set(first_key, Path.root_path(), d1)
 
     from_stream_1 = r1.xread(streams={client_1: 0})
+    #print(from_stream_1)
     from_stream_2 = r1.xread(streams={client_2: 0})
     assert len(from_stream_1[0][1]) == 3
     assert from_stream_1[0][1][2][1]['key'] == first_key
-    assert from_stream_1[0][1][2][1]['queries'] == '@User\\.Address\\.ID:{20\\-00}'
+    assert from_stream_1[0][1][2][1]['queries'] == '''usersJsonIdx:@User\\.Address\\.ID:{20\\-00}'''
     assert json.loads(from_stream_1[0][1][2][1]['value'])['User']['PASSPORT'] == new_passport_value
     assert len(from_stream_2[0][1]) == 2
     assert from_stream_2[0][1][1][1]['key'] == first_key
-    assert from_stream_2[0][1][1][1]['queries'] == '@User\\.Address\\.ID:{20\\-00}'
+    assert from_stream_2[0][1][1][1]['queries'] == 'usersJsonIdx:@User\\.Address\\.ID:{20\\-00}'
     assert json.loads(from_stream_2[0][1][1][1]['value'])['User']['PASSPORT'] == new_passport_value
 
 
@@ -1199,7 +1217,7 @@ def test_special_chars_overwritten_value_not_matching_query_should_be_removed_fr
     # CHECK THE STREAM
     from_stream = r1.xread(streams={client_1: 0})
 
-    assert from_stream[0][1][1][1]['queries'] == '@User\\.PASSPORT:{2JRUX4\\-G5}'
+    assert from_stream[0][1][1][1]['queries'] == 'usersJsonIdx:@User\\.PASSPORT:{2JRUX4\\-G5}'
     assert from_stream[0][1][1][1]['key'] == first_key
 
     r1.connection_pool.disconnect()
@@ -1211,8 +1229,8 @@ def test_special_chars_overwritten_value_not_matching_query_should_be_removed_fr
 
     assert len(from_stream[0][1]) == 4
     assert from_stream[0][1][0][1]['key'] == third_key
-    assert from_stream[0][1][0][1]['queries'] == '@User\\.Address\\.ID:{2000}'
+    assert from_stream[0][1][0][1]['queries'] == 'usersJsonIdx:@User\\.Address\\.ID:{2000}'
     assert from_stream[0][1][1][1]['key'] == second_key
-    assert from_stream[0][1][1][1]['queries'] == '@User\\.Address\\.ID:{2000}'
+    assert from_stream[0][1][1][1]['queries'] == 'usersJsonIdx:@User\\.Address\\.ID:{2000}'
     assert from_stream[0][1][2][1]['key'] == first_key
-    assert from_stream[0][1][2][1]['queries'] == '@User\\.PASSPORT:{2JRUX4\\-G5}-CCT_DEL-@User\\.Address\\.ID:{3000}'
+    assert from_stream[0][1][2][1]['queries'] == 'usersJsonIdx:@User\\.PASSPORT:{2JRUX4\\-G5}-CCT_DEL-usersJsonIdx:@User\\.Address\\.ID:{3000}'

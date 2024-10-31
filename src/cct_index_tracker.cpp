@@ -126,3 +126,12 @@ std::string Get_Tracked_Index_From_Key(std::string key) {
     }
     return "";
 }
+
+std::string Get_Index_From_Key(std::string key) {
+    for(const auto& kv: CCT_PREFIX_2_INDEX){
+        if( key.compare(0, kv.first.size(), kv.first) == 0 ){
+            return Get_Index_From_Prefix(kv.first);
+        }
+    }
+    return "";    
+}

@@ -12,10 +12,10 @@ from constants import SKIP_PERF_TEST
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 @pytest.mark.skipif(SKIP_PERF_TEST ,
                     reason="Only run manually")
@@ -35,7 +35,7 @@ def test_wildcard_with_many_clients_many_key():
         r.json().set(key, Path.root_path(), d)
     end_time = time.time()
     data_write_duration = (end_time - start_time) 
-    print("Data write duration:" + str(data_write_duration) )
+    #print("Data write duration:" + str(data_write_duration) )
 
     r.execute_command("FT.CONFIG SET MAXSEARCHRESULTS 1000000")
 
@@ -48,14 +48,14 @@ def test_wildcard_with_many_clients_many_key():
         client.execute_command("CCT2.REGISTER " + ("app" + str(i) + " ") + cct_prepare.TEST_GROUP_NAME_1 )
     end_time = time.time()
     register_duration = (end_time - start_time) 
-    print("Register duration:" + str(register_duration) )
+    #print("Register duration:" + str(register_duration) )
 
     # SEARCH
     start_time = time.time()
     clients[0].execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " * LIMIT 0 " + str(total_key_cnt))
     end_time = time.time()
     stream_write_duration = (end_time - start_time)
-    print("CCT2.FT.SEARCH duration :" + str(stream_write_duration) )
+    #print("CCT2.FT.SEARCH duration :" + str(stream_write_duration) )
 
     #from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
     #print(str(from_stream))
@@ -79,7 +79,7 @@ def test_wildcard_with_many_clients_many_key_data_change():
         r.json().set(key, Path.root_path(), d)
     end_time = time.time()
     data_write_duration = (end_time - start_time) 
-    print("Data write duration:" + str(data_write_duration) )
+    #print("Data write duration:" + str(data_write_duration) )
 
     r.execute_command("FT.CONFIG SET MAXSEARCHRESULTS 1000000")
 
@@ -92,14 +92,14 @@ def test_wildcard_with_many_clients_many_key_data_change():
         client.execute_command("CCT2.REGISTER " + ("app" + str(i) + " ") + cct_prepare.TEST_GROUP_NAME_1 )
     end_time = time.time()
     register_duration = (end_time - start_time) 
-    print("Register duration:" + str(register_duration) )
+    #print("Register duration:" + str(register_duration) )
 
     # SEARCH
     start_time = time.time()
     clients[0].execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " * LIMIT 0 " + str(total_key_cnt))
     end_time = time.time()
     stream_write_duration = (end_time - start_time)
-    print("CCT2.FT.SEARCH duration :" + str(stream_write_duration) )
+    #print("CCT2.FT.SEARCH duration :" + str(stream_write_duration) )
 
     clients[0].xtrim("app0" , 0)
 
@@ -112,6 +112,6 @@ def test_wildcard_with_many_clients_many_key_data_change():
     from_stream = clients[0].xread(streams={"app0":0} )
     end_time = time.time()
     stream_read_duration = (end_time - start_time)
-    print("Stream read duration :" + str(stream_read_duration) )
-    print(str(from_stream))
+    #print("Stream read duration :" + str(stream_read_duration) )
+    #print(str(from_stream))
     

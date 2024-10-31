@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 #include <set>
-#include <set>
 #include <unordered_map>
 #include "redismodule.h"
 

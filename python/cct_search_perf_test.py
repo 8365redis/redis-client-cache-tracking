@@ -12,10 +12,10 @@ import threading
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 INDEXED_KEY_LENGTH = 3
 INDEXED_KEY_COUNT = 3
@@ -97,7 +97,7 @@ def test_search_with_module_while_no_set():
         producer.json().set(TEST_INDEX_PREFIX + str(i), Path.root_path(), data)
     end_time = time.time()
     initial_data_set_latency = (end_time - start_time) * 1000 # time.time returns ns
-    print("initial_data_set_latency:" + str(initial_data_set_latency) )
+    #print("initial_data_set_latency:" + str(initial_data_set_latency) )
 
     # ADD INITIAL CLIENTS
     clients = []
@@ -124,7 +124,7 @@ def test_search_with_module_while_no_set():
     time.sleep(TEST_DURATION)
 
     res = clients[0].execute_command("INFO latencystats")
-    print(str(res))
+    #print(str(res))
     
     search_sender.cancel()
     hb_sender.cancel()
@@ -135,14 +135,14 @@ def test_search_with_module_while_no_set():
     clients[0].execute_command("CCT2.FT.SEARCH "+ TEST_INDEX_NAME +" @User\\.key0:{" + query_value + "}")
     end_time = time.time()
     cct_search_latency = (end_time - start_time) * 1000 # time.time returns ns
-    print("cct_search_latency:" + str(cct_search_latency) )
+    #print("cct_search_latency:" + str(cct_search_latency) )
 
     # FT_SEARCH
     start_time = time.time()
     clients[0].execute_command("FT.SEARCH "+ TEST_INDEX_NAME +" @User\\.key0:{" + query_value + "}")
     end_time = time.time()
     ft_search_latency = (end_time - start_time) * 1000 # time.time returns ns
-    print("ft_search_latency:" + str(ft_search_latency) )
+    #print("ft_search_latency:" + str(ft_search_latency) )
 
     
 @pytest.mark.skipif(SKIP_PERF_TEST ,
@@ -170,7 +170,7 @@ def test_search_without_module_while_no_set():
         producer.json().set(TEST_INDEX_PREFIX + str(i), Path.root_path(), data)
     end_time = time.time()
     initial_data_set_latency = (end_time - start_time) * 1000 # time.time returns ns
-    print("initial_data_set_latency:" + str(initial_data_set_latency) )
+    #print("initial_data_set_latency:" + str(initial_data_set_latency) )
 
     # ADD INITIAL CLIENTS
     clients = []
@@ -185,7 +185,7 @@ def test_search_without_module_while_no_set():
     time.sleep(TEST_DURATION)
 
     res = clients[0].execute_command("INFO latencystats")
-    print(str(res))
+    #print(str(res))
     
     search_sender.cancel()
 
@@ -215,7 +215,7 @@ def test_search_with_module_with_set():
         producer.json().set(TEST_INDEX_PREFIX + str(i), Path.root_path(), data)
     end_time = time.time()
     initial_data_set_latency = (end_time - start_time) * 1000 # time.time returns ns
-    print("initial_data_set_latency:" + str(initial_data_set_latency) )
+    #print("initial_data_set_latency:" + str(initial_data_set_latency) )
 
     # ADD INITIAL CLIENTS
     clients = []
@@ -246,7 +246,7 @@ def test_search_with_module_with_set():
     time.sleep(TEST_DURATION)
 
     res = clients[0].execute_command("INFO latencystats")
-    print(str(res))
+    #print(str(res))
     
     search_sender.cancel()
     hb_sender.cancel()
@@ -258,11 +258,11 @@ def test_search_with_module_with_set():
     clients[0].execute_command("CCT2.FT.SEARCH "+ TEST_INDEX_NAME +" @User\\.key0:{" + query_value + "}")
     end_time = time.time()
     cct_search_latency = (end_time - start_time) * 1000 # time.time returns ns
-    print("cct_search_latency:" + str(cct_search_latency) )
+    #print("cct_search_latency:" + str(cct_search_latency) )
 
     # FT_SEARCH
     start_time = time.time()
     clients[0].execute_command("FT.SEARCH "+ TEST_INDEX_NAME +" @User\\.key0:{" + query_value + "}")
     end_time = time.time()
     ft_search_latency = (end_time - start_time) * 1000 # time.time returns ns
-    print("ft_search_latency:" + str(ft_search_latency) )
+    #print("ft_search_latency:" + str(ft_search_latency) )

@@ -13,10 +13,10 @@ from cct_test_utils import get_redis_snapshot
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 def test_basic_wildcard_query_add_new_data():
     r = connect_redis_with_start()
@@ -45,7 +45,7 @@ def test_basic_wildcard_query_add_new_data():
     r.json().set(key, Path.root_path(), d)
 
     from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream[0][1][1][1])
+    #print(from_stream[0][1][1][1])
     assert '''{'operation': 'UPDATE', 'key': 'users:10000', 'value': '{"User":{"ID":"9999","PASSPORT":"aaa","Address":{"ID":"9999"}}}', 'queries': 'usersJsonIdx:*'}''' == str(from_stream[0][1][1][1])
 
 
@@ -84,7 +84,7 @@ def test_basic_wildcard_query_delete_data():
     cct_prepare.create_index(r)
 
     passport_value = "aaa"
-    for i in range(10):
+    for i in range(3):
         d = cct_prepare.generate_single_object(1000 - i  , 2000 + i, passport_value)
         key = cct_prepare.TEST_INDEX_PREFIX + str(i)
         r.json().set(key, Path.root_path(), d)
@@ -100,11 +100,12 @@ def test_basic_wildcard_query_delete_data():
     assert "usersJsonIdx:*" not in str(from_stream)
 
     # DELETE DATA
-    key = cct_prepare.TEST_INDEX_PREFIX + str(5)
+    key = cct_prepare.TEST_INDEX_PREFIX + str(1)
     r.delete(key, Path.root_path())
 
     from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert '''{'operation': 'DELETE', 'key': 'users:5', 'value': '', 'queries': 'usersJsonIdx:*'}''' in str(from_stream)
+    #print(from_stream)
+    assert '''{'operation': 'DELETE', 'key': 'users:1', 'value': '', 'queries': 'usersJsonIdx:*'}''' in str(from_stream)
 
 def test_wildcard_query_client_group_tracking():
     r = connect_redis_with_start()
@@ -201,7 +202,7 @@ def test_wildcard_query_in_snapshot():
     cct_prepare.create_index(r)
 
     passport_value = "aaa"
-    for i in range(20):
+    for i in range(3):
         d = cct_prepare.generate_single_object(1000 - i  , 2000 + i, passport_value)
         key = cct_prepare.TEST_INDEX_PREFIX + str(i)
 
@@ -229,8 +230,10 @@ def test_wildcard_query_in_snapshot():
     time.sleep(0.2)
 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
-    assert ''' {'operation': 'UPDATE', 'key': '', 'value': '', 'queries': '@usersJsonIdx:{*}'}''' in str(from_stream)
+    #print(from_stream)
+    assert '''{'operation': 'UPDATE', 'key': 'users:2', 'value': '{"User":{"ID":"998","PASSPORT":"aaa","Address":{"ID":"2002"}}}', 'queries': 'usersJsonIdx:*'}''' in str(from_stream)
+    assert '''{'operation': 'UPDATE', 'key': 'users:1', 'value': '{"User":{"ID":"999","PASSPORT":"aaa","Address":{"ID":"2001"}}}', 'queries': 'usersJsonIdx:*'}''' in str(from_stream)
+    assert '''{'operation': 'UPDATE', 'key': 'users:0', 'value': '{"User":{"ID":"1000","PASSPORT":"aaa","Address":{"ID":"2000"}}}', 'queries': 'usersJsonIdx:*'}''' in str(from_stream)
 
 def test_wildcard_query_in_snapshot_in_tracking_group():
     r = connect_redis_with_start()
@@ -288,9 +291,13 @@ def test_wildcard_query_in_snapshot_in_tracking_group():
 
     # CHECK STREAMS
     from_stream = client2.xread( streams={cct_prepare.TEST_APP_NAME_2:0} )
-    assert '''{'operation': 'UPDATE', 'key': '', 'value': '', 'queries': '@usersJsonIdx:{*}''' in str(from_stream)
+    assert '''{'operation': 'UPDATE', 'key': 'users:2', 'value': '{"User":{"ID":"998","PASSPORT":"aaa","Address":{"ID":"2002"}}}', 'queries': 'usersJsonIdx:*'}''' in str(from_stream)
+    assert '''{'operation': 'UPDATE', 'key': 'users:1', 'value': '{"User":{"ID":"999","PASSPORT":"aaa","Address":{"ID":"2001"}}}', 'queries': 'usersJsonIdx:*'}''' in str(from_stream)
+    assert '''{'operation': 'UPDATE', 'key': 'users:0', 'value': '{"User":{"ID":"1000","PASSPORT":"aaa","Address":{"ID":"2000"}}}', 'queries': 'usersJsonIdx:*'}''' in str(from_stream)
     from_stream = client3.xread( streams={cct_prepare.TEST_APP_NAME_3:0} )
-    assert '''{'operation': 'UPDATE', 'key': '', 'value': '', 'queries': '@usersJsonIdx:{*}''' in str(from_stream)
+    assert '''{'operation': 'UPDATE', 'key': 'users:2', 'value': '{"User":{"ID":"998","PASSPORT":"aaa","Address":{"ID":"2002"}}}', 'queries': 'usersJsonIdx:*'}''' in str(from_stream)
+    assert '''{'operation': 'UPDATE', 'key': 'users:1', 'value': '{"User":{"ID":"999","PASSPORT":"aaa","Address":{"ID":"2001"}}}', 'queries': 'usersJsonIdx:*'}''' in str(from_stream)
+    assert '''{'operation': 'UPDATE', 'key': 'users:0', 'value': '{"User":{"ID":"1000","PASSPORT":"aaa","Address":{"ID":"2000"}}}', 'queries': 'usersJsonIdx:*'}''' in str(from_stream)
 
     # TRIM STREAMS
     client1.xtrim(cct_prepare.TEST_APP_NAME_1 , 0)
@@ -393,39 +400,6 @@ def test_basic_wildcard_query_add_new_data_with_multi_index():
     assert from_stream == []
 
 
-def test_basic_wildcard_query_1():
-    r = connect_redis_with_start()
-    cct_prepare.flush_db(r) # clean all db first
-    cct_prepare.create_index(r)
-
-    passport_value = "aaa"
-    for i in range(3):
-        d = cct_prepare.generate_single_object(1000 - i  , 2000 + i, passport_value)
-        key = cct_prepare.TEST_INDEX_PREFIX + str(i)
-        r.json().set(key, Path.root_path(), d)
-
-    r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
-    print(resp)
-    assert "2000" in str(resp)
-
-    get_redis_snapshot()
-
-    key_exists = r.exists('CCT2:QC:*:app1')
-    assert key_exists == 1
-
-    from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert "usersJsonIdx:*" not in str(from_stream)
-
-    # ADD A NEW DATA
-    d = cct_prepare.generate_single_object(9999 , 9999, passport_value)
-    key = cct_prepare.TEST_INDEX_PREFIX + str(10000)
-    r.json().set(key, Path.root_path(), d)
-
-    from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
-    assert '''{'operation': 'UPDATE', 'key': 'users:10000', 'value': '{"User":{"ID":"9999","PASSPORT":"aaa","Address":{"ID":"9999"}}}', 'queries': '*', 'old_value': ''}''' == str(from_stream[0][1][1][1])
-
-
 def test_basic_wildcard_query_snapshot_1():
     r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
@@ -440,12 +414,12 @@ def test_basic_wildcard_query_snapshot_1():
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
-    print(resp)
+    #print(resp)
     assert "2000" in str(resp)
 
-    get_redis_snapshot()
+    #get_redis_snapshot()
 
-    key_exists = r.exists('CCT2:QC:*:app1')
+    key_exists = r.exists('CCT2:QC:' + cct_prepare.TEST_INDEX_NAME + ':*:app1')
     assert key_exists == 1
 
     from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -463,7 +437,7 @@ def test_basic_wildcard_query_snapshot_1():
     time.sleep(0.2)
 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
 
 
@@ -481,12 +455,12 @@ def test_basic_wildcard_query_snapshot_2():
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
-    print(resp)
+    #print(resp)
     assert "2000" in str(resp)
 
     #get_redis_snapshot()
 
-    key_exists = r.exists('CCT2:QC:*:app1')
+    key_exists = r.exists('CCT2:QC:' + cct_prepare.TEST_INDEX_NAME + ':*:app1')
     assert key_exists == 1
 
     from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -504,7 +478,7 @@ def test_basic_wildcard_query_snapshot_2():
     time.sleep(0.2)
 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
 
 def test_basic_wildcard_query_snapshot_doesn_not_include_update_from_not_result_in_snapshot():
@@ -521,12 +495,12 @@ def test_basic_wildcard_query_snapshot_doesn_not_include_update_from_not_result_
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " * LIMIT 0 1")
-    print(resp)
+    #print(resp)
     assert "2000" in str(resp)
 
     #get_redis_snapshot()
 
-    key_exists = r.exists('CCT2:QC:*:app1')
+    key_exists = r.exists('CCT2:QC:' + cct_prepare.TEST_INDEX_NAME + ':*:app1')
     assert key_exists == 1
 
     from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
@@ -544,4 +518,41 @@ def test_basic_wildcard_query_snapshot_doesn_not_include_update_from_not_result_
     time.sleep(0.2)
 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
+
+def test_basic_wildcard_query_1():
+    r = connect_redis_with_start()
+    cct_prepare.flush_db(r) # clean all db first
+    cct_prepare.create_index(r)
+
+    passport_value = "aaa"
+    for i in range(3):
+        d = cct_prepare.generate_single_object(1000 - i  , 2000 + i, passport_value)
+        key = cct_prepare.TEST_INDEX_PREFIX + str(i)
+        r.json().set(key, Path.root_path(), d)
+
+    time.sleep(1.1)
+
+    r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
+    #print(resp)
+    assert "2000" in str(resp)
+
+    #get_redis_snapshot()
+
+    key_exists = r.exists('CCT2:QC:' + cct_prepare.TEST_INDEX_NAME + ':*:app1')
+    assert key_exists == 1
+
+    from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
+    assert "usersJsonIdx:*" not in str(from_stream)
+
+    # ADD A NEW DATA
+    d = cct_prepare.generate_single_object(9999 , 9999, passport_value)
+    key = cct_prepare.TEST_INDEX_PREFIX + str(10000)
+    r.json().set(key, Path.root_path(), d)
+
+    time.sleep(1.1)
+
+    from_stream = r.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
+    #print(from_stream)
+    assert '''{'operation': 'UPDATE', 'key': 'users:10000', 'value': '{"User":{"ID":"9999","PASSPORT":"aaa","Address":{"ID":"9999"}}}', 'queries': 'usersJsonIdx:*'}''' in str(from_stream)

@@ -114,7 +114,6 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         is_wildcard_search = true;
     }
     std::string index_str = RedisModule_StringPtrLen(index, NULL);
-    std::string wildcard_query_str = index_str + CCT_MODULE_KEY_SEPERATOR + WILDCARD_SEARCH;
     
     if(is_wildcard_search) {
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "FT_Search_RedisCommand search is wildcard.");
@@ -136,13 +135,14 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     members.erase(client_name_str); // delete self so dont send to itself
     for (auto& client : members) {
         for(auto& k_v : key_value_to_stream){
-            std::string queries;
+            std::string query_to_stream;
             if(is_wildcard_search){
-                queries = wildcard_query_str;
+                query_to_stream = query_str;
             } else {
-                queries = Normalized_to_Original(Get_Query_Normalized(argv[2]));
+                query_to_stream = Normalized_to_Original(Get_Query_Normalized(query));
             }
-            if( Add_Event_To_Stream(ctx, client, "query", k_v.first, k_v.second, queries, false) != REDISMODULE_OK) {
+            std::string index_and_query = index_str + CCT_MODULE_KEY_SEPERATOR + query_to_stream;
+            if( Add_Event_To_Stream(ctx, client, "query", k_v.first, k_v.second, index_and_query, cct_config.CCT_SEND_OLD_VALUE_CFG) != REDISMODULE_OK) {
                 LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to adding to the stream : " + client );
             }
         }

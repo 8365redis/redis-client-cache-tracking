@@ -2,16 +2,17 @@ import redis
 import pytest
 from redis.commands.json.path import Path
 import cct_prepare
+from cct_test_utils import get_redis_snapshot 
 from manage_redis import connect_redis, connect_redis_with_start, kill_redis
 from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
                 CCT_K2Q, CCT_DELI, CCT_Q2K, CCT_QC
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 def test_basic_query_tracking_test_1():
     r = connect_redis_with_start()
@@ -26,17 +27,19 @@ def test_basic_query_tracking_test_1():
     # REGISTER
     resp = r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(resp)
-    print(resp)
+    #print(resp)
 
     query_key_attr = "User\\.PASSPORT" + ":" + d["User"]["PASSPORT"]
-    print("query_key_attr:" + query_key_attr)
+    #print("query_key_attr:" + query_key_attr)
     # SEARCH
     resp = r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + d["User"]["PASSPORT"] + "}")
     assert resp
-    print("CCT2.FT.SEARCH Resp:" + str(resp))
+    #print("CCT2.FT.SEARCH Resp:" + str(resp))
+
+    #print(get_redis_snapshot())
 
     #CHECK TRACKED QUERY
-    tracked_query = r.sismember(CCT_Q2C + query_key_attr, cct_prepare.TEST_APP_NAME_1)
+    tracked_query = r.sismember(CCT_Q2C +  cct_prepare.TEST_INDEX_NAME + CCT_DELI +query_key_attr, cct_prepare.TEST_APP_NAME_1)
     assert tracked_query
 
     #CHECK TRACKED KEY
@@ -52,13 +55,11 @@ def test_basic_query_tracking_test_1():
     # CHECK THE STREAM
     from_stream = r.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert new_key in str(from_stream[0][1])
-    print("From Stream :" + str(from_stream[0][1]))
+    #print("From Stream :" + str(from_stream[0][1]))
 
     #CHECK NEW TRACKED KEY
     tracked_key = r.sismember(CCT_K2C + cct_prepare.TEST_INDEX_PREFIX + str(2), cct_prepare.TEST_APP_NAME_1)
     assert tracked_key 
-    
-
 
 def test_basic_query_tracking_test_2():
     r = connect_redis_with_start()

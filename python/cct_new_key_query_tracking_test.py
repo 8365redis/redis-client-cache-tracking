@@ -6,10 +6,10 @@ from constants import CCT_K2C, CCT_EOS
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 
 def test_new_key_added_no_affect():

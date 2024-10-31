@@ -27,3 +27,42 @@ void Log_Redis(RedisModuleCtx *ctx, const char *levelstr, std::string fmt ) {
     }
     RedisModule_Log(ctx, levelstr, "%s", fmt.c_str());
 }
+
+// Implementation of Vector_To_String
+template <typename T>
+std::string Vector_To_String(const std::vector<T>& input_vector, const std::string& delimiter) {
+    std::ostringstream output_stream;
+
+    for (size_t i = 0; i < input_vector.size(); ++i) {
+        output_stream << input_vector[i];
+        if (i != input_vector.size() - 1) {
+            output_stream << delimiter;
+        }
+    }
+
+    return output_stream.str();
+}
+
+// Implementation of Set_To_String
+template <typename T>
+std::string Set_To_String(const std::set<T>& input_set, const std::string& delimiter) {
+    std::ostringstream output_stream;
+
+    for (auto it = input_set.begin(); it != input_set.end(); ++it) {
+        output_stream << *it;
+        if (std::next(it) != input_set.end()) {
+            output_stream << delimiter;
+        }
+    }
+
+    return output_stream.str();
+}
+
+// Explicit template instantiations to avoid linker errors
+template std::string Vector_To_String<int>(const std::vector<int>&, const std::string&);
+template std::string Vector_To_String<std::string>(const std::vector<std::string>&, const std::string&);
+template std::string Set_To_String<int>(const std::set<int>&, const std::string&);
+template std::string Set_To_String<std::string>(const std::set<std::string>&, const std::string&);
+
+
+

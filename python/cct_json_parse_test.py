@@ -12,10 +12,10 @@ from cct_test_utils import get_redis_snapshot
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 def test_json_with_special_chars_value():
     producer = connect_redis_with_start()
@@ -73,7 +73,7 @@ def test_json_with_special_chars_search_query():
 
     # Check key is in stream 
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
     assert key in str(from_stream[0][1])
 
     # Check new key is tracked    
@@ -105,7 +105,7 @@ def test_json_with_special_chars_multi_search_query():
 
     # Check key is in stream
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
     assert key in str(from_stream[0][1])
 
     # Check new key is tracked
@@ -132,7 +132,7 @@ def test_json_with_special_chars_in_snapshot():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
     # DISCONNECT
     client1.connection_pool.disconnect()
@@ -145,7 +145,7 @@ def test_json_with_special_chars_in_snapshot():
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
 def test_json_with_special_chars_in_snapshot_with_hit():
     TEST_INDEX_NAME = "usersJsonIdx"
@@ -171,7 +171,7 @@ def test_json_with_special_chars_in_snapshot_with_hit():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
     # DISCONNECT
     client1.connection_pool.disconnect()
@@ -184,12 +184,12 @@ def test_json_with_special_chars_in_snapshot_with_hit():
 
     # Check stream content
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
     #QUERY AGAIN
     key_val = "FEIV3\\^2"
     res = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @Key1\\.RIC:{" + key_val + "}")
-    print(res)
+    #print(res)
 
-    get_redis_snapshot()
+    #get_redis_snapshot()
 

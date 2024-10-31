@@ -2,14 +2,14 @@ import pytest
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
-from constants import CCT_QC
+from constants import CCT_QC, CCT_DELI
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 def test_query_client_key_match_single_client():
     producer = connect_redis_with_start()
@@ -27,10 +27,12 @@ def test_query_client_key_match_single_client():
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
 
+    query_1 = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.PASSPORT:aaa" + CCT_DELI
+
     # CHECK QUERY:CLIENT = 1
-    result = producer.exists(CCT_QC + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1)
+    result = producer.exists(CCT_QC + query_1 + cct_prepare.TEST_APP_NAME_1)
     assert result
-    result = producer.exists(CCT_QC + "User\\.PASSPORT:aaa:" + "NOT_EXISTING_CLIENT")
+    result = producer.exists(CCT_QC + query_1 + "NOT_EXISTING_CLIENT")
     assert not result
 
 def test_query_client_key_match_multi_client():
@@ -71,27 +73,29 @@ def test_query_client_key_match_multi_client():
     client4.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(1001) + "}")
     client4.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(1002) + "}")
 
-    
+    query_1 = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.PASSPORT:aaa" + CCT_DELI
+    query_2 = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.ID:1001" + CCT_DELI
+    query_3 = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.ID:1002" + CCT_DELI
     
     # CHECK CLIENT1
-    result = producer.exists(CCT_QC + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1)
+    result = producer.exists(CCT_QC + query_1 + cct_prepare.TEST_APP_NAME_1)
     assert result
-    result = producer.exists(CCT_QC + "User\\.PASSPORT:aaa:" + "non_existing_key")
+    result = producer.exists(CCT_QC + query_1 + "non_existing_key")
     assert not result
 
     # CHECK CLIENT2
-    result = producer.exists(CCT_QC + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2)
+    result = producer.exists(CCT_QC + query_2 + cct_prepare.TEST_APP_NAME_2)
     assert result
 
     # CHECK CLIENT3
-    result = producer.exists(CCT_QC + "User\\.ID:1002:" + cct_prepare.TEST_APP_NAME_3)
+    result = producer.exists(CCT_QC + query_3 + cct_prepare.TEST_APP_NAME_3)
     assert result       
 
 
     # CHECK CLIENT4
-    result = producer.exists(CCT_QC + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_4)
+    result = producer.exists(CCT_QC + query_2 + cct_prepare.TEST_APP_NAME_4)
     assert result
-    result = producer.exists(CCT_QC + "User\\.ID:1002:" + cct_prepare.TEST_APP_NAME_4)
+    result = producer.exists(CCT_QC + query_3 + cct_prepare.TEST_APP_NAME_4)
     assert result
 
 
@@ -122,10 +126,13 @@ def test_query_client_key_match_multi_client_multi_key():
     client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2)
     client2.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.ID:{" + str(1001) + "}")
 
+    query_1 = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.PASSPORT:aaa" + CCT_DELI
+    query_2 = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.ID:1001" + CCT_DELI
+
     # CHECK CLIENT1
-    result = producer.exists(CCT_QC + "User\\.PASSPORT:aaa:" + cct_prepare.TEST_APP_NAME_1)
+    result = producer.exists(CCT_QC + query_1 + cct_prepare.TEST_APP_NAME_1)
     assert result
 
     # CHECK CLIENT2
-    result = producer.exists(CCT_QC + "User\\.ID:1001:" + cct_prepare.TEST_APP_NAME_2)
+    result = producer.exists(CCT_QC + query_2 + cct_prepare.TEST_APP_NAME_2)
     assert result

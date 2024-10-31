@@ -32,6 +32,16 @@ std::string Get_Query_Normalized(const RedisModuleString *query) {
     return query_term_attribute_normalized;
 }
 
+std::string Normalized_to_Original_With_Index(const std::string normalized_query_with_index) {
+    std::string index = normalized_query_with_index.substr(0, normalized_query_with_index.find(CCT_MODULE_KEY_SEPERATOR));
+    std::string normalized_query = normalized_query_with_index.substr(normalized_query_with_index.find(CCT_MODULE_KEY_SEPERATOR) + 1, normalized_query_with_index.length() - normalized_query_with_index.find(CCT_MODULE_KEY_SEPERATOR));
+    if(normalized_query == WILDCARD_SEARCH){
+        return index + CCT_MODULE_KEY_SEPERATOR + normalized_query;
+    } else {
+        return index + CCT_MODULE_KEY_SEPERATOR + Normalized_to_Original(normalized_query);
+    }
+}
+
 std::string Normalized_to_Original(const std::string normalized_query) {
     if(normalized_query.find(CCT_MODULE_KEY_SEPERATOR) == std::string::npos) {
         return normalized_query;

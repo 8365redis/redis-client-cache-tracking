@@ -30,10 +30,10 @@ def send_hb(client):
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 @pytest.mark.skipif(SKIP_PERF_TEST ,
                     reason="Only run manually")
@@ -61,7 +61,7 @@ def test_snapshot_after_lots_of_queries():
         producer.json().set(TEST_INDEX_PREFIX + str(i), Path.root_path(), data)
     end_time = time.time()
     initial_data_set_latency = (end_time - start_time) * 1000 # time.time returns ns
-    print("initial_data_set_latency:" + str(initial_data_set_latency) )
+    #print("initial_data_set_latency:" + str(initial_data_set_latency) )
 
 
     # REGISTER CLIENT
@@ -81,7 +81,7 @@ def test_snapshot_after_lots_of_queries():
         client1.execute_command("CCT2.FT.SEARCH "+ TEST_INDEX_NAME +" @User\\." + index + ":{" + query_value + "}")
     end_time = time.time()
     initial_query_latency = (end_time - start_time) * 1000 # time.time returns ns
-    print("initial_query_latency:" + str(initial_query_latency) )
+    #print("initial_query_latency:" + str(initial_query_latency) )
 
     # DISCONNECT
     client1.connection_pool.disconnect()
@@ -92,8 +92,8 @@ def test_snapshot_after_lots_of_queries():
     resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     end_time = time.time()
     register_total_time = (end_time - start_time) * 1000 # time.time returns ns
-    print("register_total_time:" + str(register_total_time) )
-    print(str(resp))
+    #print("register_total_time:" + str(register_total_time) )
+    #print(str(resp))
 
     res = client1.execute_command("INFO latencystats")
-    print(str(res))
+    #print(str(res))

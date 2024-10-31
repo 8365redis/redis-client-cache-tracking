@@ -10,10 +10,10 @@ import time
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 def test_basic_ft_aggregate_handler_basic():
     r = connect_redis_with_start()

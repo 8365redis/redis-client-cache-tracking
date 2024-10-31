@@ -9,10 +9,10 @@ TTL_SET_1 = 2
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 def test_1_client_normal_register():
     producer = connect_redis_with_start()
@@ -29,11 +29,11 @@ def test_1_client_normal_register():
     client1 = connect_redis()
     resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(resp)
-    print(resp)
+    #print(resp)
 
     client1.connection_pool.disconnect()
 
     client1 = connect_redis()
     resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(resp)
-    print(resp)
+    #print(resp)

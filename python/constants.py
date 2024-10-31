@@ -32,3 +32,4 @@ SKIP_PERF_TEST = True
 REMOTE_REDIS_CONNECTION = False
 SKIP_MULTI_VERSION_TEST = True
 SKIP_UNSTABLE_TEST = True
+SKIP_OLD_VALUE_TEST = True # Set False when you set configuration for old values

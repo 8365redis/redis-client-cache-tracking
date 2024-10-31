@@ -10,13 +10,13 @@ import time
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 def test_basic_ft_aggregate_return_first():
-    r = connect_redis()
+    r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
 
@@ -119,7 +119,7 @@ def test_basic_ft_aggregate_return_cached_different_clients():
 
 
 def test_ft_aggregate_return_with_different_queries():
-    r = connect_redis()
+    r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
 
@@ -198,7 +198,7 @@ def test_ft_aggregate_return_with_different_queries():
 
 
 def test_ft_aggregate_return_with_large_dataset_1():
-    r = connect_redis()
+    r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
 

@@ -10,10 +10,10 @@ import time
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 # Need to check logs 
 def test_basic_ft_aggregate_expire_basic():
@@ -269,12 +269,12 @@ def test_basic_ft_aggregate_expire_metadata():
     assert client1.exists('CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT02') == True
     assert client1.exists('CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT03') == True
 
-    print("Current time:")
-    print(time.time())
-    print("Expire times:")
-    print(client1.get("CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT01"))
-    print(client1.get("CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT02"))
-    print(client1.get("CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT03"))
+    #print("Current time:")
+    #print(time.time())
+    #print("Expire times:")
+    #print(client1.get("CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT01"))
+    #print(client1.get("CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT02"))
+    #print(client1.get("CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT03"))
 
     time.sleep(3.1)
 

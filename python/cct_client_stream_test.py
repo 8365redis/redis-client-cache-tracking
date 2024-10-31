@@ -8,10 +8,10 @@ from constants import CCT_QUERIES, CCT_EOS
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 def test_client_get_update_while_connected():
     producer = connect_redis_with_start()
@@ -43,7 +43,7 @@ def test_client_get_update_while_connected():
     # CHECK STREAM
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert 2 == len(from_stream[0][1])
-    print(from_stream)
+    #print(from_stream)
 
     # UPDATE DATA (K2)
     d = cct_prepare.generate_single_object(1001 , 2001, "ddd")

@@ -11,10 +11,10 @@ from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 
 def test_updated_key_added_no_affect():
@@ -370,7 +370,7 @@ def test_updated_key_match_same_queries_one_client_mixed_data():
     query_value = "d_1_data"
     res = client1.execute_command(
         "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @d\\.d_1:{" + query_value + "}" + " LIMIT 0 100")  # match first
-    print(res)
+    #print(res)
 
     #UPDATE DATA
     d = { "a" : "a_data2" , "b" : "b_data2" , "c" : "c_data2", "d" : { "d_1" : "d_1_data" , "d_2" : "d_2_data2" }}
@@ -379,7 +379,7 @@ def test_updated_key_match_same_queries_one_client_mixed_data():
 
     # Check key is in streams 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
 
 def test_updated_key_match_single_query_after_restart():
@@ -407,7 +407,7 @@ def test_updated_key_match_single_query_after_restart():
 
     # Check key is in streams
     from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
     #Kill Redis
     kill_redis()
@@ -425,7 +425,7 @@ def test_updated_key_match_single_query_after_restart():
 
     # Check key is in streams
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    print(from_stream)
+    #print(from_stream)
 
 
 def test_updated_key_matches_query_with_hyphen():

@@ -7,10 +7,10 @@ from constants import CCT_K2C, CCT_Q2C
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 def test_multi_register_client():
     producer = connect_redis_with_start()
@@ -21,13 +21,13 @@ def test_multi_register_client():
     client1 = connect_redis()
     resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     assert cct_prepare.OK in str(resp)
-    print(resp)
+    #print(resp)
 
     # REGISTER CLIENT2
     client2 = connect_redis()
     resp = client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2)
     assert cct_prepare.OK in str(resp)
-    print(resp)
+    #print(resp)
 
 def test_multi_register_ignored():
     producer = connect_redis_with_start()

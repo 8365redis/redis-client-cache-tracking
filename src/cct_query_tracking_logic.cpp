@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <set>
+#include <iostream>
 
 #include "cct_query_tracking_logic.h"
 #include "query_parser.h"
@@ -20,39 +21,49 @@ int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string even
                                              std::set<std::string> &current_queries) {
     RedisModule_AutoMemory(ctx);
 
-    std::string key_str = RedisModule_StringPtrLen(r_key, NULL);
-    
-    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON :  key " + key_str + " for event: " + event);
-
-    RedisModuleString *value = Get_JSON_Value(ctx, "" , r_key);
-    if (value == NULL){
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Get_Tracking_Clients_From_Changed_JSON failed while getting JSON value for key: " +  key_str);
-        return REDISMODULE_ERR;
-    }
-
-    json_str = RedisModule_StringPtrLen(value, NULL);
-    if ( json_str.empty() ){ 
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON :  JSON value is empty for key: " + key_str);
-        return REDISMODULE_OK;
-    }
-
     std::vector<std::string> queries;
-    nlohmann::json json_object = Get_JSON_Object(ctx, json_str);
-    if(json_object == NULL) {
-        return REDISMODULE_ERR;
-    }
-    Recursive_JSON_Iterate(json_object , "", queries);
+    std::string key_str = RedisModule_StringPtrLen(r_key, NULL);
+
     // Add the wildcard query for the index if there is any
     std::string tracked_index = Get_Tracked_Index_From_Key(key_str);
     if( tracked_index != "" ) {
         std::string wildcard_query_str = WILDCARD_SEARCH;
         queries.push_back(wildcard_query_str);
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON add the wildcard query for key: " + key_str + " and index : " + tracked_index);
     }
+    
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON :  key " + key_str + " for event: " + event);
+
+    if(event == REDIS_DEL_EVENT) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON :  Delete event for key : " + key_str + " return empty");
+    } else {
+        RedisModuleString *value = Get_JSON_Value(ctx, event , r_key);
+        if (value == NULL){
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Get_Tracking_Clients_From_Changed_JSON failed while getting JSON value for key: " +  key_str);
+            return REDISMODULE_ERR;
+        }
+
+        json_str = RedisModule_StringPtrLen(value, NULL);
+        if ( json_str.empty() ){ 
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON :  JSON value is empty for key: " + key_str);
+            return REDISMODULE_OK;
+        }
+
+        nlohmann::json json_object = Get_JSON_Object(ctx, json_str);
+        if(json_object == NULL) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Get_Tracking_Clients_From_Changed_JSON failed to parse JSON for key: " +  key_str);
+            return REDISMODULE_ERR;
+        }
+        Recursive_JSON_Iterate(json_object , "", queries);
+    }
+
+    std::string index = Get_Index_From_Key(key_str);
 
     for (auto & q : queries) {
         std::string escaped_query = Escape_FtQuery(q);
-        current_queries.insert(escaped_query);
-        std::string query_with_prefix = CCT_MODULE_QUERY_2_CLIENT + escaped_query;
+        std::string index_and_query = index + CCT_MODULE_KEY_SEPERATOR + escaped_query;
+        current_queries.insert(index_and_query);
+        std::string query_with_prefix = CCT_MODULE_QUERY_2_CLIENT + index_and_query;
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON check this query for tracking: " + query_with_prefix);
         RedisModuleCallReply *smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", query_with_prefix.c_str());
 
@@ -67,10 +78,10 @@ int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string even
                     RedisModuleString *client = RedisModule_CreateStringFromCallReply(key_reply);
                     const char *client_str = RedisModule_StringPtrLen(client, NULL);
                     clients_to_update.push_back(std::string(client_str));
-                    client_to_queries_map[std::string(client_str)].push_back(escaped_query);
-                    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON query matched to this client(app): " + (std::string)client_str);
+                    client_to_queries_map[std::string(client_str)].push_back(index_and_query);
+                    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON query matched to this client: " + (std::string)client_str);
                     Add_Tracking_Key(ctx, key_str, client_str);
-                    Update_Tracking_Query(ctx, escaped_query, key_str);
+                    Update_Tracking_Query(ctx, index_and_query, key_str);
                 }
             }
         }
@@ -82,13 +93,19 @@ int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string even
 int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString* r_key, std::vector<std::string> already_tracking_clients) {
     RedisModule_AutoMemory(ctx);
 
+    std::string key_str = RedisModule_StringPtrLen(r_key, NULL);
+    std::string index = Get_Index_From_Key(key_str);
+
     std::vector<std::string> clients_to_update;
     std::string json_str;
     std::unordered_map<std::string, std::vector<std::string>> client_to_queries_map;
     std::set<std::string> current_queries_for_key;
     Get_Tracking_Clients_From_Changed_JSON(ctx , event,  r_key , clients_to_update , json_str, client_to_queries_map, current_queries_for_key);
 
-    std::string key_str = RedisModule_StringPtrLen(r_key, NULL);
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check event : " +  event + " , key  : " + key_str + " , index : " + index);
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check already_tracking_clients : " +  Vector_To_String(already_tracking_clients));
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check clients_to_update : " +  Vector_To_String(clients_to_update));
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check current_queries_for_key : " +  Set_To_String(current_queries_for_key));
 
     std::set<std::string> already_tracking_clients_set(already_tracking_clients.begin(), already_tracking_clients.end());
     std::set<std::string> clients_to_update_set(clients_to_update.begin(), clients_to_update.end());
@@ -101,7 +118,9 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
         std::string client_queries_str;
         std::vector<std::string> client_queries_original;
         for (auto q : client_queries) {
-            client_queries_original.push_back(Normalized_to_Original(q));
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check Client : " + client_name + " , and query is : " +  q);
+            std::string index_and_query = Normalized_to_Original_With_Index(q);
+            client_queries_original.push_back(index_and_query);
         }
         for(auto const& e : client_queries_original) client_queries_str += (e + CCT_MODULE_QUERY_DELIMETER);
         if(client_queries_str.length() > CCT_MODULE_QUERY_DELIMETER.length()){
@@ -110,7 +129,7 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
 
         std::set<std::string> c_s = Get_Client_Tracking_Group_Clients(client_name);
         for (auto &c : c_s) {
-            if (Add_Event_To_Stream(ctx, c, event, key_str, json_str, client_queries_str, true) != REDISMODULE_OK) {
+            if (Add_Event_To_Stream(ctx, c, event, key_str, json_str, client_queries_str, cct_config.CCT_SEND_OLD_VALUE_CFG) != REDISMODULE_OK) {
                 LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Query_Track_Check failed to adding to the stream." );
                 return RedisModule_ReplyWithError(ctx, strerror(errno));
             }
@@ -146,11 +165,15 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
 	            tracked_queries_for_key.insert(std::string(query_name_str));
 	        }
 	    }
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check tracked_queries_for_key : " +  Set_To_String(tracked_queries_for_key));
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check current_queries_for_key : " +  Set_To_String(current_queries_for_key));
 		// Compute all tracked queries that no longer match the new JSON value (tracked_queries_for_key - current_queries_for_key)
     	std::set<std::string> queries_no_longer_matching_value;
     	std::set_difference(tracked_queries_for_key.begin(), tracked_queries_for_key.end(),
                         	current_queries_for_key.begin(), current_queries_for_key.end(),
                         	std::inserter(queries_no_longer_matching_value, queries_no_longer_matching_value.begin()));
+
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check queries_no_longer_matching_value : " +  Set_To_String(queries_no_longer_matching_value));
 
     	// Delete all the tracked queries that no longer match the JSON value
     	for (auto &query_to_delete : queries_no_longer_matching_value) {
@@ -184,30 +207,29 @@ int Notify_Callback(RedisModuleCtx *ctx, int type, const char *event, RedisModul
     std::string event_str = event;
     std::string key_str = RedisModule_StringPtrLen(key, NULL);
 
-    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str);
+    //LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str);
 
     if( CCT_KEY_EVENTS.count(event) == 0 )
     {
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " not interested event." );
+        //LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " not interested event." );
         return REDISMODULE_OK;        
     }
 
     // Ignore our self events
     if (key_str.find(CCT_MODULE_PREFIX, 0) == 0) {
         if(strcasecmp(event, "expired") != 0) {
-            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " ignore our own events to prevent loops." );
+            //LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " ignore our own events to prevent loops." );
             return REDISMODULE_OK;
         } else if(key_str.find(CCT_MODULE_QUERY_CLIENT, 0) == 0) {
             return Handle_Query_Expire(ctx, key_str);           
         } else {
-            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " ignore our own events to prevent loops." );
+            //LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " ignore our own events to prevent loops." );
             return REDISMODULE_OK;
         }
     }
 
     // Add prefix
     std::string key_with_prefix = CCT_MODULE_KEY_2_CLIENT + key_str;
-
 
     // First check which clients are tracking updated key
     std::vector<std::string> already_tracking_clients;

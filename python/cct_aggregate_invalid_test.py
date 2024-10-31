@@ -10,10 +10,10 @@ import time
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 
 def test_aggregate_invalid_multi_request_single_client():

@@ -17,6 +17,7 @@ std::string Get_Str_Between(const std::string &s,
 std::string Get_Query_Term(const std::string &s);
 std::string Get_Query_Attribute(const std::string &s);
 std::string Normalized_to_Original(const std::string normalized_query);
+std::string Normalized_to_Original_With_Index(const std::string normalized_query_with_index);
 std::string Get_Query_Normalized(const RedisModuleString *query);
 std::string Escape_Special_Chars(const std::string &input);
 std::string Escape_FtQuery(const std::string &input);

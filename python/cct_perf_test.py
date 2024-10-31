@@ -7,10 +7,10 @@ from constants import SKIP_PERF_TEST
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 @pytest.mark.skipif(SKIP_PERF_TEST ,
                     reason="Only run manually")
@@ -38,9 +38,9 @@ def test_cct_search_latency_single_tag_search():
     diff_micron = cct_latency - default_latency
     assert 1.0 > diff_micron
 
-    print("CCT LATENCY : " + str(cct_latency))
-    print("DEFAULT LATENCY : " + str(default_latency))
-    print("DIFF : " + str(diff_micron))
+    #print("CCT LATENCY : " + str(cct_latency))
+    #print("DEFAULT LATENCY : " + str(default_latency))
+    #print("DIFF : " + str(diff_micron))
 
 @pytest.mark.skipif(SKIP_PERF_TEST ,
                     reason="Only run manually")
@@ -68,9 +68,9 @@ def test_cct_search_latency_multi_tag_search():
     diff_micron = cct_latency - default_latency
     assert 1.0 > diff_micron
 
-    print("CCT LATENCY : " + str(cct_latency))
-    print("DEFAULT LATENCY : " + str(default_latency))
-    print("DIFF : " + str(diff_micron))
+    #print("CCT LATENCY : " + str(cct_latency))
+    #print("DEFAULT LATENCY : " + str(default_latency))
+    #print("DIFF : " + str(diff_micron))
 
 @pytest.mark.skipif(SKIP_PERF_TEST ,
                     reason="Only run manually")
@@ -101,7 +101,7 @@ def test_cct_search_latency_single_tag_search_multiple():
         assert 1.0 > diff_micron
         latencies.append(diff_micron)
 
-    print("Latency diff average : " + str(mean(latencies)))
+    #print("Latency diff average : " + str(mean(latencies)))
 
 @pytest.mark.skipif(SKIP_PERF_TEST ,
                     reason="Only run manually")
@@ -132,4 +132,4 @@ def test_cct_search_latency_multiple_tag_search_multiple():
         assert 1.0 > diff_micron
         latencies.append(diff_micron)
 
-    print("Latency diff average : " + str(mean(latencies)))
+    #print("Latency diff average : " + str(mean(latencies)))

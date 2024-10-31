@@ -12,10 +12,10 @@ import constants
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
-    print("Start")
+    #print("Start")
     yield
     kill_redis()
-    print("End")
+    #print("End")
 
 @pytest.mark.skipif(SKIP_HB_TEST ,
                     reason="Not sending HB in other tests")
