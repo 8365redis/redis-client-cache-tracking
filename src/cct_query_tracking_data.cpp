@@ -221,3 +221,40 @@ int Trim_Stream_By_ID(RedisModuleCtx *ctx, RedisModuleString *last_read_id, std:
 
     return REDISMODULE_OK;
 }
+
+void Handle_Deleted_Key(RedisModuleCtx *ctx, const std::string deleted_key) {
+	    
+    // First get the queries matching the deleted key
+    std::set<std::string> tracked_queries_for_key;
+    std::string k2q = CCT_MODULE_KEY_2_QUERY + deleted_key;
+    RedisModuleCallReply *k2q_smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", k2q.c_str());
+    const size_t reply_length = RedisModule_CallReplyLength(k2q_smembers_reply);
+    for (size_t i = 0; i < reply_length; i++) {
+        RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(k2q_smembers_reply, i);
+        if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING) {
+            RedisModuleString *query_name = RedisModule_CreateStringFromCallReply(key_reply);
+            const char *query_name_str = RedisModule_StringPtrLen(query_name, NULL);
+            tracked_queries_for_key.insert(std::string(query_name_str));
+        }
+    }
+
+    // Now delete the Key:Queries 
+    RedisModuleString *k2q_key_str = RedisModule_CreateString(ctx, k2q.c_str() , k2q.length());
+    RedisModuleKey *k2q_key = RedisModule_OpenKey(ctx, k2q_key_str, REDISMODULE_WRITE);
+    if( RedisModule_DeleteKey(k2q_key) == REDISMODULE_ERR ) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Deleted_Key deleting key:queries failed : " +  k2q);
+    }
+
+    for (auto &query_to_delete : tracked_queries_for_key) {
+        std::string q2k_key = CCT_MODULE_QUERY_2_KEY + query_to_delete;
+        RedisModuleCallReply *q2k_srem_key_reply = RedisModule_Call(ctx, "SREM", "cc", q2k_key.c_str(), deleted_key.c_str());
+        if (RedisModule_CallReplyType(q2k_srem_key_reply) != REDISMODULE_REPLY_INTEGER) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Deleted_Key (Query:{Keys}) failed while deleting key: " +  deleted_key);
+            continue; ;
+        } else if ( RedisModule_CallReplyInteger(q2k_srem_key_reply) == 0 ) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Deleted_Key (Query:{Keys}) failed while deleting key (non existing key): " +  deleted_key);
+            continue ;
+        }
+    }
+
+}

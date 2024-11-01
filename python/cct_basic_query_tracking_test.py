@@ -6,6 +6,7 @@ from cct_test_utils import get_redis_snapshot
 from manage_redis import connect_redis, connect_redis_with_start, kill_redis
 from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
                 CCT_K2Q, CCT_DELI, CCT_Q2K, CCT_QC
+import time
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -51,6 +52,8 @@ def test_basic_query_tracking_test_1():
     new_key = cct_prepare.TEST_INDEX_PREFIX + str(2)
     r.json().set(new_key, Path.root_path(), d)
     assert r.json().get(cct_prepare.TEST_INDEX_PREFIX + str(2))
+
+    time.sleep(0.1)
 
     # CHECK THE STREAM
     from_stream = r.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )

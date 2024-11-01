@@ -1075,7 +1075,7 @@ def test_add_events_should_be_reflected_in_snapshot_for_query_for_multiple_clien
     assert from_stream[0][1][5][1]['key'] == key_1
 
 
-def test_delete_events_should_be_reflected_in_snapshot_for_query_for_multiple_clients():
+def test_delete_events_should_not_be_reflected_in_snapshot_for_query_for_multiple_clients():
     r1 = connect_redis_with_start()
     cct_prepare.flush_db(r1)
     cct_prepare.create_index(r1)
@@ -1104,6 +1104,7 @@ def test_delete_events_should_be_reflected_in_snapshot_for_query_for_multiple_cl
     r2.execute_command(
         "CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + passport_value + "}")
 
+    #DELETE KEY 3
     r1.delete(key_3)
 
     # CHECK THE STREAM
@@ -1126,12 +1127,12 @@ def test_delete_events_should_be_reflected_in_snapshot_for_query_for_multiple_cl
     r2.execute_command("CCT2.REGISTER " + client_2)
 
     from_stream = r1.xread(streams={client_1: 0})
-    assert from_stream[0][1][0][1]['operation'] == 'DELETE'
-    assert from_stream[0][1][0][1]['key'] == key_3
+    assert from_stream[0][1][0][1]['operation'] != 'DELETE'
+    #assert from_stream[0][1][0][1]['key'] == key_3
 
     from_stream = r2.xread(streams={client_2: 0})
-    assert from_stream[0][1][0][1]['operation'] == 'DELETE'
-    assert from_stream[0][1][0][1]['key'] == key_3
+    assert from_stream[0][1][0][1]['operation'] != 'DELETE'
+    #assert from_stream[0][1][0][1]['key'] == key_3
 
 
 def test_special_chars_multiple_clients_should_get_notified_before_and_after_query():

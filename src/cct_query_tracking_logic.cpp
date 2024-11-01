@@ -196,7 +196,9 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
                 return REDISMODULE_ERR;
             }
     	}
-	}
+	} else if (CCT_KEY_EVENTS.at(event) == CCT_DELETE_EVENT){
+        Handle_Deleted_Key(ctx, key_str);
+    }
 
     return REDISMODULE_OK;
 }
