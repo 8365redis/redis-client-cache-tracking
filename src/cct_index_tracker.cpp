@@ -4,7 +4,7 @@
 #include "logger.h"
 
 
-std::unordered_map<std::string, std::string> CCT_PREFIX_2_INDEX;
+std::unordered_map<std::string, std::set<std::string>> CCT_PREFIX_2_INDEX;
 std::set<std::string> TRACKED_INDEXES;
 std::unordered_map<std::string, std::set<std::string>> CCT_TRACKED_INDEX_2_CLIENTS;
 
@@ -78,7 +78,7 @@ void Redis_Index_Manager::Get_Index_Prefixes(RedisModuleCtx *ctx, std::set<std::
                             if (RedisModule_CallReplyType(prefix_reply) == REDISMODULE_REPLY_STRING){
                                 RedisModuleString *prefix_redis_str = RedisModule_CreateStringFromCallReply(prefix_reply);
                                 std::string prefix = RedisModule_StringPtrLen(prefix_redis_str, NULL);
-                                CCT_PREFIX_2_INDEX[prefix] = index; // multiple index using same prefix scenario is not covered
+                                CCT_PREFIX_2_INDEX[prefix].insert(index);
                                 LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Index_Prefixes prefix : " + prefix + " is added for index : "  + index);
                             }
                         }
@@ -97,10 +97,6 @@ void Track_Index(std::string index, std::string client_tracking_group) {
     TRACKED_INDEXES.insert(index);
 }
 
-const std::set<std::string> Get_Tracked_Index_Clients(std::string index){
-    return CCT_TRACKED_INDEX_2_CLIENTS[index];
-}
-
 void UnTrack_Index(std::string index, std::string client_name) { 
     TRACKED_INDEXES.erase(index);
 }
@@ -109,40 +105,43 @@ bool Is_Index_Tracked(std::string index){
     return TRACKED_INDEXES.find(index) != TRACKED_INDEXES.end();
 }
 
-std::string Get_Index_From_Prefix(std::string prefix) {
+std::set<std::string> Get_Indexes_From_Prefix(std::string prefix) {
     if (CCT_PREFIX_2_INDEX.find(prefix) == CCT_PREFIX_2_INDEX.end()){
-        return "";
+        return std::set<std::string>();
     }
     return CCT_PREFIX_2_INDEX[prefix];
 }
 
-std::string Get_Tracked_Index_From_Prefix(std::string prefix) {
-    std::string index = Get_Index_From_Prefix(prefix);
-    if ( index == ""){
-        return "";
-    } 
-    if( Is_Index_Tracked(index) ) {
-        return index;
+std::set<std::string> Get_Tracked_Indexes_From_Prefix(std::string prefix) {
+    std::set<std::string> indexes = Get_Indexes_From_Prefix(prefix);
+    if ( indexes.empty()){
+        return std::set<std::string>();
     }
-    return "";
-}
-
-std::string Get_Tracked_Index_From_Key(std::string key) {
-    for(const auto& kv: CCT_PREFIX_2_INDEX){
-        if( key.compare(0, kv.first.size(), kv.first) == 0 ){
-            return Get_Tracked_Index_From_Prefix(kv.first);
+    std::set<std::string> tracked_indexes;
+    for(const auto &i : indexes) {
+        if( Is_Index_Tracked(i) ) {
+            tracked_indexes.insert(i);
         }
     }
-    return "";
+    return tracked_indexes;
 }
 
-std::string Get_Index_From_Key(std::string key) {
+std::set<std::string> Get_Tracked_Indexes_From_Key(std::string key) {
     for(const auto& kv: CCT_PREFIX_2_INDEX){
         if( key.compare(0, kv.first.size(), kv.first) == 0 ){
-            return Get_Index_From_Prefix(kv.first);
+            return Get_Tracked_Indexes_From_Prefix(kv.first);
         }
     }
-    return "";    
+    return std::set<std::string>();
+}
+
+std::set<std::string> Get_Indexes_From_Key(std::string key) {
+    for(const auto& kv: CCT_PREFIX_2_INDEX){
+        if( key.compare(0, kv.first.size(), kv.first) == 0 ){
+            return Get_Indexes_From_Prefix(kv.first);
+        }
+    }
+    return std::set<std::string>();
 }
 
 void Start_Index_Change_Handler(RedisModuleCtx *ctx) {

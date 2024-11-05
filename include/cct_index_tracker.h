@@ -29,13 +29,10 @@ private:
 };
 
 void OnRedisReady(RedisModuleCtx *ctx, RedisModuleEvent event, uint64_t subevent, void *data);
-//std::set<std::string> Get_All_Indexes(RedisModuleCtx *ctx);
-//void Get_Index_Prefixes(RedisModuleCtx *ctx, std::set<std::string> indexes);
-std::string Get_Tracked_Index_From_Key(std::string key);
-const std::set<std::string> Get_Tracked_Index_Clients(std::string index);
+std::set<std::string> Get_Tracked_Indexes_From_Key(std::string key);
 void Track_Index(std::string index, std::string client_name);
 void UnTrack_Index(std::string index, std::string client_name);
-std::string Get_Index_From_Key(std::string key);
+std::set<std::string> Get_Indexes_From_Key(std::string key);
 
 void Start_Index_Change_Handler(RedisModuleCtx *ctx);
 void Index_Change_Handler(RedisModuleCtx *ctx);

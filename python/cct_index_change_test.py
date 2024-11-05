@@ -50,7 +50,7 @@ def test_index_created_after_keys_added():
     assert '''{"User":{"ID":"1002","PASSPORT":"aaa","Address":{"ID":"1998"}}}''' in str(resp)
 
 
-def test_index_created_after_keys_added():
+def test_index_created_after_keys_added_2():
     r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
     
