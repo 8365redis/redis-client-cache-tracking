@@ -93,7 +93,7 @@ void Add_Tracking_Key(RedisModuleCtx *ctx, std::string key, std::string client_t
     if (RedisModule_CallReplyType(sadd_key_reply) != REDISMODULE_REPLY_INTEGER ) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracking_Key failed while registering tracking key: " +  key_with_prefix);
     } else {
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Tracking_Key added to stream: " + key_with_prefix);
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Tracking_Key Client : " + client_tracking_group  + " is added to set: " + key_with_prefix);
     }
     
     RedisModuleString *key_tracking_set_key_str = RedisModule_CreateString(ctx, key_with_prefix.c_str() , key_with_prefix.length());

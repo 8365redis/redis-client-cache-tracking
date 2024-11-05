@@ -5,6 +5,7 @@ from json import JSONEncoder
 from redis.commands.json.path import Path
 from redis.commands.search.field import TextField, NumericField, TagField
 from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+import time
 
 TEST_APP_NAME_1 = "app1"
 TEST_APP_NAME_2 = "app2"
@@ -25,6 +26,7 @@ TEST_INDEX_PREFIX = "users:"
 
 def flush_db(r):
     r.flushall()
+    time.sleep(0.1)
 
 def generate_object(d, id, addr_id):
     d["User"] = {}

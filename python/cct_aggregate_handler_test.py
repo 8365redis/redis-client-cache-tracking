@@ -76,6 +76,8 @@ def test_basic_ft_aggregate_handler_basic():
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
     assert str(response) == '''[5, ['User.ID', '10'], ['User.ID', '1001'], ['User.ID', '1002']]'''
 
+    time.sleep(3.1)
+
 def test_basic_ft_aggregate_handler_multi_request_single_client():
     r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
@@ -157,6 +159,8 @@ def test_basic_ft_aggregate_handler_multi_request_single_client():
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 1")
     assert str(response) == '''[5, ['User.ID', '10']]'''
 
+    time.sleep(3.1)
+
 def test_basic_ft_aggregate_handler_single_request_multi_client():
     r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
@@ -219,6 +223,7 @@ def test_basic_ft_aggregate_handler_single_request_multi_client():
     response = client3.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 4")
     assert str(response) == '''[5, ['User.ID', '10'], ['User.ID', '1001'], ['User.ID', '1002'], ['User.ID', '1003']]'''
 
+    time.sleep(3.1)
 
 
 def test_basic_ft_aggregate_handler_multi_request_multi_client():
@@ -334,3 +339,5 @@ def test_basic_ft_aggregate_handler_multi_request_multi_client():
     assert str(response) == '''[5, ['User.ID', '10'], ['User.ID', '1001']]'''
     response = client3.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 1")
     assert str(response) == '''[5, ['User.ID', '10']]'''
+
+    time.sleep(3.1)

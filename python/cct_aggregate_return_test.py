@@ -27,11 +27,13 @@ def test_basic_ft_aggregate_return_first():
 
     # REGISTER
     client1 = connect_redis()
-    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1  + " " + cct_prepare.TEST_APP_NAME_1 +  " 2")
     assert cct_prepare.OK in str(resp)
 
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
     assert str(response) == '''[10, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
+
+    time.sleep(3.1)
 
 def test_basic_ft_aggregate_return_cached_same_client():
     r = connect_redis_with_start()
@@ -45,7 +47,7 @@ def test_basic_ft_aggregate_return_cached_same_client():
 
     # REGISTER
     client1 = connect_redis()
-    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1  + " " + cct_prepare.TEST_APP_NAME_1 +  " 2")
     assert cct_prepare.OK in str(resp)
 
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
@@ -61,6 +63,8 @@ def test_basic_ft_aggregate_return_cached_same_client():
 
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
     assert str(response) == '''[100, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
+
+    time.sleep(3.1)
 
 
 def test_basic_ft_aggregate_return_cached_different_clients():
@@ -116,6 +120,16 @@ def test_basic_ft_aggregate_return_cached_different_clients():
     response = client4.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
     assert str(response) == '''[100, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
 
+    res = client1.execute_command("CCT2.INVALIDATE")
+    assert str(res) == '''OK'''    
+    res = client2.execute_command("CCT2.INVALIDATE")
+    assert str(res) == '''OK'''
+    res = client3.execute_command("CCT2.INVALIDATE")
+    assert str(res) == '''OK'''    
+    res = client4.execute_command("CCT2.INVALIDATE")
+    assert str(res) == '''OK'''  
+
+    time.sleep(3.1)  
 
 
 def test_ft_aggregate_return_with_different_queries():

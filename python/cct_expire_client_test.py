@@ -35,6 +35,8 @@ def test_client_expire_normal():
     from_stream = producer.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert not from_stream
 
+    client1.connection_pool.disconnect()
+
 @pytest.mark.skipif(SKIP_HB_TEST ,
                     reason="Not sending HB in other tests")
 def test_client_expire_with_no_heartbeat():
@@ -50,6 +52,8 @@ def test_client_expire_with_no_heartbeat():
     # Check stream 
     from_stream = producer.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert not from_stream
+
+    client1.connection_pool.disconnect()
 
 @pytest.mark.skipif(SKIP_HB_TEST ,
                     reason="Not sending HB in other tests")

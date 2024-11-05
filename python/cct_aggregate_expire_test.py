@@ -53,7 +53,8 @@ def test_basic_ft_aggregate_expire_basic():
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
     assert str(response) == '''[10, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''   
 
-    time.sleep(2.1)
+    time.sleep(3.1)
+
 
 def test_aggregate_expire_multi_request_single_client():
     r = connect_redis_with_start()
@@ -109,6 +110,8 @@ def test_aggregate_expire_multi_request_single_client():
     assert str(response) == '''[5, ['User.ID', '1000'], ['User.ID', '1001']]'''
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 1")
     assert str(response) == '''[5, ['User.ID', '1000']]'''
+
+    time.sleep(3.1)
 
 
 def test_aggregate_expire_multi_request_multi_client():
@@ -239,6 +242,8 @@ def test_aggregate_expire_multi_request_multi_client():
     response = client3.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 1")
     assert str(response) == '''[5, ['User.ID', '10']]'''
 
+    time.sleep(3.1)
+
 
 def test_basic_ft_aggregate_expire_metadata():
     r = connect_redis_with_start()
@@ -263,7 +268,7 @@ def test_basic_ft_aggregate_expire_metadata():
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 1")
     assert str(response) == '''[10, ['User.ID', '1000']]'''
 
-    response = client1.execute_command("KEYS *")
+    #response = client1.execute_command("KEYS *")
 
     assert client1.exists('CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT01') == True
     assert client1.exists('CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT02') == True
@@ -281,3 +286,5 @@ def test_basic_ft_aggregate_expire_metadata():
     assert client1.exists('CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT01') == False
     assert client1.exists('CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT02') == False
     assert client1.exists('CCT2:CQ:usersJsonIdx*SORTBY1@User.IDLIMIT03') == False
+
+    time.sleep(3.1)

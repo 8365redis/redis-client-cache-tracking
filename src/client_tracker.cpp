@@ -35,7 +35,8 @@ void Handle_Client_Event(RedisModuleCtx *ctx, RedisModuleEvent eid,
     }
 }
 
-void Add_To_Client_Tracking_Group(std::string client_tracking_group, std::string client){
+void Add_To_Client_Tracking_Group(RedisModuleCtx *ctx, std::string client_tracking_group, std::string client){
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_To_Client_Tracking_Group client  : " + client + " group name : " + client_tracking_group);
     if( CCT_CLIENT_TRACK_GROUP_2_CLIENTS.count(client_tracking_group) == 0 ) {
         CCT_CLIENT_TRACK_GROUP_2_CLIENTS[client_tracking_group] = std::set<std::string>{client};
     }else {
@@ -58,11 +59,13 @@ const std::set<std::string> Get_Client_Tracking_Group_Clients(std::string client
     return CCT_CLIENT_TRACK_GROUP_2_CLIENTS[client_tracking_group];
 }
 
-void Connect_Client(std::string client) {
+void Connect_Client(RedisModuleCtx *ctx, std::string client) {
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Connect_Client client : " + client );
     CCT_CLIENT_CONNECTION[client] = true;
 }
 
 void Disconnect_Client(RedisModuleCtx *ctx, std::string client) {
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Disconnect_Client client : " + client );
     CCT_CLIENT_CONNECTION[client] = false;
     CCT_CLIENT_CONNECTION_TIMEOUT.erase(client);
     RedisModuleString *client_name = RedisModule_CreateString(ctx, client.c_str(), client.length());
@@ -138,6 +141,7 @@ void Client_TTL_Handler(RedisModuleCtx *ctx, std::unordered_map<std::string, uns
             }
         }
         for(auto client : expire_client_list) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Client_TTL_Handler expire client : " + client );
             Disconnect_Client(ctx, client);
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // Check every second

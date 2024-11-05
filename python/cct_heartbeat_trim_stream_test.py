@@ -9,6 +9,7 @@ from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
                 CCT_EOS, CCT_QUERY_TTL
 
 import constants
+from cct_test_utils import get_redis_snapshot
 
 @pytest.fixture(autouse=True)
 def before_and_after_test():
@@ -97,6 +98,10 @@ def test_heartbeat_trims_one_from_stream():
     assert cct_prepare.OK in str(res)
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert not from_stream
+
+    # DISCONNECT CLIENT
+    client1.connection_pool.disconnect()
+    time.sleep(1.1)
 
 @pytest.mark.skipif(SKIP_HB_TEST ,
                     reason="Not sending HB in other tests")
@@ -220,6 +225,9 @@ def test_heartbeat_trims_stream_with_invalid_ids():
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert not from_stream
 
+    # DISCONNECT CLIENT
+    client1.connection_pool.disconnect()
+
 
 @pytest.mark.skipif(SKIP_HB_TEST ,
                     reason="Not sending HB in other tests")
@@ -250,6 +258,11 @@ def test_heartbeat_trims_empty():
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert CCT_EOS in from_stream[0][1][0][1]
 
+    # DISCONNECT CLIENT
+    client1.connection_pool.disconnect()
+
+    #time.sleep(4.1)
+
 
 @pytest.mark.skipif(SKIP_HB_TEST ,
                     reason="Not sending HB in other tests")
@@ -277,10 +290,7 @@ def test_heartbeat_trims_stream_after_snapshot():
     assert cct_prepare.OK in str(res)
 
     # FIRST CLIENT
-    query_value = passport_value
-    #client1 = connect_redis()
-    #client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
-    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
+    client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1000 , 2001 ,passport_value)
@@ -327,7 +337,7 @@ def test_heartbeat_trims_stream_after_snapshot():
     assert not from_stream
     
     # THIS WILL EXPIRE QUERY 
-    time.sleep(CCT_QUERY_TTL + 0.1)
+    time.sleep(CCT_QUERY_TTL + 1.1)
 
     # DISCONNECT CLIENT
     client1.connection_pool.disconnect()
@@ -338,4 +348,6 @@ def test_heartbeat_trims_stream_after_snapshot():
 
     # Check stream 
     from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    #print(from_stream)
+    assert len(from_stream[0][1]) == 1
+
+    client1.connection_pool.disconnect()

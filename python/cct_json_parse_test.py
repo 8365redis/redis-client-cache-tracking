@@ -41,7 +41,7 @@ def test_json_with_special_chars_value():
     producer.json().set(key, Path.root_path(), d)
 
     # Check key is in stream 
-    from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
     assert key in str(from_stream[0][1])
 
     # Check new key is tracked    

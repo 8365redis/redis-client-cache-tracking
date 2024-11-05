@@ -138,11 +138,15 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     }
 
     if(client_tracking_group_str.empty()){
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand client tracking group name is not given using client name : " + client_name_str );
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand client tracking group name is not given using client name as tracking group name: " + client_name_str );
         client_tracking_group_str = client_name_str;
     }
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand client id : " + std::to_string(client_id) );
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand client name : " + client_name_str );
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand client tracking group name : " + client_tracking_group_str );
+    
 
-    Add_To_Client_Tracking_Group(client_tracking_group_str, client_name_str);
+    Add_To_Client_Tracking_Group(ctx, client_tracking_group_str, client_name_str);
 
     unsigned long long client_query_ttl = 0;
     if (argc == 4) {
@@ -153,8 +157,10 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         }
     }
 
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand client query TTL : " + std::to_string(client_query_ttl) );
+
     // Update client connection status
-    Connect_Client(client_name_str);
+    Connect_Client(ctx, client_name_str);
 
     // Update the client TTL
     if ( Update_Client_TTL(ctx , true) == false ) {

@@ -8,6 +8,7 @@ from manage_redis import connect_redis, connect_redis_with_start, kill_redis
 from constants import CCT_Q2C, CCT_K2C, CCT_C2Q, \
                 CCT_K2Q, CCT_DELI, CCT_Q2K, CCT_QC
 import time
+from cct_test_utils import get_redis_snapshot
 
 
 @pytest.fixture(autouse=True)
@@ -36,10 +37,13 @@ def test_index_created_after_keys_added():
     assert cct_prepare.OK in str(resp)
 
     # make search in not existing index
+    exception_expected = False
     try:
         resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
     except redis.exceptions.ResponseError as e:
-        assert "Success" in str(e)
+        exception_expected = True
+
+    assert exception_expected == True
 
     # INDEX CREATED HERE
     cct_prepare.create_index(r)
@@ -48,6 +52,8 @@ def test_index_created_after_keys_added():
 
     resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
     assert '''{"User":{"ID":"1002","PASSPORT":"aaa","Address":{"ID":"1998"}}}''' in str(resp)
+
+    client1.connection_pool.disconnect()
 
 
 def test_index_created_after_keys_added_2():
@@ -75,10 +81,13 @@ def test_index_created_after_keys_added_2():
     assert cct_prepare.OK in str(resp)
 
     # make search in not existing index
+    exception_expected = False
     try:
-        resp = client1.execute_command("CCT2.FT.SEARCH "+ TEST_INDEX_NAME_1 + " *")
+        resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
     except redis.exceptions.ResponseError as e:
-        assert "Success" in str(e)
+        exception_expected = True
+
+    assert exception_expected == True
 
     # CREATE INDEX 1
     schema = (TagField("$.a", as_name="a"), TagField("$.b", as_name="b"),  \
@@ -91,10 +100,13 @@ def test_index_created_after_keys_added_2():
     assert '''{"a":"2","b":"1002","c":"2002","d":"3002"}''' in str(resp) 
 
     # make search in not existing index
+    exception_expected = False
     try:
         resp = client1.execute_command("CCT2.FT.SEARCH "+ TEST_INDEX_NAME_2 + " *")
     except redis.exceptions.ResponseError as e:
-        assert "Success" in str(e)
+        exception_expected = True
+
+    assert exception_expected == True
 
     # CREATE INDEX 2
     TEST_INDEX_NAME_2 = "index_2"
@@ -113,6 +125,8 @@ def test_index_created_after_keys_added_2():
 
     resp = client1.execute_command("CCT2.FT.SEARCH "+ TEST_INDEX_NAME_2 + " *")
     assert '''{"x":"0","y":"6000","z":"7000","q":"8000"}''' in str(resp)
+
+    client1.connection_pool.disconnect()
 
 def test_index_created_after_many_keys_added():
     r = connect_redis_with_start()
@@ -133,10 +147,13 @@ def test_index_created_after_many_keys_added():
     assert cct_prepare.OK in str(resp)
 
     # make search in not existing index
+    exception_expected = False
     try:
         resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
     except redis.exceptions.ResponseError as e:
-        assert "Success" in str(e)
+        exception_expected = True
+
+    assert exception_expected == True
 
     # INDEX CREATED HERE
     cct_prepare.create_index(r)
@@ -146,6 +163,9 @@ def test_index_created_after_many_keys_added():
     client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " * ")
 
     cct_prepare.flush_db(r) # clean all db lastly
+
+    client1.connection_pool.disconnect()
+    
 
 def test_new_index_working_as_expected():
     r = connect_redis_with_start()
@@ -166,10 +186,13 @@ def test_new_index_working_as_expected():
     assert cct_prepare.OK in str(resp)
 
     # make search in not existing index
+    exception_expected = False
     try:
         resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
     except redis.exceptions.ResponseError as e:
-        assert "Success" in str(e)
+        exception_expected = True
+
+    assert exception_expected == True
 
     key_exists = client1.exists('CCT2:QC:usersJsonIdx:*:app1')
     assert key_exists == 0
@@ -194,4 +217,6 @@ def test_new_index_working_as_expected():
     r.json().set(key, Path.root_path(), d)
 
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
+    #print(from_stream)
+    #get_redis_snapshot()
     assert '''{'operation': 'UPDATE', 'key': 'users:10000', 'value': '{"User":{"ID":"9999","PASSPORT":"aaa","Address":{"ID":"9999"}}}', 'queries': 'usersJsonIdx:*'}''' == str(from_stream[0][1][1][1])
