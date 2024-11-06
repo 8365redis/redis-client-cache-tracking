@@ -26,16 +26,20 @@ def test_basic_ft_aggregate_expire_basic():
         d = cct_prepare.generate_single_object(1000 + i , 2000 - i, "aaa")
         r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(i), Path.root_path(), d)
 
+    TEST_APP_NAME_1 = "test_aggregate_expire_basic"
+
+    QUERY_TTL = 1
+
     # REGISTER
     client1 = connect_redis()
-    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_APP_NAME_1 +  " 2")
+    resp = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1 + " " + TEST_APP_NAME_1 +  " " + str(QUERY_TTL))
     assert cct_prepare.OK in str(resp)
 
     # REQUEST
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
     assert str(response) == '''[10, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
 
-    time.sleep(1.1)
+    time.sleep(0.1)
 
     res = client1.execute_command("CCT2.HEARTBEAT")
     assert str(res) == '''OK'''
@@ -44,7 +48,7 @@ def test_basic_ft_aggregate_expire_basic():
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
     assert str(response) == '''[10, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''    
 
-    time.sleep(3.1)
+    time.sleep(QUERY_TTL + 0.1)
 
     res = client1.execute_command("CCT2.HEARTBEAT")
     assert str(res) == '''OK'''
@@ -53,7 +57,10 @@ def test_basic_ft_aggregate_expire_basic():
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
     assert str(response) == '''[10, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''   
 
-    time.sleep(3.1)
+    res = client1.execute_command("CCT2.INVALIDATE")
+    assert str(res) == '''OK'''
+
+    time.sleep(1.1)
 
 
 def test_aggregate_expire_multi_request_single_client():
@@ -66,9 +73,13 @@ def test_aggregate_expire_multi_request_single_client():
         d = cct_prepare.generate_single_object(1000 + i , 2000 - i, "aaa")
         r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(i), Path.root_path(), d)
 
+    TEST_APP_NAME_1 = "test_aggregate_expire_multi_request_single_client"
+
+    QUERY_TTL = 1
+
     # REGISTER
     client1 = connect_redis()
-    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_APP_NAME_1 +  " 2")
+    resp = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1 + " " + TEST_APP_NAME_1 +  " " + str(QUERY_TTL))
     assert cct_prepare.OK in str(resp)
 
     # REQUEST
@@ -84,22 +95,12 @@ def test_aggregate_expire_multi_request_single_client():
     res = client1.execute_command("CCT2.HEARTBEAT")
     assert str(res) == '''OK'''
 
-    time.sleep(3.1)
-
-    # REQUEST
-    response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 4")
-    assert str(response) == '''[5, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002'], ['User.ID', '1003']]'''
-    response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
-    assert str(response) == '''[5, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
-    response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 2")
-    assert str(response) == '''[5, ['User.ID', '1000'], ['User.ID', '1001']]'''
-    response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 1")
-    assert str(response) == '''[5, ['User.ID', '1000']]'''
+    time.sleep(QUERY_TTL / 2)
 
     res = client1.execute_command("CCT2.HEARTBEAT")
     assert str(res) == '''OK'''
 
-    time.sleep(3.1)
+    time.sleep(QUERY_TTL / 2 + 0.1)
 
     # REQUEST
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 4")
@@ -111,8 +112,26 @@ def test_aggregate_expire_multi_request_single_client():
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 1")
     assert str(response) == '''[5, ['User.ID', '1000']]'''
 
-    time.sleep(3.1)
+    time.sleep(QUERY_TTL / 2)
 
+    res = client1.execute_command("CCT2.HEARTBEAT")
+    assert str(res) == '''OK'''
+
+    time.sleep(QUERY_TTL / 2 + 0.1)
+
+    # REQUEST
+    response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 4")
+    assert str(response) == '''[5, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002'], ['User.ID', '1003']]'''
+    response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
+    assert str(response) == '''[5, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
+    response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 2")
+    assert str(response) == '''[5, ['User.ID', '1000'], ['User.ID', '1001']]'''
+    response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 1")
+    assert str(response) == '''[5, ['User.ID', '1000']]'''
+
+    res = client1.execute_command("CCT2.INVALIDATE")
+    assert str(res) == '''OK'''
+    time.sleep(1.1)
 
 def test_aggregate_expire_multi_request_multi_client():
     r = connect_redis_with_start()

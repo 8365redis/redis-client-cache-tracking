@@ -61,9 +61,11 @@ def test_json_with_special_chars_search_query():
     d = cct_prepare.generate_single_object( id , addr_id, passport_value)
     producer.json().set(key, Path.root_path(), d)
 
+    TEST_APP_NAME_1 = "test_json_with_special_chars_search_query"
+
     # FIRST CLIENT
     client1 = connect_redis()
-    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1)
     query_value = "\\^"
     client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
@@ -72,12 +74,12 @@ def test_json_with_special_chars_search_query():
     producer.json().set(key, Path.root_path(), d)
 
     # Check key is in stream 
-    from_stream = client1.xread( count=2, streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( count=2, streams={TEST_APP_NAME_1:0} )
     #print(from_stream)
     assert key in str(from_stream[0][1])
 
     # Check new key is tracked    
-    tracked_key = producer.sismember(CCT_K2C + key, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = producer.sismember(CCT_K2C + key, TEST_APP_NAME_1)
     assert tracked_key 
 
 def test_json_with_special_chars_multi_search_query():

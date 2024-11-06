@@ -111,17 +111,20 @@ def test_basic_query_tracking_test_3():
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
 
+    TEST_APP_NAME_1 = "test_app_1"
+    TEST_APP_NAME_2 = "test_app_2"
+
     ####### FIRST CLIENT
     passport_value = "aaa"
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
     first_key = cct_prepare.TEST_INDEX_PREFIX + str(1)
     r.json().set(first_key, Path.root_path(), d)
-    r.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    r.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1)
     r.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
 
     ####### SECOND CLIENT
     r2 = connect_redis()
-    r2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    r2.execute_command("CCT2.REGISTER " + TEST_APP_NAME_2)
     r2.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
     
     ####### THIRD CLIENT
@@ -135,21 +138,21 @@ def test_basic_query_tracking_test_3():
     # TESTS
 
     # CHECK THE STREAMS
-    from_stream = r.xread( count=3, streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = r.xread( streams={TEST_APP_NAME_1:0} )
     assert new_added_key in str(from_stream[0][1][-1][1])
     #assert from_stream[0][1][-1][1][new_added_key] == ''
-    from_stream = r.xread( count=2, streams={cct_prepare.TEST_APP_NAME_2:0} )
+    from_stream = r.xread(streams={TEST_APP_NAME_2:0} )
     assert new_added_key in str(from_stream[0][1][-1][1])
     #assert from_stream[0][1][-1][1][new_added_key] == '' 
 
     #CHECK NEW TRACKED KEY
-    tracked_key = r.sismember(CCT_K2C + first_key, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = r.sismember(CCT_K2C + first_key, TEST_APP_NAME_1)
     assert tracked_key 
-    tracked_key = r.sismember(CCT_K2C + new_added_key, cct_prepare.TEST_APP_NAME_1)
+    tracked_key = r.sismember(CCT_K2C + new_added_key, TEST_APP_NAME_1)
     assert not tracked_key 
-    tracked_key = r.sismember(CCT_K2C + first_key, cct_prepare.TEST_APP_NAME_2)
+    tracked_key = r.sismember(CCT_K2C + first_key, TEST_APP_NAME_2)
     assert tracked_key 
-    tracked_key = r.sismember(CCT_K2C + new_added_key, cct_prepare.TEST_APP_NAME_2)
+    tracked_key = r.sismember(CCT_K2C + new_added_key, TEST_APP_NAME_2)
     assert not tracked_key     
 
 

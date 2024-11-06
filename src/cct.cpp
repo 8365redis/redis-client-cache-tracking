@@ -100,7 +100,7 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     }
 
     if (RedisModule_SubscribeToServerEvent(ctx, RedisModuleEvent_ClientChange,
-                                             Handle_Client_Event) != REDISMODULE_OK) {
+                                             handleClientEvent) != REDISMODULE_OK) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "RedisModule_OnLoad failed to SubscribeToServerEvent for RedisModuleEvent_ClientChange." );
         return RedisModule_ReplyWithError(ctx, "SubscribeToServerEvent to ClientChange has failed");
     }
@@ -121,7 +121,8 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
 
     RedisModule_RegisterCommandFilter(ctx, Command_Filter_Callback, REDISMODULE_CMDFILTER_NOSELF);
 
-    Start_Client_Handler(rdts_staticCtx);
+    ClientTracker& client_tracker = ClientTracker::getInstance();
+    client_tracker.startClientHandler(rdts_staticCtx);
 
     Start_Aggregate_Handler(rdts_staticCtx);
 

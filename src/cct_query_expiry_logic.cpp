@@ -95,7 +95,8 @@ int Handle_Query_Expire(RedisModuleCtx *ctx , std::string key) {
 
     // Add event to stream
     std::string original_query = Normalized_to_Original_With_Index(index_and_query);
-    std::set<std::string> c_s = Get_Client_Tracking_Group_Clients(client_name);
+    ClientTracker& client_tracker = ClientTracker::getInstance();
+    std::set<std::string> c_s = client_tracker.getClientTrackingGroupClients(client_name);
     for (auto &c : c_s) {
         if (Add_Event_To_Stream(ctx, c, "query_expired", "" , "", original_query) != REDISMODULE_OK) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Handle_Query_Expire failed to adding to the stream." );

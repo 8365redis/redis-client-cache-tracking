@@ -24,7 +24,8 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         return REDISMODULE_ERR;
     }
 
-    if (Is_Client_Connected(Get_Client_Name(ctx)) == false) {
+    ClientTracker& client_tracker = ClientTracker::getInstance();
+    if (client_tracker.isClientConnected(client_tracker.getClientName(ctx)) == false) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed : Client is not registered" );
         return RedisModule_ReplyWithError(ctx, "Not registered client");
     }
@@ -95,12 +96,12 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         }
     }
 
-    std::string client_name_str = Get_Client_Name(ctx);
+    std::string client_name_str = client_tracker.getClientName(ctx);
     if ( client_name_str.empty()){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to get client name" );
         return REDISMODULE_ERR;
     }
-    std::string client_tracking_group = Get_Client_Client_Tracking_Group(client_name_str);
+    std::string client_tracking_group = client_tracker.getClientClientTrackingGroup(client_name_str);
     if (client_tracking_group.empty()){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to get client tracking group" );
         return REDISMODULE_ERR;
@@ -131,7 +132,7 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     }    
 
     // Write to other client tracking group members stream
-    std::set<std::string> members = Get_Client_Tracking_Group_Clients(client_tracking_group);
+    std::set<std::string> members = client_tracker.getClientTrackingGroupClients(client_tracking_group);
     members.erase(client_name_str); // delete self so dont send to itself
     for (auto& client : members) {
         for(auto& k_v : key_value_to_stream){

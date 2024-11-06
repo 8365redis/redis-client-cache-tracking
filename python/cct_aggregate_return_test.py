@@ -25,15 +25,21 @@ def test_basic_ft_aggregate_return_first():
         d = cct_prepare.generate_single_object(1000 + i , 2000 - i, "aaa")
         r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(i), Path.root_path(), d)
 
+    TEST_APP_NAME_1 = "test_basic_ft_aggregate_return_first"
+    QUERY_TTL = 1
+
     # REGISTER
     client1 = connect_redis()
-    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1  + " " + cct_prepare.TEST_APP_NAME_1 +  " 2")
+    resp = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1  + " " + TEST_APP_NAME_1 +  " " + str(QUERY_TTL)) 
     assert cct_prepare.OK in str(resp)
 
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
     assert str(response) == '''[10, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
 
-    time.sleep(3.1)
+    res = client1.execute_command("CCT2.INVALIDATE")
+    assert str(res) == '''OK'''
+
+    time.sleep(1.1)
 
 def test_basic_ft_aggregate_return_cached_same_client():
     r = connect_redis_with_start()
@@ -45,9 +51,12 @@ def test_basic_ft_aggregate_return_cached_same_client():
         d = cct_prepare.generate_single_object(1000 + i , 2000 - i, "aaa")
         r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(i), Path.root_path(), d)
 
+    TEST_APP_NAME_1 = "test_basic_ft_aggregate_return_cached_same_client"
+    QUERY_TTL = 1
+
     # REGISTER
     client1 = connect_redis()
-    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1  + " " + cct_prepare.TEST_APP_NAME_1 +  " 2")
+    resp = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1  + " " + TEST_APP_NAME_1 +  " " + str(QUERY_TTL))
     assert cct_prepare.OK in str(resp)
 
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
@@ -56,7 +65,7 @@ def test_basic_ft_aggregate_return_cached_same_client():
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
     assert str(response) == '''[100, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
 
-    time.sleep(2)
+    time.sleep(QUERY_TTL)
 
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
     assert str(response) == '''[100, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
@@ -64,13 +73,22 @@ def test_basic_ft_aggregate_return_cached_same_client():
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
     assert str(response) == '''[100, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
 
-    time.sleep(3.1)
+    res = client1.execute_command("CCT2.INVALIDATE")
+    assert str(res) == '''OK'''
+
+    time.sleep(1.1)
 
 
 def test_basic_ft_aggregate_return_cached_different_clients():
     r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
+
+    TEST_APP_NAME_1 = "test_basic_ft_aggregate_return_cached_different_clients_1"
+    TEST_APP_NAME_2 = "test_basic_ft_aggregate_return_cached_different_clients_2"
+    TEST_APP_NAME_3 = "test_basic_ft_aggregate_return_cached_different_clients_3"
+    TEST_APP_NAME_4 = "test_basic_ft_aggregate_return_cached_different_clients_4"
+    QUERY_TTL = 1
 
     # ADD INITIAL DATA
     for i in range(100):
@@ -79,19 +97,19 @@ def test_basic_ft_aggregate_return_cached_different_clients():
 
     # REGISTER
     client1 = connect_redis()
-    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    resp = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1 + " " + TEST_APP_NAME_1 + " " + str(QUERY_TTL))
     assert cct_prepare.OK in str(resp)
 
     client2 = connect_redis()
-    resp = client2.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_2)
+    resp = client2.execute_command("CCT2.REGISTER " + TEST_APP_NAME_2 + " " + TEST_APP_NAME_2 + " " + str(QUERY_TTL))
     assert cct_prepare.OK in str(resp)
 
     client3 = connect_redis()
-    resp = client3.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_3)
+    resp = client3.execute_command("CCT2.REGISTER " + TEST_APP_NAME_3 + " " + TEST_APP_NAME_3 + " " + str(QUERY_TTL))
     assert cct_prepare.OK in str(resp)
 
     client4 = connect_redis()
-    resp = client4.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_4)
+    resp = client4.execute_command("CCT2.REGISTER " + TEST_APP_NAME_4 + " " + TEST_APP_NAME_4 + " " + str(QUERY_TTL))
     assert cct_prepare.OK in str(resp)
 
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
@@ -106,7 +124,7 @@ def test_basic_ft_aggregate_return_cached_different_clients():
     response = client4.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
     assert str(response) == '''[100, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
 
-    time.sleep(4)
+    time.sleep(QUERY_TTL)
 
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3")
     assert str(response) == '''[100, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
@@ -121,15 +139,9 @@ def test_basic_ft_aggregate_return_cached_different_clients():
     assert str(response) == '''[100, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
 
     res = client1.execute_command("CCT2.INVALIDATE")
-    assert str(res) == '''OK'''    
-    res = client2.execute_command("CCT2.INVALIDATE")
     assert str(res) == '''OK'''
-    res = client3.execute_command("CCT2.INVALIDATE")
-    assert str(res) == '''OK'''    
-    res = client4.execute_command("CCT2.INVALIDATE")
-    assert str(res) == '''OK'''  
 
-    time.sleep(3.1)  
+    time.sleep(1.1)
 
 
 def test_ft_aggregate_return_with_different_queries():

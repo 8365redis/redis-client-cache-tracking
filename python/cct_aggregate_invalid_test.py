@@ -21,6 +21,9 @@ def test_aggregate_invalid_multi_request_single_client():
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
 
+    TEST_APP_NAME_1 = "test_aggregate_invalid_multi_request_single_client"
+    QUERY_TTL = 1000  
+
     # ADD INITIAL DATA
     for i in range(5):
         d = cct_prepare.generate_single_object(1000 + i , 2000 - i, "aaa")
@@ -28,7 +31,7 @@ def test_aggregate_invalid_multi_request_single_client():
 
     # REGISTER
     client1 = connect_redis()
-    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_APP_NAME_1 +  " 1000")
+    resp = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1 + " " + TEST_APP_NAME_1 +  " " + str(QUERY_TTL))   
     assert cct_prepare.OK in str(resp)
 
     # REQUEST
@@ -44,7 +47,7 @@ def test_aggregate_invalid_multi_request_single_client():
     res = client1.execute_command("CCT2.HEARTBEAT")
     assert str(res) == '''OK'''
 
-    time.sleep(3.1)
+    time.sleep(0.1)
 
     res = client1.execute_command("CCT2.HEARTBEAT")
     assert str(res) == '''OK'''
@@ -52,7 +55,15 @@ def test_aggregate_invalid_multi_request_single_client():
     res = client1.execute_command("CCT2.INVALIDATE")
     assert str(res) == '''OK'''
 
-    time.sleep(1.2)
+    time.sleep(0.5)
+
+    res = client1.execute_command("CCT2.HEARTBEAT")
+    assert str(res) == '''OK'''
+
+    time.sleep(0.6)
+
+    res = client1.execute_command("CCT2.HEARTBEAT")
+    assert str(res) == '''OK'''
 
     # REQUEST
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 4")
@@ -64,7 +75,12 @@ def test_aggregate_invalid_multi_request_single_client():
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 1")
     assert str(response) == '''[5, ['User.ID', '1000']]'''
 
-    time.sleep(1.2)
+    time.sleep(0.5)
+
+    res = client1.execute_command("CCT2.HEARTBEAT")
+    assert str(res) == '''OK'''
+
+    time.sleep(0.6)
 
     res = client1.execute_command("CCT2.HEARTBEAT")
     assert str(res) == '''OK'''
@@ -72,4 +88,4 @@ def test_aggregate_invalid_multi_request_single_client():
     res = client1.execute_command("CCT2.INVALIDATE")
     assert str(res) == '''OK'''
 
-    time.sleep(2.2)
+    time.sleep(1.1)

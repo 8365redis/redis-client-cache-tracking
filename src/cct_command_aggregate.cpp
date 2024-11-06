@@ -113,9 +113,10 @@ int Aggregate_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         query.push_back(new_str);
     }
 
-    std::string client_name_str = Get_Client_Name(ctx);
-    std::string client_tracking_group = Get_Client_Client_Tracking_Group(client_name_str);
-    unsigned long long client_ttl = Get_Client_Query_TTL(client_tracking_group);
+    ClientTracker& client_tracker = ClientTracker::getInstance();
+    std::string client_name_str = client_tracker.getClientName(ctx);
+    std::string client_tracking_group = client_tracker.getClientClientTrackingGroup(client_name_str);
+    unsigned long long client_ttl = client_tracker.getClientQueryTTL(client_tracking_group);
 
     if(Is_Query_Cached(query, client_ttl)) {
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG, "Aggregate_RedisCommand returning cached result for query : " + Query_2_String(query));

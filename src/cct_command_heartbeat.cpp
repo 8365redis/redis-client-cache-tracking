@@ -17,15 +17,16 @@ int Heartbeat_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         return RedisModule_WrongArity(ctx);
     }
 
-    std::string client_name = Get_Client_Name(ctx);
+    ClientTracker& client_tracker = ClientTracker::getInstance();
+    std::string client_name = client_tracker.getClientName(ctx);
 
-    if (Is_Client_Connected(client_name) == false) {
+    if (client_tracker.isClientConnected(client_name) == false) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Heartbeat_RedisCommand failed : Client is not registered : " + client_name );
         return RedisModule_ReplyWithError(ctx, "Not registered client");
     }
 
     // Regardless update the TTL
-    if ( Update_Client_TTL(ctx) == false ) {
+    if (client_tracker.updateClientTTL(ctx, false) == false) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Heartbeat_RedisCommand failed.");
         return RedisModule_ReplyWithError(ctx, "Updating the TTL failed");
     }

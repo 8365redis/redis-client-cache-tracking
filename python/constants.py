@@ -20,16 +20,16 @@ CCT_VALUE = "value"
 CCT_QUERIES = "queries" 
 
 
-CCT_QUERY_TTL = 4  # This must be same as CCT_QUERY_TTL_SECOND in constants.h with _DEBUG
-CCT_QUERY_HALF_TTL = ( CCT_QUERY_TTL / 2 ) + 1
+CCT_QUERY_TTL = 1  # This must be same as CCT_QUERY_TTL_SECOND in constants.h with _DEBUG
+CCT_QUERY_HALF_TTL = ( CCT_QUERY_TTL / 2 ) + 0.1
 
-CCT_HEART_BEAT_INTERVAL = 2 # This must be same as CCT_CLIENT_TTL_CHECK_INTERVAL_SECOND in constants.h with _DEBUG
+CCT_HEART_BEAT_INTERVAL = 1 # This must be same as CCT_CLIENT_TTL_CHECK_INTERVAL_SECOND in constants.h with _DEBUG
 
 CCT_NOT_REGISTERED_COMMAND_ERROR  = "Not registered client"
 
 SKIP_HB_TEST = False
 SKIP_PERF_TEST = True
-REMOTE_REDIS_CONNECTION = True
+REMOTE_REDIS_CONNECTION = False
 SKIP_MULTI_VERSION_TEST = True
 SKIP_UNSTABLE_TEST = True
 SKIP_OLD_VALUE_TEST = True # Set False when you set configuration for old values

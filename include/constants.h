@@ -46,9 +46,9 @@ const int CCT_QUERY_TTL_SECOND = 7 * 24 * 60 * 60  ; // 7 days
 const int CCT_CLIENT_TTL_CHECK_INTERVAL_SECOND = 2 * 60 ; // 2 Minutes
 const int CCT_CLIENT_TTL_HEARTBEAT_MISS_COUNT = 3;
 #else
-const int CCT_QUERY_TTL_SECOND = 4  ; // 4 seconds
-const int CCT_CLIENT_TTL_CHECK_INTERVAL_SECOND = 2 ; // 10 Minutes
-const int CCT_CLIENT_TTL_HEARTBEAT_MISS_COUNT = 3;
+const int CCT_QUERY_TTL_SECOND = 1  ; // 1 second
+const int CCT_CLIENT_TTL_CHECK_INTERVAL_SECOND = 1 ; // 1 second
+const int CCT_CLIENT_TTL_HEARTBEAT_MISS_COUNT = 2;
 #endif
 
 const int CCT_SEND_OLD_VALUE = 0 ;

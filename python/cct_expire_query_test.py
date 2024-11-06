@@ -209,7 +209,7 @@ def test_1_client_1_query_1_key_expired():
     # CHECK CCT_META_DATA 
     check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, query_normalized, key_1, [True]*6 )
 
-    time.sleep(CCT_QUERY_TTL + 1)
+    time.sleep(CCT_QUERY_TTL + 0.1)
 
     # CHECK CCT_META_DATA 
     check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, query_normalized, key_1, [False]*6 )
@@ -339,7 +339,7 @@ def test_2_client_1_query_1_key_expired_same_time():
     check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_2, first_query_normalized, key_1, [True]*6 ) 
 
     # THIS WILL EXPIRE BOTH QUERIES
-    time.sleep(CCT_QUERY_TTL+1)
+    time.sleep(CCT_QUERY_TTL + 0.1)
 
     # CHECK CCT_META_DATA
     check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [False]*6 )
@@ -426,7 +426,7 @@ def test_2_client_2_query_1_key_expired_same_time():
     check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_2, second_query_normalized, key_1, [True]*6) 
 
     # THIS WILL EXPIRE BOTH QUERIES
-    time.sleep(CCT_QUERY_TTL+1)
+    time.sleep(CCT_QUERY_TTL + 0.1)
 
     # CHECK CCT_META_DATA
     check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [False]*6 )

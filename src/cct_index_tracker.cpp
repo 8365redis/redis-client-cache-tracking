@@ -153,10 +153,12 @@ void Index_Change_Handler(RedisModuleCtx *ctx) {
     auto& index_manager = Redis_Index_Manager::Instance();
     while(true) {
         if(index_manager.Get_Index_Change()) {
+            RedisModule_ThreadSafeContextLock(ctx);
             LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Index_Change_Handler index change scan started" );
             std::set<std::string> indexes = index_manager.Get_All_Indexes(ctx);
             index_manager.Get_Index_Prefixes(ctx , indexes);
             index_manager.Set_Index_Change(false);
+            RedisModule_ThreadSafeContextUnlock(ctx);
         }   
         std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // Check every second
     }

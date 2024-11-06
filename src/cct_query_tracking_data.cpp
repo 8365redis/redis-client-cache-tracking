@@ -61,7 +61,8 @@ void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::stri
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracking_Query failed while registering Query:Client:1 " +  query_client_expire_key_name_str);
     }
 
-    if(RedisModule_SetExpire(query_client_key, Get_Client_Query_TTL(client_tracking_group)) != REDISMODULE_OK){
+    ClientTracker& client_tracker = ClientTracker::getInstance();
+    if(RedisModule_SetExpire(query_client_key, client_tracker.getClientQueryTTL(client_tracking_group)) != REDISMODULE_OK){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracking_Query failed set expire for Query:Client:1  " +  query_client_expire_key_name_str);
     }
 
@@ -103,7 +104,8 @@ void Add_Tracking_Key(RedisModuleCtx *ctx, std::string key, std::string client_t
     } 
 
     // Set new TTL
-    long long new_ttl = Get_Client_Query_TTL(client_tracking_group);
+    ClientTracker& client_tracker = ClientTracker::getInstance();
+    long long new_ttl = client_tracker.getClientQueryTTL(client_tracking_group);
     // Get previous TTL 
     long long current_ttl = RedisModule_GetExpire(key_tracking_set_key);
     if( new_ttl < current_ttl) {
@@ -142,7 +144,8 @@ void Add_Tracking_Key_Old_Value(RedisModuleCtx *ctx, std::string key, std::strin
 
 int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std::string event, const std::string key, const std::string value, const std::string queries, bool send_old_value ) { 
     RedisModule_AutoMemory(ctx);
-    if( Is_Client_Connected(client) == false) {
+    ClientTracker& client_tracker = ClientTracker::getInstance();
+    if( client_tracker.isClientConnected(client) == false) {
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream skipping offline client : " + client);
         return REDISMODULE_OK;
     } else {

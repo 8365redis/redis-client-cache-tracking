@@ -31,15 +31,17 @@ def test_index_created_after_keys_added():
 
     time.sleep(0.1)
 
+    TEST_APP_NAME_1 = "test_index_created_after_keys_added"
+
     # REGISTER
     client1 = connect_redis()
-    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_APP_NAME_1 +  " 2")
+    resp = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1 + " " + TEST_APP_NAME_1 +  " 2")
     assert cct_prepare.OK in str(resp)
 
     # make search in not existing index
     exception_expected = False
     try:
-        resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
+        resp = client1.execute_command("CCT2.FT.SEARCH "+ "not_existing_index" + " *")
     except redis.exceptions.ResponseError as e:
         exception_expected = True
 
@@ -75,15 +77,17 @@ def test_index_created_after_keys_added_2():
 
     time.sleep(0.1)
 
+    TEST_APP_NAME_1 = "test_index_created_after_keys_added_2"
+
     # REGISTER 1
     client1 = connect_redis()
-    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_APP_NAME_1 +  " 2")
+    resp = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1 + " " + TEST_APP_NAME_1 +  " 2")
     assert cct_prepare.OK in str(resp)
 
     # make search in not existing index
     exception_expected = False
     try:
-        resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
+        resp = client1.execute_command("CCT2.FT.SEARCH "+ "not_existing_index" + " *") # non existing index
     except redis.exceptions.ResponseError as e:
         exception_expected = True
 
@@ -95,6 +99,7 @@ def test_index_created_after_keys_added_2():
     r.ft(TEST_INDEX_NAME_1).create_index(schema, definition=IndexDefinition(prefix=[TEST_INDEX_PREFIX_1], index_type=IndexType.JSON))
 
     time.sleep(1.1)
+    client1.execute_command("CCT2.HEARTBEAT")
    
     resp = client1.execute_command("CCT2.FT.SEARCH "+ TEST_INDEX_NAME_1 + " *")
     assert '''{"a":"2","b":"1002","c":"2002","d":"3002"}''' in str(resp) 
@@ -116,6 +121,7 @@ def test_index_created_after_keys_added_2():
     r.ft(TEST_INDEX_NAME_2).create_index(schema, definition=IndexDefinition(prefix=[TEST_INDEX_PREFIX_2], index_type=IndexType.JSON))
 
     time.sleep(1.1)
+    client1.execute_command("CCT2.HEARTBEAT")
 
     #ADD DATA INDEX_2
     for i in range(3):
@@ -134,6 +140,8 @@ def test_index_created_after_many_keys_added():
     
     time.sleep(0.1)
 
+    TEST_APP_NAME_1 = "test_index_created_after_many_keys_added"
+
     # ADD INITIAL DATA
     for i in range(10000):
         d = cct_prepare.generate_single_object(1000 + i , 2000 - i, "aaa")
@@ -143,7 +151,7 @@ def test_index_created_after_many_keys_added():
 
     # REGISTER
     client1 = connect_redis()
-    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_APP_NAME_1 +  " 2")
+    resp = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1 + " " + TEST_APP_NAME_1 +  " 2")
     assert cct_prepare.OK in str(resp)
 
     # make search in not existing index
@@ -173,6 +181,8 @@ def test_new_index_working_as_expected():
     
     time.sleep(0.1)
 
+    TEST_APP_NAME_1 = "test_new_index_working_as_expected"
+
     # ADD INITIAL DATA
     for i in range(3):
         d = cct_prepare.generate_single_object(1000 + i , 2000 - i, "aaa")
@@ -182,7 +192,7 @@ def test_new_index_working_as_expected():
 
     # REGISTER
     client1 = connect_redis()
-    resp = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1 + " " + cct_prepare.TEST_APP_NAME_1 +  " 2")
+    resp = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1 + " " + TEST_APP_NAME_1 +  " 2")
     assert cct_prepare.OK in str(resp)
 
     # make search in not existing index
@@ -205,10 +215,10 @@ def test_new_index_working_as_expected():
     resp = client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME + " *")
     assert "2000" in str(resp)
 
-    key_exists = client1.exists('CCT2:QC:usersJsonIdx:*:app1')
+    key_exists = client1.exists('CCT2:QC:usersJsonIdx:*:'+ TEST_APP_NAME_1)
     assert key_exists == 1
 
-    from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread(streams={TEST_APP_NAME_1:0} )
     assert "usersJsonIdx:*" not in str(from_stream)
 
     # ADD A NEW DATA
@@ -216,7 +226,7 @@ def test_new_index_working_as_expected():
     key = cct_prepare.TEST_INDEX_PREFIX + str(10000)    
     r.json().set(key, Path.root_path(), d)
 
-    from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread(streams={TEST_APP_NAME_1:0} )
     #print(from_stream)
     #get_redis_snapshot()
     assert '''{'operation': 'UPDATE', 'key': 'users:10000', 'value': '{"User":{"ID":"9999","PASSPORT":"aaa","Address":{"ID":"9999"}}}', 'queries': 'usersJsonIdx:*'}''' == str(from_stream[0][1][1][1])

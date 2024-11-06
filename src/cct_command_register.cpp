@@ -15,8 +15,9 @@
 
 void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string client_name_str) {
     RedisModule_AutoMemory(ctx);
-
-    std::string client_tracking_group = Get_Client_Client_Tracking_Group(client_name_str);
+    
+    ClientTracker& client_tracker = ClientTracker::getInstance();
+    std::string client_tracking_group = client_tracker.getClientClientTrackingGroup(client_name_str);
     if (client_tracking_group.empty()){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Send_Snapshot failed to get client tracking group" );
         return ;
@@ -145,8 +146,8 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand client name : " + client_name_str );
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand client tracking group name : " + client_tracking_group_str );
     
-
-    Add_To_Client_Tracking_Group(ctx, client_tracking_group_str, client_name_str);
+    ClientTracker& client_tracker = ClientTracker::getInstance();
+    client_tracker.addToClientTrackingGroup(ctx, client_tracking_group_str, client_name_str);
 
     unsigned long long client_query_ttl = 0;
     if (argc == 4) {
@@ -160,19 +161,19 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand client query TTL : " + std::to_string(client_query_ttl) );
 
     // Update client connection status
-    Connect_Client(ctx, client_name_str);
+    client_tracker.connectClient(ctx, client_name_str);
 
     // Update the client TTL
-    if ( Update_Client_TTL(ctx , true) == false ) {
+    if ( client_tracker.updateClientTTL(ctx, true) == false ) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set TTL.");
         return RedisModule_ReplyWithError(ctx, "Setting client TTL has failed");
     }
 
     // Update the client Query TTL
     if(client_query_ttl == 0 ) {
-        Set_Client_Query_TTL(ctx, client_tracking_group_str, (cct_config.CCT_QUERY_TTL_SECOND_CFG * MS_MULT));
+        client_tracker.setClientQueryTTL(ctx, client_tracking_group_str, (cct_config.CCT_QUERY_TTL_SECOND_CFG * MS_MULT));
     } else {
-        Set_Client_Query_TTL(ctx, client_tracking_group_str, client_query_ttl * MS_MULT); // Argument TTL is in second
+        client_tracker.setClientQueryTTL(ctx, client_tracking_group_str, client_query_ttl * MS_MULT); // Argument TTL is in second
     }
     
     // Check if the stream exists and delete if it is

@@ -31,19 +31,18 @@ def test_heartbeat_trims_one_from_stream():
     key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
     producer.json().set(key_1, Path.root_path(), d)    
 
+    TEST_APP_NAME_1 = "test_heartbeat_trims_one_from_stream"
+
     client1 = connect_redis()
-    res = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    res = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1)
     assert cct_prepare.OK in str(res)
     res = client1.execute_command("CCT2.HEARTBEAT")
     assert cct_prepare.OK in str(res)
 
     # FIRST CLIENT
     query_value = passport_value
-    client1 = connect_redis()
-    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
-    query_normalized = "User\\.PASSPORT:aaa"
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1001 , 2001 ,passport_value)
@@ -52,7 +51,7 @@ def test_heartbeat_trims_one_from_stream():
     producer.json().set(key_1, Path.root_path(), d)
 
     # Check stream 
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     read_ids = []
     assert 3 == len(from_stream[0][1])
     for id, value in from_stream[0][1]:
@@ -63,7 +62,7 @@ def test_heartbeat_trims_one_from_stream():
     max_id = max(read_ids)
     res = client1.execute_command("CCT2.HEARTBEAT " + str(max_id))
     assert cct_prepare.OK in str(res)
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert not from_stream
 
     # UPDATE DATA AGAIN
@@ -73,7 +72,7 @@ def test_heartbeat_trims_one_from_stream():
     producer.json().set(key_1, Path.root_path(), d)
 
     # Check stream 
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     read_ids = []
     assert 2 == len(from_stream[0][1])
     for id, value in from_stream[0][1]:
@@ -82,21 +81,21 @@ def test_heartbeat_trims_one_from_stream():
     # SEND HB without trim
     res = client1.execute_command("CCT2.HEARTBEAT" )
     assert cct_prepare.OK in str(res)
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert 2 == len(from_stream[0][1])
 
     # SEND HB with trim
     min_id = min(read_ids)
     res = client1.execute_command("CCT2.HEARTBEAT " + str(min_id) )
     assert cct_prepare.OK in str(res)
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert 1 == len(from_stream[0][1]) 
 
     # SEND HB with trim
     max_id = max(read_ids)
     res = client1.execute_command("CCT2.HEARTBEAT " + str(max_id) )
     assert cct_prepare.OK in str(res)
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert not from_stream
 
     # DISCONNECT CLIENT
@@ -110,6 +109,8 @@ def test_heartbeat_trims_stream_with_invalid_ids():
     cct_prepare.flush_db(producer) # clean all db first
     cct_prepare.create_index(producer)
 
+    TEST_APP_NAME_1 = "test_heartbeat_trims_stream_with_invalid_ids"
+
     # ADD INITIAL DATA
     passport_value = "aaa"
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
@@ -117,15 +118,13 @@ def test_heartbeat_trims_stream_with_invalid_ids():
     producer.json().set(key_1, Path.root_path(), d)    
 
     client1 = connect_redis()
-    res = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    res = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1)
     assert cct_prepare.OK in str(res)
     res = client1.execute_command("CCT2.HEARTBEAT")
     assert cct_prepare.OK in str(res)
 
     # FIRST CLIENT
     query_value = passport_value
-    client1 = connect_redis()
-    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
     client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # UPDATE DATA
@@ -135,7 +134,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
     producer.json().set(key_1, Path.root_path(), d)
 
     # Check stream 
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     read_ids = []
     assert 3 == len(from_stream[0][1])
     for id, value in from_stream[0][1]:
@@ -150,7 +149,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
     #print('New min id     :' + str(new_min_id) )
     res = client1.execute_command("CCT2.HEARTBEAT " + str(new_min_id) )
     assert cct_prepare.OK in str(res)
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert 3 == len(from_stream[0][1])
 
     # SEND HB with trim invalid value
@@ -160,7 +159,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
     #print('New min id     :' + str(new_min_id) )
     res = client1.execute_command("CCT2.HEARTBEAT " + str(new_min_id) )
     assert cct_prepare.OK in str(res)
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert 3 == len(from_stream[0][1])
 
     # SEND HB with trim invalid value
@@ -168,7 +167,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
     #print('New min id     :' + str(new_min_id) )
     res = client1.execute_command("CCT2.HEARTBEAT " + str(new_min_id) )
     assert cct_prepare.OK in str(res)
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert 3 == len(from_stream[0][1]) 
 
     # SEND HB with trim invalid value
@@ -178,7 +177,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
         res = client1.execute_command("CCT2.HEARTBEAT " + str(new_min_id) )
     except redis.exceptions.ResponseError as e:
         assert "failed" in str(e)
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert 3 == len(from_stream[0][1])
 
     # SEND HB with trim invalid value
@@ -190,7 +189,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
         assert "failed" in str(e)
 
     
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert 3 == len(from_stream[0][1])
 
     # SEND HB with trim invalid value
@@ -200,7 +199,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
         res = client1.execute_command("CCT2.HEARTBEAT " + str(new_min_id) )
     except redis.exceptions.ResponseError as e:
         assert "failed" in str(e)
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert 3 == len(from_stream[0][1])  
 
     # SEND HB with trim invalid value
@@ -210,7 +209,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
         res = client1.execute_command("CCT2.HEARTBEAT " + str(new_min_id) )
     except redis.exceptions.ResponseError as e:
         assert "failed" in str(e)
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert 3 == len(from_stream[0][1])  
 
     # SEND HB with trim higher than max
@@ -222,7 +221,7 @@ def test_heartbeat_trims_stream_with_invalid_ids():
     #print('New max id     :' + str(new_min_id) )
     res = client1.execute_command("CCT2.HEARTBEAT " + str(new_min_id) )
     assert cct_prepare.OK in str(res)
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert not from_stream
 
     # DISCONNECT CLIENT
@@ -236,18 +235,17 @@ def test_heartbeat_trims_empty():
     cct_prepare.flush_db(producer) # clean all db first
     cct_prepare.create_index(producer)
 
+    TEST_APP_NAME_1 = "test_heartbeat_trims_empty"
+
     client1 = connect_redis()
-    res = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    res = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1)
     assert cct_prepare.OK in str(res)
     res = client1.execute_command("CCT2.HEARTBEAT")
     assert cct_prepare.OK in str(res)
 
-    # FIRST CLIENT
-    client1 = connect_redis()
-    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
 
     # Check stream 
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert CCT_EOS in from_stream[0][1][0][1]
 
     # SEND HB with trim invalid value
@@ -255,7 +253,7 @@ def test_heartbeat_trims_empty():
     #print('New min id     :' + str(new_min_id) )
     res = client1.execute_command("CCT2.HEARTBEAT " + str(new_min_id) )
     assert cct_prepare.OK in str(res)
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert CCT_EOS in from_stream[0][1][0][1]
 
     # DISCONNECT CLIENT
@@ -272,7 +270,7 @@ def test_heartbeat_trims_stream_after_snapshot():
     cct_prepare.create_index(producer)
 
     # ADD INITIAL DATA
-    passport_value = "aaa"
+    passport_value = "test_heartbeat_trims_stream_after_snapshot"
     d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
     key_1 = cct_prepare.TEST_INDEX_PREFIX + str(1) 
     producer.json().set(key_1, Path.root_path(), d)
@@ -283,8 +281,10 @@ def test_heartbeat_trims_stream_after_snapshot():
     key_3 = cct_prepare.TEST_INDEX_PREFIX + str(3) 
     producer.json().set(key_3, Path.root_path(), d)
 
+    TEST_APP_NAME_1 = "test_heartbeat_trims_stream_after_snapshot"
+
     client1 = connect_redis()
-    res = client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    res = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1)
     assert cct_prepare.OK in str(res)
     res = client1.execute_command("CCT2.HEARTBEAT")
     assert cct_prepare.OK in str(res)
@@ -307,23 +307,20 @@ def test_heartbeat_trims_stream_after_snapshot():
     producer.json().set(key_3, Path.root_path(), d)
 
     # Check stream 
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
-    read_ids = []
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert 7 == len(from_stream[0][1])
-    for id, value in from_stream[0][1]:
-        read_ids.append(id)
 
     # DISCONNECT CLIENT
     client1.connection_pool.disconnect()
 
-    time.sleep(1.1)
+    time.sleep(0.1)
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1)
 
     # Check stream 
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     read_ids = []
     assert 4 == len(from_stream[0][1])
     for id, value in from_stream[0][1]:
@@ -333,21 +330,21 @@ def test_heartbeat_trims_stream_after_snapshot():
     max_id = max(read_ids)
     res = client1.execute_command("CCT2.HEARTBEAT " + str(max_id) )
     assert cct_prepare.OK in str(res)
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert not from_stream
     
     # THIS WILL EXPIRE QUERY 
-    time.sleep(CCT_QUERY_TTL + 1.1)
+    time.sleep(CCT_QUERY_TTL + 0.1)
 
     # DISCONNECT CLIENT
     client1.connection_pool.disconnect()
 
     # RE-REGISTER
     client1 = connect_redis()
-    client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1)
 
     # Check stream 
-    from_stream = client1.xread( streams={cct_prepare.TEST_APP_NAME_1:0} )
+    from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert len(from_stream[0][1]) == 1
 
     client1.connection_pool.disconnect()
