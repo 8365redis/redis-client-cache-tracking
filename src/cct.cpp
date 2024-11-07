@@ -6,6 +6,7 @@
 #include "cct_command_search.h"
 #include "cct_command_heartbeat.h"
 #include "cct_command_aggregate.h"
+#include "cct_command_unsubscribe.h"
 #include "cct_offline_query_expire.h"
 #include "constants.h"
 #include "config_handler.h"
@@ -89,6 +90,12 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         return REDISMODULE_ERR;
     } else {
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.INVALIDATE command created successfully.");
+    }
+
+    if (RedisModule_CreateCommand(ctx,"CCT2.FT.SEARCH.UNSUBSCRIBE", Unsubscribe_Command , "write", 0, 0, 0) == REDISMODULE_ERR) {
+        return REDISMODULE_ERR;
+    } else {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.FT.SEARCH.UNSUBSCRIBE command created successfully.");
     }
 
     // Subscribe to key space events

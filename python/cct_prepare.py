@@ -78,3 +78,8 @@ def create_index(r):
               TagField("$.User.Address.ID", as_name="User.Address.ID"))
     r.ft(TEST_INDEX_NAME).create_index(schema, definition=IndexDefinition(prefix=[TEST_INDEX_PREFIX], index_type=IndexType.JSON))
 
+def create_index_with_prefix(r, prefix , index_name):
+    schema = (TagField("$.User.ID", as_name="User.ID"), TagField("$.User.PASSPORT", as_name="User.PASSPORT"),  \
+              TagField("$.User.Address.ID", as_name="User.Address.ID"))
+    r.ft(index_name).create_index(schema, definition=IndexDefinition(prefix=[prefix], index_type=IndexType.JSON))
+
