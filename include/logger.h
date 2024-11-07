@@ -1,5 +1,4 @@
-#ifndef LOGGER_H
-#define LOGGER_H
+#pragma once
 
 #include "redismodule.h"
 #include <string>
@@ -25,6 +24,4 @@ std::string Vector_To_String(const std::vector<T>& input_vector, const std::stri
 // Function to convert set to string
 template <typename T>
 std::string Set_To_String(const std::set<T>& input_set, const std::string& delimiter = ", ");
-
-#endif /* LOGGER_H */
 

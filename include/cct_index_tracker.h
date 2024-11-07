@@ -1,5 +1,4 @@
-#ifndef CCT_INDEX_TRACKER_H
-#define CCT_INDEX_TRACKER_H
+#pragma once
 
 #include <set>
 #include <string>
@@ -36,5 +35,3 @@ std::set<std::string> Get_Indexes_From_Key(std::string key);
 
 void Start_Index_Change_Handler(RedisModuleCtx *ctx);
 void Index_Change_Handler(RedisModuleCtx *ctx);
-
-#endif /* CCT_INDEX_TRACKER_H */

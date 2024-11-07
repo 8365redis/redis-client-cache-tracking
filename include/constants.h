@@ -1,5 +1,4 @@
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
+#pragma once
 
 #include <string>
 #include <unordered_map>
@@ -71,5 +70,3 @@ const std::string CCT_KEY = "key" ;
 const std::string CCT_VALUE = "value" ;
 const std::string CCT_OLD_VALUE = "old_value" ;
 const std::string CCT_QUERIES = "queries" ;
-
-#endif /* CONSTANTS_H */

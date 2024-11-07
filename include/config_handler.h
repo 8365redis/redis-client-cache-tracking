@@ -1,5 +1,4 @@
-#ifndef CONFIG_HANDLER_H
-#define CONFIG_HANDLER_H
+#pragma once
 
 #include <string>
 #include "redismodule.h"
@@ -16,6 +15,3 @@ const std::string CCT_AGGREGATE_HANDLER_CONFIG = "CCT_AGGREGATE_HANDLER";
 const std::string CCT_AGGREGATE_HANDLER_INTERVAL_SECOND_CONFIG = "CCT_AGGREGATE_HANDLER_INTERVAL_SECOND";
 
 CCT_Config Read_CCT_Config(RedisModuleCtx *ctx, std::string config_file_path_str);
-
-
-#endif /* CONFIG_HANDLER_H */

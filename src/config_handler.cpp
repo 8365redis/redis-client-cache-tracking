@@ -1,6 +1,6 @@
 #include <dlfcn.h>
 #include "config_handler.h"
-#include "ini.h"
+#include "ini/ini.h"
 #include "logger.h"
 
 CCT_Config Read_CCT_Config(RedisModuleCtx *ctx, std::string config_file_path_str) {
