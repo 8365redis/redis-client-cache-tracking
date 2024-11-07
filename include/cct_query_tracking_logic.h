@@ -1,5 +1,4 @@
-#ifndef CCT_QUERY_TRACKING_LOGIC_H
-#define CCT_QUERY_TRACKING_LOGIC_H
+#pragma once
 
 #include <vector>
 #include <string>
@@ -14,5 +13,3 @@ int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string even
 
 int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString* r_key, std::vector<std::string> already_tracking_clients);
 int Notify_Callback(RedisModuleCtx *ctx, int type, const char *event, RedisModuleString *key);
-
-#endif /* CCT_QUERY_TRACKING_LOGIC_H */

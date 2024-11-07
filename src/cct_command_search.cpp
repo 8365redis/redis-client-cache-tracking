@@ -7,7 +7,7 @@
 #include "constants.h"
 #include "query_parser.h"
 #include "cct_query_tracking_data.h"
-#include "client_tracker.h"
+#include "cct_client_tracker.h"
 #include "cct_command_search.h"
 #include "cct_index_tracker.h"
 

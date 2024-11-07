@@ -7,7 +7,7 @@
 #include "cct_command_heartbeat.h"
 #include "logger.h"
 #include "constants.h"
-#include "client_tracker.h"
+#include "cct_client_tracker.h" 
 #include "cct_query_tracking_data.h"
 
 int Heartbeat_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {

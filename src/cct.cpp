@@ -11,7 +11,7 @@
 #include "config_handler.h"
 #include "version.h"
 #include "cct_index_tracker.h"
-#include "client_tracker.h"
+#include "cct_client_tracker.h"
 #include "cct_command_filter.h"
 
 

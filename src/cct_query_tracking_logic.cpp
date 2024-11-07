@@ -7,7 +7,7 @@
 
 #include "cct_query_tracking_logic.h"
 #include "query_parser.h"
-#include "client_tracker.h"
+#include "cct_client_tracker.h"
 #include "cct_index_tracker.h"
 #include "logger.h"
 #include "constants.h"

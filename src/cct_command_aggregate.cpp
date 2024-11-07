@@ -5,7 +5,7 @@
 #include <atomic>
 #include "cct_command_aggregate.h"
 #include "logger.h"
-#include "client_tracker.h"
+#include "cct_client_tracker.h" 
 #include "constants.h"
 
 std::unordered_map<std::string, RedisModuleCallReply*> CCT_AGGREGATE_CACHED_QUERIES;
