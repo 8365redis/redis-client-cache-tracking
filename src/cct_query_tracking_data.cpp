@@ -86,15 +86,18 @@ void Update_Tracking_Query(RedisModuleCtx *ctx, const std::string query_str, con
     }
 }
 
-void Add_Tracking_Key(RedisModuleCtx *ctx, std::string key, std::string client_tracking_group) {
+void Add_Tracking_Key(RedisModuleCtx *ctx, std::string key, std::string client_tracking_group, bool renew) {
     RedisModule_AutoMemory(ctx);
-    // Save the Key:{Clients} Expire
+
     std::string key_with_prefix = CCT_MODULE_KEY_2_CLIENT + key;
-    RedisModuleCallReply *sadd_key_reply = RedisModule_Call(ctx, "SADD", "cc", key_with_prefix.c_str()  , client_tracking_group.c_str());
-    if (RedisModule_CallReplyType(sadd_key_reply) != REDISMODULE_REPLY_INTEGER ) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracking_Key failed while registering tracking key: " +  key_with_prefix);
-    } else {
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Tracking_Key Client : " + client_tracking_group  + " is added to set: " + key_with_prefix);
+    if(!renew) {
+        // Save the Key:{Clients} Expire
+        RedisModuleCallReply *sadd_key_reply = RedisModule_Call(ctx, "SADD", "cc", key_with_prefix.c_str()  , client_tracking_group.c_str());
+        if (RedisModule_CallReplyType(sadd_key_reply) != REDISMODULE_REPLY_INTEGER ) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracking_Key failed while registering tracking key: " +  key_with_prefix);
+        } else {
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Tracking_Key Client : " + client_tracking_group  + " is added to set: " + key_with_prefix);
+        }
     }
     
     RedisModuleString *key_tracking_set_key_str = RedisModule_CreateString(ctx, key_with_prefix.c_str() , key_with_prefix.length());
@@ -267,6 +270,7 @@ void Renew_Queries(RedisModuleCtx *ctx, std::vector<std::string> queries, const 
     RedisModule_AutoMemory(ctx);
     
     for (const auto& query : queries) {
+        // Renew the Query:Client:1
         std::string query_client_expire_key_name_str = CCT_MODULE_QUERY_CLIENT + query + CCT_MODULE_KEY_SEPERATOR + client_tracking_group;
         RedisModuleString *query_client_expire_key_name = RedisModule_CreateString(ctx, query_client_expire_key_name_str.c_str() , query_client_expire_key_name_str.length());
         if (RedisModule_KeyExists(ctx, query_client_expire_key_name)){
@@ -277,6 +281,25 @@ void Renew_Queries(RedisModuleCtx *ctx, std::vector<std::string> queries, const 
             LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Renew_Queries set expire for Query:Client:1  " +  query_client_expire_key_name_str);
         } else {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Renew_Queries failed to find Query:Client:1  " +  query_client_expire_key_name_str);
+        }
+
+        // Get the Query:{Keys}
+        std::vector<std::string> keys_matching_query;
+        std::string q2k = CCT_MODULE_QUERY_2_KEY + query;
+        RedisModuleCallReply *q2k_smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", q2k.c_str());
+        const size_t reply_length = RedisModule_CallReplyLength(q2k_smembers_reply);
+        for (size_t i = 0; i < reply_length; i++) {
+            RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(q2k_smembers_reply, i);
+            if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING){
+                RedisModuleString *key_name = RedisModule_CreateStringFromCallReply(key_reply);
+                const char *key_name_str = RedisModule_StringPtrLen(key_name, NULL);
+                keys_matching_query.push_back(std::string(key_name_str));
+            }
+        }
+
+        // Renew the Key:{Clients}
+        for (auto &key_name : keys_matching_query) {
+            Add_Tracking_Key(ctx, key_name, client_tracking_group, true);
         }
     }
 

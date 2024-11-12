@@ -49,7 +49,6 @@ int Clean_Up_Query(RedisModuleCtx *ctx , std::string client_name, std::string in
 
     // If query doesn't belong to any client 
     if (expired_query_has_other_clients == false) {
-
         // First find all keys matching to query
         std::vector<std::string> keys_matching_expired_query;
         std::string q2k_str = CCT_MODULE_QUERY_2_KEY + index_and_query;

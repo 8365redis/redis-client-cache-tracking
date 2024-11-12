@@ -118,7 +118,6 @@ def test_basic_renew():
 
 
 def test_basic_renew_with_multi_query():
-    # TEST MULTI QUERY
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
 
@@ -176,5 +175,98 @@ def test_basic_renew_with_multi_query():
     # CHECK STREAMS
     from_stream = client1.xread(streams={TEST_APP_NAME_1:0} )
     assert len(from_stream) == 1
+
+
+def test_basic_renew_with_multi_keys():
+    producer = connect_redis_with_start()
+    cct_prepare.flush_db(producer) # clean all db first
+
+    TEST_APP_NAME_1 = '''test_basic_renew_with_multi_keys_app'''    
+    TEST_INDEX_NAME = '''test_basic_renew_with_multi_keys_index'''
+    TEST_INDEX_PREFIX = '''test_basic_renew_with_multi_keys_prefix:'''
+    cct_prepare.create_index_with_prefix(producer, TEST_INDEX_PREFIX, TEST_INDEX_NAME)
+
+    # ADD INITIAL DATA
+    passport_value = "test_basic_renew_with_multi_keys_passport"
+    for i in range(0, 3):
+        d = cct_prepare.generate_single_object(1000 + i , 1000 - i, passport_value)
+        key = TEST_INDEX_PREFIX + str(i)
+        producer.json().set(key, Path.root_path(), d)
+    
+    # FIRST CLIENT
+    client1 = connect_redis()
+    client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1) # DEBUG QUERY TTL SET TO 1 second
+    res = client1.execute_command("CCT2.FT.SEARCH "+ TEST_INDEX_NAME +" @User\\.PASSPORT:{" + passport_value + "}")
+    assert TEST_INDEX_PREFIX + str(0) in str(res)
+    assert TEST_INDEX_PREFIX + str(1) in str(res)
+    assert TEST_INDEX_PREFIX + str(2) in str(res)
+
+    meta_data_query_key_1 = '''CCT2:QC:test_basic_renew_with_multi_keys_index:User\\.PASSPORT:test_basic_renew_with_multi_keys_passport:test_basic_renew_with_multi_keys_app'''
+    assert producer.exists(meta_data_query_key_1) == 1
+
+    time.sleep(0.6)
+    client1.execute_command("CCT2.HEARTBEAT")
+
+    query_and_index_normalized_1 = '''test_basic_renew_with_multi_keys_index:User\\.PASSPORT:test_basic_renew_with_multi_keys_passport'''
+
+    # RENEW
+    client1.execute_command("CCT2.FT.RENEW " + query_and_index_normalized_1)
+
+    time.sleep(0.6)
+    client1.execute_command("CCT2.HEARTBEAT")
+
+    assert producer.exists(meta_data_query_key_1) == 1
+
+    # TRIM STREAMS
+    client1.xtrim(TEST_APP_NAME_1 , 0)
+
+    # UPDATE DATA 0 
+    d = cct_prepare.generate_single_object(0  , 0, passport_value)
+    producer.json().set(TEST_INDEX_PREFIX + str(0), Path.root_path(), d)
+
+    # CHECK STREAMS
+    from_stream = client1.xread(streams={TEST_APP_NAME_1:0} )
+    assert '''test_basic_renew_with_multi_keys_prefix:0''' in str(from_stream[0])
+
+    # RENEW
+    client1.execute_command("CCT2.FT.RENEW " + query_and_index_normalized_1)
+
+    time.sleep(0.6)
+    client1.execute_command("CCT2.HEARTBEAT")
+
+    assert producer.exists(meta_data_query_key_1) == 1
+
+    # TRIM STREAMS
+    client1.xtrim(TEST_APP_NAME_1 , 0)
+
+    # UPDATE DATA 1 
+    d = cct_prepare.generate_single_object(1  , 1, passport_value)
+    producer.json().set(TEST_INDEX_PREFIX + str(1), Path.root_path(), d)
+
+    # CHECK STREAMS
+    from_stream = client1.xread(streams={TEST_APP_NAME_1:0} )
+    assert '''test_basic_renew_with_multi_keys_prefix:1''' in str(from_stream[0])
+
+    # RENEW
+    client1.execute_command("CCT2.FT.RENEW " + query_and_index_normalized_1)
+
+    time.sleep(0.6)
+    client1.execute_command("CCT2.HEARTBEAT")
+
+    assert producer.exists(meta_data_query_key_1) == 1
+
+    # TRIM STREAMS
+    client1.xtrim(TEST_APP_NAME_1 , 0)
+
+    # UPDATE DATA 1 
+    d = cct_prepare.generate_single_object(1  , 1, passport_value)
+    producer.json().set(TEST_INDEX_PREFIX + str(2), Path.root_path(), d)
+
+    # CHECK STREAMS
+    from_stream = client1.xread(streams={TEST_APP_NAME_1:0} )
+    assert '''test_basic_renew_with_multi_keys_prefix:2''' in str(from_stream[0])
+
+
+
 
 
