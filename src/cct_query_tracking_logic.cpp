@@ -211,12 +211,12 @@ int Notify_Callback(RedisModuleCtx *ctx, int type, const char *event, RedisModul
     std::string event_str = event;
     std::string key_str = RedisModule_StringPtrLen(key, NULL);
 
-    //LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str);
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str);
 
     if( CCT_KEY_EVENTS.count(event) == 0 )
     {
         //LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " not interested event." );
-        return REDISMODULE_OK;        
+        return REDISMODULE_OK;
     }
 
     // Ignore our self events
@@ -225,7 +225,7 @@ int Notify_Callback(RedisModuleCtx *ctx, int type, const char *event, RedisModul
             //LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " ignore our own events to prevent loops." );
             return REDISMODULE_OK;
         } else if(key_str.find(CCT_MODULE_QUERY_CLIENT, 0) == 0) {
-            return Handle_Query_Expire(ctx, key_str);           
+            return Handle_Query_Expire(ctx, key_str);
         } else {
             //LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Notify_Callback event : " + event_str  + " , key " + key_str + " ignore our own events to prevent loops." );
             return REDISMODULE_OK;

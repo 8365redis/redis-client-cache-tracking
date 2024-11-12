@@ -14,7 +14,7 @@
 #include "cct_index_tracker.h"
 #include "cct_client_tracker.h"
 #include "cct_command_filter.h"
-
+#include "cct_command_renew.h"
 
 #ifndef CCT_MODULE_VERSION
 #define CCT_MODULE_VERSION "unknown"
@@ -96,6 +96,12 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         return REDISMODULE_ERR;
     } else {
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.FT.SEARCH.UNSUBSCRIBE command created successfully.");
+    }
+
+    if (RedisModule_CreateCommand(ctx,"CCT2.FT.RENEW", Renew_RedisCommand , "readonly", 0, 0, 0) == REDISMODULE_ERR) {
+        return REDISMODULE_ERR;
+    } else {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.FT.RENEW command created successfully.");
     }
 
     // Subscribe to key space events

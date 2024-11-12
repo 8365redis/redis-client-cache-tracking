@@ -54,14 +54,16 @@ def test_basic_unsubscribe_1():
     from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     assert '''test_basic_unsubscribe_1_prefix:1''' in str(from_stream)
 
-    get_redis_snapshot()
+    #get_redis_snapshot()
 
     # UNSUBSCRIBE
     #time.sleep(1.1)
     res = client1.execute_command("CCT2.FT.SEARCH.UNSUBSCRIBE " + TEST_INDEX_NAME + " " + all_query)
     assert str(res) == "OK"
 
-    get_redis_snapshot()
+    time.sleep(1.1)
+
+    #get_redis_snapshot()
 
     # Key existence
     assert producer.exists('CCT2:QC:test_basic_unsubscribe_1_index:User\\.PASSPORT:test_basic_unsubscribe_1_query_value:test_basic_unsubscribe_1_app_1') == 0
@@ -84,4 +86,6 @@ def test_basic_unsubscribe_1():
     # READ STREAM
     from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     print(from_stream)
+
+    #get_redis_snapshot()
 

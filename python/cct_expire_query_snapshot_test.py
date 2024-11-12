@@ -102,5 +102,5 @@ def test_query_expired_with_not_expired_offline():
 
 
     # Check Meta data after query is expired offline
-    get_redis_snapshot()
+    #get_redis_snapshot()
     check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, first_query_normalized, key_1, [False, False, True, False, True, False] )

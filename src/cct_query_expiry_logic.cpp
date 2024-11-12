@@ -125,5 +125,6 @@ int Clean_Up_Query(RedisModuleCtx *ctx , std::string client_name, std::string in
         }
     }
     
+    
     return REDISMODULE_OK;
 }

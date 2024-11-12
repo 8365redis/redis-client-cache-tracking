@@ -208,12 +208,13 @@ def test_1_client_1_query_1_key_expired():
     query_normalized = cct_prepare.TEST_INDEX_NAME + CCT_DELI + "User\\.PASSPORT:aaa"
     # CHECK CCT_META_DATA 
     check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, query_normalized, key_1, [True]*6 )
-    get_redis_snapshot()
+    #get_redis_snapshot()
     time.sleep(CCT_QUERY_TTL + 0.1)
 
-    get_redis_snapshot()
+    #get_redis_snapshot()
     # CHECK CCT_META_DATA 
     check_query_meta_data(producer, cct_prepare.TEST_APP_NAME_1, query_normalized, key_1, [False]*6 )
+    
 
 def test_1_client_2_query_1_key_expired():
     producer = connect_redis_with_start()

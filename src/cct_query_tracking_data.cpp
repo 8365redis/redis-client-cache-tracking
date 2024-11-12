@@ -261,3 +261,23 @@ void Handle_Deleted_Key(RedisModuleCtx *ctx, const std::string deleted_key) {
     }
 
 }
+
+
+void Renew_Queries(RedisModuleCtx *ctx, std::vector<std::string> queries, const std::string client_tracking_group, unsigned long long client_ttl) {
+    RedisModule_AutoMemory(ctx);
+    
+    for (const auto& query : queries) {
+        std::string query_client_expire_key_name_str = CCT_MODULE_QUERY_CLIENT + query + CCT_MODULE_KEY_SEPERATOR + client_tracking_group;
+        RedisModuleString *query_client_expire_key_name = RedisModule_CreateString(ctx, query_client_expire_key_name_str.c_str() , query_client_expire_key_name_str.length());
+        if (RedisModule_KeyExists(ctx, query_client_expire_key_name)){
+            RedisModuleKey *query_client_key = RedisModule_OpenKey(ctx, query_client_expire_key_name, REDISMODULE_WRITE);
+            if(RedisModule_SetExpire(query_client_key, client_ttl) != REDISMODULE_OK){
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Renew_Queries failed set expire for Query:Client:1  " +  query_client_expire_key_name_str);
+            }
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Renew_Queries set expire for Query:Client:1  " +  query_client_expire_key_name_str);
+        } else {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Renew_Queries failed to find Query:Client:1  " +  query_client_expire_key_name_str);
+        }
+    }
+
+}
