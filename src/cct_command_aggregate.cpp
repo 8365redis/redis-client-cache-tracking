@@ -26,7 +26,9 @@ unsigned long long Get_Current_Ms(){
 std::string Query_2_String(std::vector<RedisModuleString*> &query){
     std::string arg_str = "";
     for(const auto &arg: query) {
-        arg_str += RedisModule_StringPtrLen(arg, NULL);
+        if(arg != NULL){
+            arg_str += RedisModule_StringPtrLen(arg, NULL);
+        }
     }
     return arg_str;
 }
@@ -106,7 +108,6 @@ int Invalidate_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int a
 }
 
 int Aggregate_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-    RedisModule_AutoMemory(ctx);
 
     ClientTracker& client_tracker = ClientTracker::getInstance();
     std::string client_name_str;
