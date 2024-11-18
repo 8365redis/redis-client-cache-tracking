@@ -1,5 +1,6 @@
 #include "query_parser.h"
 #include <string>
+#include <cstring>
 #include <unordered_map>
 
 std::string Get_Str_Between(const std::string &s,
@@ -107,4 +108,39 @@ std::string Escape_FtQuery(const std::string &input) {
     std::string escapedAfterColon = Escape_Special_Chars(afterColon);
 
     return beforeColon + escapedAfterColon;
+}
+
+void FindAndRemoveClientName(RedisModuleString **argv, int *argc, RedisModuleString **clientname) {
+    // Ensure we have at least 2 arguments to look for "CLIENTNAME" and its value.
+    if (*argc < 2) {
+        return;
+    }
+
+    // Iterate over argv to find "CLIENTNAME"
+    for (int i = 0; i < *argc; i++) {
+        size_t len;
+        const char *arg_str = RedisModule_StringPtrLen(argv[i], &len);
+
+        // Check if current argument is "CLIENTNAME"
+        if (std::strcmp(arg_str, CCT_CLIENTNAME.c_str()) == 0) {
+            if (i + 1 >= *argc) {
+                return; // CLIENTNAME provided without a value
+            }
+
+            // Set clientname to the next argument
+            *clientname = argv[i + 1];
+
+            // Remove "CLIENTNAME" and its value from argv and argc
+            for (int j = i; j < *argc - 2; j++) {
+                argv[j] = argv[j + 2];
+            }
+
+            *argc -= 2;
+            return;
+        }
+    }
+
+    // If "CLIENTNAME" wasn't found, set clientname to NULL
+    *clientname = NULL;
+    return ;
 }

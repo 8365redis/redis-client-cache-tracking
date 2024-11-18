@@ -53,8 +53,8 @@ bool ClientTracker::isClientConnected(const std::string& client) {
     return client_connection[client];
 }
 
-bool ClientTracker::updateClientTTL(RedisModuleCtx *ctx, bool first_update) {
-    std::string client_name = getClientName(ctx);
+bool ClientTracker::updateClientTTL(RedisModuleCtx *ctx, bool first_update, std::string client_name ) {
+
     if (client_name.empty()) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING, "Update_Client_TTL failed . Client name is empty. ");
         return false;
@@ -101,24 +101,16 @@ void ClientTracker::clientTTLHandler(RedisModuleCtx *ctx) {
         auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
         unsigned long long now_ms_value = ms.count();
         std::vector<std::string> expire_client_list;
-        setExpirationThreadRunning(true);
         for(const auto& pair : client_connection_timeout) {
             unsigned long long diff_in_ms = now_ms_value - pair.second;
             if(diff_in_ms >= (unsigned long long)(cct_config.CCT_CLIENT_TTL_CHECK_INTERVAL_SECOND_CFG * MS_MULT * cct_config.CCT_CLIENT_TTL_HEARTBEAT_MISS_COUNT_CFG)) {
                 expire_client_list.push_back(pair.first);
             }
         }
-
-        for(const auto& client : clients_to_disconnect) {
-            expire_client_list.push_back(client);
-        }
-        
         for(const auto& client : expire_client_list) {
             LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG, "Client_TTL_Handler expire client : " + client);
             disconnectClient(ctx, client);
         }
-        setExpirationThreadRunning(false);
-        
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 }

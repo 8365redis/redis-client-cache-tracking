@@ -20,3 +20,5 @@ std::string Normalized_to_Original_With_Index(const std::string normalized_query
 std::string Get_Query_Normalized(const RedisModuleString *query);
 std::string Escape_Special_Chars(const std::string &input);
 std::string Escape_FtQuery(const std::string &input);
+
+void FindAndRemoveClientName(RedisModuleString **argv, int *argc, RedisModuleString **clientname);

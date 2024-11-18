@@ -30,11 +30,6 @@ def test_basic_expire():
     key1 = TEST_INDEX_PREFIX + str(1)
     producer.json().set(key1, Path.root_path(), d)   
 
-    # ADD INITIAL DATA
-    passport_value = "test_basic_renew_passport"
-    d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
-    key1 = TEST_INDEX_PREFIX + str(1)
-    producer.json().set(key1, Path.root_path(), d)
 
     # FIRST CLIENT
     client1 = connect_redis()

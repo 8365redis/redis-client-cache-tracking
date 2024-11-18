@@ -20,7 +20,16 @@ int Unsubscribe_Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     }
 
     ClientTracker& client_tracker = ClientTracker::getInstance();
-    std::string client_name_str = client_tracker.getClientName(ctx);
+
+    RedisModuleString *client_name_from_argv = NULL;
+    FindAndRemoveClientName(argv, &argc, &client_name_from_argv);
+    std::string client_name_str;
+    if (client_name_from_argv != NULL) {
+        client_name_str = RedisModule_StringPtrLen(client_name_from_argv, NULL);
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG, "Unsubscribe_Command CLIENTNAME is provided in argv: " + client_name_str);
+    } else {
+        client_name_str = client_tracker.getClientName(ctx);
+    }
 
     RedisModuleString *index = argv[1];
     RedisModuleString *query = argv[2];

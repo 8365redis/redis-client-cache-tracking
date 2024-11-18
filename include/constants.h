@@ -70,3 +70,5 @@ const std::string CCT_KEY = "key" ;
 const std::string CCT_VALUE = "value" ;
 const std::string CCT_OLD_VALUE = "old_value" ;
 const std::string CCT_QUERIES = "queries" ;
+
+const std::string CCT_CLIENTNAME = "CLIENTNAME";

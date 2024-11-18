@@ -18,8 +18,6 @@ private:
     std::unordered_map<std::string, unsigned long long> client_query_ttl;
     std::unordered_map<std::string, std::set<std::string>> client_track_group_2_clients;
     std::unordered_map<std::string, std::string> client_2_client_track_group;
-    std::atomic<bool> expiration_thread_running;
-    std::set<std::string> clients_to_disconnect;
     void clientTTLHandler(RedisModuleCtx* ctx);
 
 
@@ -31,9 +29,6 @@ public:
         static ClientTracker instance;
         return instance;
     }
-    void setExpirationThreadRunning(bool value) { expiration_thread_running = value; }
-    bool getExpirationThreadRunning() const { return expiration_thread_running; }
-    void addClientToDisconnect(const std::string& client) { clients_to_disconnect.insert(client); }
     
     void addToClientTrackingGroup(RedisModuleCtx* ctx, const std::string& client_tracking_group, const std::string& client);
     std::string getClientClientTrackingGroup(const std::string& client);
@@ -41,7 +36,7 @@ public:
     void connectClient(RedisModuleCtx* ctx, const std::string& client);
     void disconnectClient(RedisModuleCtx* ctx, const std::string& client);
     bool isClientConnected(const std::string& client);
-    bool updateClientTTL(RedisModuleCtx* ctx, bool first_update);
+    bool updateClientTTL(RedisModuleCtx* ctx, bool first_update, std::string client_name);
     std::string getClientName(RedisModuleCtx* ctx);
     std::string getClientNameFromID(RedisModuleCtx* ctx, unsigned long long client_id);
     void startClientHandler(RedisModuleCtx* ctx);

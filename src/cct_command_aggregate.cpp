@@ -7,6 +7,7 @@
 #include "logger.h"
 #include "cct_client_tracker.h" 
 #include "constants.h"
+#include "query_parser.h"
 
 std::unordered_map<std::string, RedisModuleCallReply*> CCT_AGGREGATE_CACHED_QUERIES;
 std::unordered_map<std::string, std::vector<RedisModuleString*>> CCT_AGGREGATE_CACHED_QUERIES_STR;
@@ -105,6 +106,20 @@ int Invalidate_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int a
 }
 
 int Aggregate_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    RedisModule_AutoMemory(ctx);
+
+    ClientTracker& client_tracker = ClientTracker::getInstance();
+    std::string client_name_str;
+
+    RedisModuleString *client_name_from_argv = NULL;
+    FindAndRemoveClientName(argv, &argc, &client_name_from_argv);
+    if(client_name_from_argv != NULL) {
+        client_name_str = RedisModule_StringPtrLen(client_name_from_argv, NULL);
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG, "Aggregate_RedisCommand CLIENTNAME is provided in argv: " + client_name_str);
+    } else {
+        client_name_str = client_tracker.getClientName(ctx);
+    }
+
     std::vector<RedisModuleString*> query;
     for (int i = 1; i < argc; i++) {
         size_t len;
@@ -113,8 +128,6 @@ int Aggregate_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         query.push_back(new_str);
     }
 
-    ClientTracker& client_tracker = ClientTracker::getInstance();
-    std::string client_name_str = client_tracker.getClientName(ctx);
     std::string client_tracking_group = client_tracker.getClientClientTrackingGroup(client_name_str);
     unsigned long long client_ttl = client_tracker.getClientQueryTTL(client_tracking_group);
 

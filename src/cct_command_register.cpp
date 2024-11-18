@@ -117,20 +117,30 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
 int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     RedisModule_AutoMemory(ctx);
     
-    if (argc < 2  || argc > 4) {
+    if (argc < 2 ) {
         return RedisModule_WrongArity(ctx);
     }
-    
-    // Get Client ID
-    RedisModuleString *client_name = argv[1];
-    std::string client_name_str = RedisModule_StringPtrLen(client_name, NULL);
+
     unsigned long long client_id = RedisModule_GetClientId(ctx);
-    
-    // Set client name
-    if (RedisModule_SetClientNameById(client_id, client_name) != REDISMODULE_OK){
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set client name." );
-        return RedisModule_ReplyWithError(ctx, "Setting client name has failed");
+    std::string client_name_str = "";
+    RedisModuleString *client_name_from_argv = NULL;
+    RedisModuleString *client_name;
+    FindAndRemoveClientName(argv, &argc, &client_name_from_argv);
+    if(client_name_from_argv != NULL) {
+        client_name = client_name_from_argv;
+        client_name_str = RedisModule_StringPtrLen(client_name_from_argv, NULL);
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand CLIENTNAME is provided in argv: " + client_name_str );
+    } else {
+        // Get Client ID
+        client_name = argv[1];
+        client_name_str = RedisModule_StringPtrLen(client_name, NULL);
+        // Set client name
+        if (RedisModule_SetClientNameById(client_id, client_name) != REDISMODULE_OK){
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set client name." );
+            return RedisModule_ReplyWithError(ctx, "Setting client name has failed");
+        } 
     }
+
 
     std::string client_tracking_group_str = "";
     if (argc > 2) {
@@ -142,6 +152,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand client tracking group name is not given using client name as tracking group name: " + client_name_str );
         client_tracking_group_str = client_name_str;
     }
+
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand client id : " + std::to_string(client_id) );
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand client name : " + client_name_str );
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand client tracking group name : " + client_tracking_group_str );
@@ -164,7 +175,7 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     client_tracker.connectClient(ctx, client_name_str);
 
     // Update the client TTL
-    if ( client_tracker.updateClientTTL(ctx, true) == false ) {
+    if ( client_tracker.updateClientTTL(ctx, true , client_name_str) == false ) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set TTL.");
         return RedisModule_ReplyWithError(ctx, "Setting client TTL has failed");
     }
@@ -200,10 +211,6 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     RedisModule_StreamTrimByLength(stream_key, 0, 0);  // Clear the stream
 
     // Send SNAPSHOT to client
-    //LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Before Send_Snapshot starts for client : " + client_name_str );
-    //RedisModuleCtx *detached_ctx = RedisModule_GetDetachedThreadSafeContext(ctx);
-    //std::thread snapshot_sender(Send_Snapshot, detached_ctx, stream_key, client_name_str);
-    //snapshot_sender.detach();
     Send_Snapshot(ctx, stream_key, client_name_str);
     
 

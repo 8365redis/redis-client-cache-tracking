@@ -25,7 +25,18 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     }
 
     ClientTracker& client_tracker = ClientTracker::getInstance();
-    if (client_tracker.isClientConnected(client_tracker.getClientName(ctx)) == false) {
+
+    RedisModuleString *client_name_from_argv = NULL;
+    FindAndRemoveClientName(argv, &argc, &client_name_from_argv);
+    std::string client_name_str;
+    if(client_name_from_argv != NULL) {
+        client_name_str = RedisModule_StringPtrLen(client_name_from_argv, NULL);
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG, "FT_Search_RedisCommand CLIENTNAME is provided in argv: " + client_name_str);
+    } else {
+        client_name_str = client_tracker.getClientName(ctx);
+    }
+
+    if (client_tracker.isClientConnected(client_name_str) == false) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed : Client is not registered" );
         return RedisModule_ReplyWithError(ctx, "Not registered client");
     }
@@ -96,7 +107,6 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         }
     }
 
-    std::string client_name_str = client_tracker.getClientName(ctx);
     if ( client_name_str.empty()){
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to get client name" );
         return REDISMODULE_ERR;
