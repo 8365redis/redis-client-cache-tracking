@@ -2,38 +2,6 @@
 #include "logger.h"
 #include "constants.h"
 
-void handleClientEvent(RedisModuleCtx *ctx, RedisModuleEvent eid,
-                                    uint64_t subevent, void *data) {
-    if (data == NULL) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING, "Handle_Client_Event failed with NULL data.");
-        return;
-    }
-
-    RedisModuleClientInfo *client_info = (RedisModuleClientInfo*)data;
-    unsigned long long client_id = client_info->id;
-    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG, "Handle_Client_Event client : " + std::to_string(client_id));
-    ClientTracker& client_tracker = ClientTracker::getInstance();
-    std::string client_name = client_tracker.getClientNameFromID(ctx, client_id);
-    
-    if (eid.id == REDISMODULE_EVENT_CLIENT_CHANGE) {
-        switch (subevent) {
-            case REDISMODULE_SUBEVENT_CLIENT_CHANGE_DISCONNECTED:
-                LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG, "Handle_Client_Event client disconnected : " + client_name);
-                if (!client_name.empty()) {
-                    if(client_tracker.getExpirationThreadRunning() == false) {   
-                        client_tracker.disconnectClient(ctx, client_name);
-                    } else {
-                        client_tracker.addClientToDisconnect(client_name);
-                    }
-                }
-                break;
-            case REDISMODULE_SUBEVENT_CLIENT_CHANGE_CONNECTED:
-                LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG, "Handle_Client_Event client connected : " + client_name);
-                break;
-        }
-    }
-}
-
 void ClientTracker::addToClientTrackingGroup(RedisModuleCtx *ctx, const std::string& client_tracking_group, const std::string& client) {
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG, "Add_To_Client_Tracking_Group client  : " + client + " group name : " + client_tracking_group);
     if (client_track_group_2_clients.count(client_tracking_group) == 0) {

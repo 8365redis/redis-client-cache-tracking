@@ -48,6 +48,3 @@ public:
     void setClientQueryTTL(RedisModuleCtx* ctx, const std::string& client, unsigned long long ttl);
     unsigned long long getClientQueryTTL(const std::string& client);
 };
-
-
-void handleClientEvent(RedisModuleCtx* ctx, RedisModuleEvent eid, uint64_t subevent, void* data);
