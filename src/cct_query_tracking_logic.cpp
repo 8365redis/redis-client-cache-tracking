@@ -116,16 +116,17 @@ int Query_Track_Check(RedisModuleCtx *ctx, std::string event, RedisModuleString*
     // Write to stream
     for (auto & client_name : total_clients) {
         auto client_queries = client_to_queries_map[client_name];
-        std::string client_queries_str;
         std::vector<std::string> client_queries_original;
         for (auto q : client_queries) {
             LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check Client : " + client_name + " , and query is : " +  q);
             std::string index_and_query = Normalized_to_Original_With_Index(q);
             client_queries_original.push_back(index_and_query);
         }
-        for(auto const& e : client_queries_original) client_queries_str += (e + CCT_MODULE_QUERY_DELIMETER);
-        if(client_queries_str.length() > CCT_MODULE_QUERY_DELIMETER.length()){
-            client_queries_str.erase(client_queries_str.length() - CCT_MODULE_QUERY_DELIMETER.length());
+
+        std::string client_queries_str = Concate_Queries(client_queries_original);
+        if (CCT_KEY_EVENTS.at(event) == CCT_DELETE_EVENT){
+            client_queries_str = Get_Key_Queries(ctx, key_str);
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Query_Track_Check client_queries_str for delete event: " + client_queries_str);
         }
 
         ClientTracker& client_tracker = ClientTracker::getInstance();

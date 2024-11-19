@@ -76,11 +76,8 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
         for (auto q : client_queries_internal) {
             client_queries_internal_original.push_back(Normalized_to_Original_With_Index(q));
         }
-        std::string client_queries_internal_str;
-        for(auto const& e : client_queries_internal_original) client_queries_internal_str += (e + CCT_MODULE_QUERY_DELIMETER);
-        if(client_queries_internal_str.length() > CCT_MODULE_QUERY_DELIMETER.length() ) {
-            client_queries_internal_str.erase(client_queries_internal_str.length() - CCT_MODULE_QUERY_DELIMETER.length());
-        }
+        std::string client_queries_internal_str = Concate_Queries(client_queries_internal_original);
+
         std::string event = REDIS_JSON_SET_EVENT;
         if(client_keys_2_values[key].empty()){
             event = REDIS_DEL_EVENT;

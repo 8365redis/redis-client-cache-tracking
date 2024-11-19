@@ -1,5 +1,5 @@
 #include "query_parser.h"
-#include <string>
+
 #include <cstring>
 #include <unordered_map>
 
@@ -108,6 +108,28 @@ std::string Escape_FtQuery(const std::string &input) {
     std::string escapedAfterColon = Escape_Special_Chars(afterColon);
 
     return beforeColon + escapedAfterColon;
+}
+
+template <typename Container>
+std::string Concate_Queries_Helper(const Container& queries) {
+    std::string client_queries_str;
+    for (const auto& e : queries) {
+        client_queries_str += (e + CCT_MODULE_QUERY_DELIMETER);
+    }
+    if (client_queries_str.length() > CCT_MODULE_QUERY_DELIMETER.length()) {
+        client_queries_str.erase(client_queries_str.length() - CCT_MODULE_QUERY_DELIMETER.length());
+    }
+    return client_queries_str;
+}
+
+// Original function for std::vector
+std::string Concate_Queries(std::vector<std::string> queries) {
+    return Concate_Queries_Helper(queries);
+}
+
+// Overloaded function for std::set
+std::string Concate_Queries(std::set<std::string> queries) {
+    return Concate_Queries_Helper(queries);
 }
 
 void FindAndRemoveClientName(RedisModuleString **argv, int *argc, RedisModuleString **clientname) {

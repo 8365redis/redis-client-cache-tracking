@@ -304,3 +304,20 @@ void Renew_Queries(RedisModuleCtx *ctx, std::vector<std::string> queries, const 
     }
 
 }
+
+std::string Get_Key_Queries(RedisModuleCtx *ctx, const std::string key) {
+    std::set<std::string> tracked_queries_for_key;
+    std::string k2q_key = CCT_MODULE_KEY_2_QUERY + key;
+    RedisModuleCallReply *k2q_smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", k2q_key.c_str());
+    const size_t reply_length = RedisModule_CallReplyLength(k2q_smembers_reply);
+    for (size_t i = 0; i < reply_length; i++) {
+        RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(k2q_smembers_reply, i);
+        if (RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING) {
+            RedisModuleString *query_name = RedisModule_CreateStringFromCallReply(key_reply);
+            const char *query_name_str = RedisModule_StringPtrLen(query_name, NULL);
+            std::string query_str = Normalized_to_Original_With_Index(query_name_str);
+            tracked_queries_for_key.insert(query_str);
+        }
+    }
+    return Concate_Queries(tracked_queries_for_key);
+}

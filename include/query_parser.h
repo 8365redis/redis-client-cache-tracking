@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <vector>
+#include <set>
 #include "redismodule.h"
 #include "constants.h"
 
@@ -20,5 +22,8 @@ std::string Normalized_to_Original_With_Index(const std::string normalized_query
 std::string Get_Query_Normalized(const RedisModuleString *query);
 std::string Escape_Special_Chars(const std::string &input);
 std::string Escape_FtQuery(const std::string &input);
+
+std::string Concate_Queries(std::vector<std::string> queries);
+std::string Concate_Queries(std::set<std::string> queries);
 
 void FindAndRemoveClientName(RedisModuleString **argv, int *argc, RedisModuleString **clientname);
