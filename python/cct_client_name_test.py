@@ -137,6 +137,10 @@ def test_heartbeat_with_client_name_2():
     assert producer.exists(TEST_APP_NAME_1) == False
     assert producer.exists(TEST_APP_NAME_2) == True
 
+    time.sleep(3.2)
+
+    assert producer.exists(TEST_APP_NAME_2) == False
+
 
 def test_search_with_client_name():
     producer = connect_redis_with_start()
@@ -189,3 +193,80 @@ def test_search_with_client_name():
     #print(from_stream)
     assert '''test_search_with_client_name_index_prefix:1''' in str(from_stream)
 
+def test_client_name_with_aggregate():
+    r = connect_redis_with_start()
+    cct_prepare.flush_db(r) # clean all db first
+    cct_prepare.create_index(r)
+
+    # ADD INITIAL DATA
+    for i in range(10):
+        d = cct_prepare.generate_single_object(1000 + i , 2000 - i, "aaa")
+        r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(i), Path.root_path(), d)
+
+    TEST_APP_NAME_1 = "test_client_name_with_aggregate"
+    TEST_APP_NAME_2 = "test_client_name_with_aggregate_2"
+    QUERY_TTL = 1
+
+    # REGISTER
+    client1 = connect_redis()
+    resp = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_2  + " " + TEST_APP_NAME_2 +  " " + str(QUERY_TTL) + " CLIENTNAME " + TEST_APP_NAME_2) 
+    assert cct_prepare.OK in str(resp)
+
+    response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3 CLIENTNAME " + TEST_APP_NAME_2)
+    assert str(response) == '''[10, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
+
+    res = client1.execute_command("CCT2.INVALIDATE CLIENTNAME " + TEST_APP_NAME_2)
+    assert str(res) == '''OK'''
+
+    time.sleep(1.1)
+
+
+def test_search_with_client_name_2():
+    producer = connect_redis_with_start()
+    cct_prepare.flush_db(producer) # clean all db first
+
+    TEST_APP_NAME_1 = '''test_search_with_client_name_app_1'''
+    TEST_INDEX_NAME = '''test_search_with_client_name_index'''
+    TEST_INDEX_PREFIX = '''test_search_with_client_name_index_prefix:'''
+
+    TEST_APP_NAME_2 = '''test_search_with_client_name_app_2'''
+
+    cct_prepare.create_index_with_prefix(producer, TEST_INDEX_PREFIX, TEST_INDEX_NAME)
+
+     # ADD INITIAL DATA
+    passport_value = "test_search_with_client_name_passport"
+    d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
+    key1 = TEST_INDEX_PREFIX + str(1)
+    producer.json().set(key1, Path.root_path(), d)
+
+    # CLIENT 1
+    client = connect_redis()
+    res = client.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1)
+    assert cct_prepare.OK in str(res)
+    assert producer.exists(TEST_APP_NAME_1) == True
+
+    # CLIENT 2
+    res = client.execute_command("CCT2.REGISTER " + TEST_APP_NAME_2 + " CLIENTNAME " + TEST_APP_NAME_2)
+    assert cct_prepare.OK in str(res)
+    assert producer.exists(TEST_APP_NAME_2) == True
+
+    # QUERY FOR CLIENT 1
+    non_passport_value = "non_passport_value"
+    res = client.execute_command("CCT2.FT.SEARCH " + TEST_INDEX_NAME + " @User\\.PASSPORT:{" + non_passport_value + "}")
+    assert str(res) == '''[0]'''
+    # QUERY FOR CLIENT 2
+    res = client.execute_command("CCT2.FT.SEARCH " + TEST_INDEX_NAME + " @User\\.PASSPORT:{" + passport_value + "} CLIENTNAME " + TEST_APP_NAME_2)
+    assert str(res) == '''[1, 'test_search_with_client_name_index_prefix:1', ['$', '{"User":{"ID":"1000","PASSPORT":"test_search_with_client_name_passport","Address":{"ID":"2000"}}}']]'''
+
+    #UPDATE DATA
+    d = cct_prepare.generate_single_object(9999 , 9999, passport_value)
+    producer.json().set(key1, Path.root_path(), d)
+
+    time.sleep(0.1)
+
+    #CHECK STREAMS
+    from_stream = client.xread(streams={TEST_APP_NAME_1:0} )
+    assert '''test_search_with_client_name_index_prefix:1''' not in str(from_stream)
+
+    from_stream = client.xread(streams={TEST_APP_NAME_2:0} )
+    assert '''test_search_with_client_name_index_prefix:1''' in str(from_stream)
