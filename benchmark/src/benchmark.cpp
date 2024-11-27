@@ -66,7 +66,7 @@ void createIndex(redisContext* context, int attributeCount) {
 
     //std::cout << "Create command: " << command.str() << std::endl;
     redisReply* reply = (redisReply*)redisCommand(context, command.str().c_str());
-    if (reply == nullptr || context->err) {
+    if (reply == nullptr) {
         std::cerr << "Error creating index: " << context->errstr << std::endl;
         exit(1);
     }
@@ -121,7 +121,7 @@ void searchIndex(redisContext* context) {
     }
 
     //printResponse(reply);
-    if(reply->element != nullptr && reply->element[0]->type == REDIS_REPLY_INTEGER){
+    if(reply->element != nullptr && reply->element != nullptr && reply->element[0]->type == REDIS_REPLY_INTEGER){
         std::cout << "Search results: " << reply->element[0]->integer << " results found." << std::endl;
     } else {
         std::cerr << "Unexpected reply type: " << reply->element[0]->type << std::endl;

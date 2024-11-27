@@ -220,8 +220,9 @@ int Trim_Stream_By_ID(RedisModuleCtx *ctx, RedisModuleString *last_read_id, std:
     RedisModuleString *client_name_r = RedisModule_CreateString(ctx, client_name.c_str(), client_name.length());
     RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name_r, REDISMODULE_WRITE);
 
-    if (RedisModule_StreamTrimByID(stream_key, 0, &minid) < 0) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Trim_Stream_By_ID:  Trim with given Stream ID failed.");
+    long long trim_resp = RedisModule_StreamTrimByID(stream_key, 0, &minid);
+    if (trim_resp < 0) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Trim_Stream_By_ID:  Trim with given min id failed : " + std::to_string(minid.seq) + " for client : " + client_name + " with response : " + std::to_string(trim_resp));
         return REDISMODULE_ERR;
     }
 
