@@ -41,3 +41,31 @@ def test_ft_aggregate_with_many_keys():
         time.sleep(2)
 
     time.sleep(2)
+
+
+@pytest.mark.skipif(False ,
+                    reason="Only run manually")
+def test_ft_aggregate_with_many_keys_and_groupby():
+    r = connect_redis_with_start()
+    cct_prepare.flush_db(r) # clean all db first
+    cct_prepare.create_index(r)
+
+    total = 100000
+    # ADD INITIAL DATA
+    for i in range(total):
+        if i % 2 == 0:
+            d = cct_prepare.generate_single_object(1000000 + i , 2000000 - i, "aaa")
+            r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(i), Path.root_path(), d)
+        else:
+            d = cct_prepare.generate_single_object(1000000 + i , 2000000 - i, "bbb")
+            r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(i), Path.root_path(), d)
+
+    # Connect
+    client1 = connect_redis()
+
+    # REQUEST
+    start = time.time()
+    res = client1.execute_command("ft.aggregate usersJsonIdx * GROUPBY 1 @User.PASSPORT")
+    end = time.time()
+    print(res)
+    print("Time taken: ", end - start)

@@ -6,7 +6,7 @@ LIBSDIR = ./libs
 LDFLAGS = -L$(LIBSDIR)
 LIBS = -lhiredis
 
-TARGET = benchmark
+TARGET = redis_benchmark
 SOURCES = $(shell echo src/*.cpp)
 
 all: $(TARGET)
