@@ -2,6 +2,9 @@
 
 This program is a C++ benchmarking tool designed to evaluate the performance of Redis and RedisJSON queries. It performs a series of operations including creating indexes, adding data, and searching the Redis database, while measuring the time taken for these operations. The tool provides a simple way to test the performance of different Redis and RedisJSON/Search versions.
 
+[!WARNING]
+> The program will FLUSHALL the current database before starting the benchmark.
+
 ## Features
 
 - **Redis Integration:** Connects to a Redis database, flushing the current data.
@@ -11,11 +14,12 @@ This program is a C++ benchmarking tool designed to evaluate the performance of 
 
 ## Prerequisites
 
-- **Redis:** You need to have Redis installed. This tool specifically uses the RedisJSON module for working with JSON data.
-- **RedisJSON Module:** Ensure you have RedisJSON installed in your Redis setup to support JSON commands.
+- **Redis:** You need to have Redis installed. This tool specifically uses the RedisJSON and RediSearch modules for working with JSON data.
+- **Redis Modules:** Ensure you have RedisJSON/RediSearch installed in your Redis setup to support JSON commands.
+- **Internal Modules:** Ensure you have the internal modules installed in your Redis setup to support CCT2 and TRACE_EXECUTE commands.
 - **Dependencies:**
   - [Hiredis](https://github.com/redis/hiredis): Redis client for C.
-  - [nlohmann/json](https://github.com/nlohmann/json): JSON library for C++.
+  - [nlohmann/json](https://github.com/nlohmann/json): JSON library for C++.(header only)
 
 ## Building the Project
 
@@ -42,6 +46,7 @@ g++ -o redis_benchmark redis_benchmark.cpp -lhiredis -ljsoncpp
 
 ### Parameters
 
+- **MODE (optional):** The mode of the benchmark. 0 for FT_SEARCH, 1 for CCT2_FT_SEARCH, 2 for TRACE_EXECUTE (default is `0`).
 - **REDIS_IP (optional):** The IP address of your Redis server (default is `127.0.0.1`).
 - **REDIS_PORT (optional):** The port of your Redis server (default is `6379`).
 - **KEY_COUNT (optional):** Number of keys to add (default is `10`).
@@ -62,7 +67,11 @@ To run the benchmark with default parameters:
 To specify Redis server IP and port, as well as other parameters:
 
 ```sh
-./redis_benchmark 192.168.0.10 6379 100 50 5
+./redis_benchmark 0
+```
+
+```sh
+./redis_benchmark 0 192.168.0.10 6379 100 50 5
 ```
 
 ## Output
@@ -74,7 +83,4 @@ The program performs the following actions and prints output for each:
 - **Add Data:** Adds JSON data to Redis with the specified number of keys and attributes.
 - **Search Index:** Searches the index based on a common attribute value, displaying the time taken and the number of results found.
 
-## License
-
-This project is open-source. Feel free to use, modify, and share as needed.
 
