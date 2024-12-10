@@ -193,33 +193,6 @@ def test_search_with_client_name():
     #print(from_stream)
     assert '''test_search_with_client_name_index_prefix:1''' in str(from_stream)
 
-def test_client_name_with_aggregate():
-    r = connect_redis_with_start()
-    cct_prepare.flush_db(r) # clean all db first
-    cct_prepare.create_index(r)
-
-    # ADD INITIAL DATA
-    for i in range(10):
-        d = cct_prepare.generate_single_object(1000 + i , 2000 - i, "aaa")
-        r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(i), Path.root_path(), d)
-
-    TEST_APP_NAME_1 = "test_client_name_with_aggregate"
-    TEST_APP_NAME_2 = "test_client_name_with_aggregate_2"
-    QUERY_TTL = 1
-
-    # REGISTER
-    client1 = connect_redis()
-    resp = client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_2  + " " + TEST_APP_NAME_2 +  " " + str(QUERY_TTL) + " CLIENTNAME " + TEST_APP_NAME_2) 
-    assert cct_prepare.OK in str(resp)
-
-    response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 3 CLIENTNAME " + TEST_APP_NAME_2)
-    assert str(response) == '''[10, ['User.ID', '1000'], ['User.ID', '1001'], ['User.ID', '1002']]'''
-
-    res = client1.execute_command("CCT2.INVALIDATE CLIENTNAME " + TEST_APP_NAME_2)
-    assert str(res) == '''OK'''
-
-    time.sleep(1.1)
-
 
 def test_search_with_client_name_2():
     producer = connect_redis_with_start()

@@ -5,7 +5,6 @@
 #include "cct_command_register.h"
 #include "cct_command_search.h"
 #include "cct_command_heartbeat.h"
-#include "cct_command_aggregate.h"
 #include "cct_command_unsubscribe.h"
 #include "cct_offline_query_expire.h"
 #include "constants.h"
@@ -80,18 +79,6 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.HEARTBEAT command created successfully.");
     }
 
-    if (RedisModule_CreateCommand(ctx,"CCT2.FT.AGGREGATE", Aggregate_RedisCommand , "readonly", 0, 0, 0) == REDISMODULE_ERR) {
-        return REDISMODULE_ERR;
-    } else {
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.FT.AGGREGATE command created successfully.");
-    }
-
-    if (RedisModule_CreateCommand(ctx,"CCT2.INVALIDATE", Invalidate_RedisCommand , "readonly", 0, 0, 0) == REDISMODULE_ERR) {
-        return REDISMODULE_ERR;
-    } else {
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.INVALIDATE command created successfully.");
-    }
-
     if (RedisModule_CreateCommand(ctx,"CCT2.FT.SEARCH.UNSUBSCRIBE", Unsubscribe_Command , "write", 0, 0, 0) == REDISMODULE_ERR) {
         return REDISMODULE_ERR;
     } else {
@@ -128,8 +115,6 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
 
     ClientTracker& client_tracker = ClientTracker::getInstance();
     client_tracker.startClientHandler(rdts_staticCtx);
-
-    Start_Aggregate_Handler(rdts_staticCtx);
 
     Start_Index_Change_Handler(rdts_staticCtx);
   
