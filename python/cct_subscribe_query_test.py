@@ -12,15 +12,16 @@ def before_and_after_test():
     kill_redis()
 
 def test_basic_subscribe_query_test_1():
-    r = connect_redis_with_start()
+    r = connect_redis()
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
 
     # ADD INITIAL DATA
     passport_value = "aaa"
-    d = cct_prepare.generate_single_object(1000 , 2000, passport_value)
-    r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(1), Path.root_path(), d)
-    assert r.json().get(cct_prepare.TEST_INDEX_PREFIX + str(1))
+    for i in range(0, 5):
+        d = cct_prepare.generate_single_object(1000 - i , 2000 + i, passport_value)
+        r.json().set(cct_prepare.TEST_INDEX_PREFIX + str(i), Path.root_path(), d)
+        assert r.json().get(cct_prepare.TEST_INDEX_PREFIX + str(i))
 
     # REGISTER
     client1 = connect_redis()
