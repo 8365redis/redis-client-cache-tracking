@@ -14,18 +14,20 @@
 #include "cct_client_tracker.h"
 #include "cct_command_filter.h"
 #include "cct_command_renew.h"
-#include "cct_command_subscribe_query.h"
+#include "cct_command_subscribe_index.h"
 #ifndef CCT_MODULE_VERSION
 #define CCT_MODULE_VERSION "unknown"
 #endif
 
 CCT_Config cct_config;
 
+RedisModuleCtx *rdts_staticCtx;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-RedisModuleCtx *rdts_staticCtx;
+
 
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 
@@ -91,10 +93,16 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.FT.RENEW command created successfully.");
     }
 
-    if (RedisModule_CreateCommand(ctx,"CCT2.SUBSCRIBE_TO_QUERY", Subscribe_Query_RedisCommand , "write", 0, 0, 0) == REDISMODULE_ERR) {
+    if (RedisModule_CreateCommand(ctx,"CCT2.SUBSCRIBE_TO_INDEX", Subscribe_Index_RedisCommand , "write", 0, 0, 0) == REDISMODULE_ERR) {
         return REDISMODULE_ERR;
     } else {
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.SUBSCRIBE_TO_QUERY command created successfully.");
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.SUBSCRIBE_TO_INDEX command created successfully.");
+    }
+
+    if (RedisModule_CreateCommand(ctx,"CCT2.SETUP_INDEX_SUBSCRIPTION", Setup_Index_Subscription , "write", 0, 0, 0) == REDISMODULE_ERR) {
+        return REDISMODULE_ERR;
+    } else {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.SETUP_INDEX_SUBSCRIPTION command created successfully.");
     }
 
     // Subscribe to key space events
@@ -117,6 +125,8 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     client_tracker.startClientHandler(rdts_staticCtx);
 
     Start_Index_Change_Handler(rdts_staticCtx);
+
+    Start_Index_Subscription_Handler(rdts_staticCtx); 
   
     return REDISMODULE_OK;
 }

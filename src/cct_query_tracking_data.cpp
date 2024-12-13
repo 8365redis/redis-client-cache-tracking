@@ -145,14 +145,18 @@ void Add_Tracking_Key_Old_Value(RedisModuleCtx *ctx, std::string key, std::strin
     }
 }
 
-int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std::string event, const std::string key, const std::string value, const std::string queries, bool send_old_value ) { 
+int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std::string event, const std::string key, const std::string value, const std::string queries, bool send_old_value, bool index_subscription ) { 
     RedisModule_AutoMemory(ctx);
     ClientTracker& client_tracker = ClientTracker::getInstance();
-    if( client_tracker.isClientConnected(client) == false) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream skipping offline client : " + client);
-        return REDISMODULE_OK;
+    if (!index_subscription) {
+        if( client_tracker.isClientConnected(client) == false) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream skipping offline client : " + client);
+            return REDISMODULE_OK;
+        } else {
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream adding for client:  " + client);
+        }
     } else {
-         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream adding for client:  " + client);
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream adding for index subscription stream:  " + client);
     }
     RedisModuleString *client_name = RedisModule_CreateString(ctx, client.c_str(), client.length());
     RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
