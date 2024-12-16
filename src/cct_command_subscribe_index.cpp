@@ -24,23 +24,6 @@ int Setup_Index_Subscription(RedisModuleCtx *ctx, RedisModuleString **argv, int 
         return REDISMODULE_ERR;
     }
 
-    ClientTracker& client_tracker = ClientTracker::getInstance();
-
-    RedisModuleString *client_name_from_argv = NULL;
-    FindAndRemoveClientName(argv, &argc, &client_name_from_argv);
-    std::string client_name_str;
-    if(client_name_from_argv != NULL) {
-        client_name_str = RedisModule_StringPtrLen(client_name_from_argv, NULL);
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG, "Setup_Index_Subscription CLIENTNAME is provided in argv: " + client_name_str);
-    } else {
-        client_name_str = client_tracker.getClientName(ctx);
-    }
-
-    if (client_tracker.isClientConnected(client_name_str) == false) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Setup_Index_Subscription failed : Client is not registered" );
-        return RedisModule_ReplyWithError(ctx, "Not registered client");
-    }
-
     // Convert argv to vector of strings
     RedisModuleString *index_name = argv[1];
     std::string index_name_str = RedisModule_StringPtrLen(index_name, NULL);
@@ -92,7 +75,7 @@ int Subscribe_Index_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, 
     if( subscribed_indexes.find(index_name_str) != subscribed_indexes.end() ) {
         RedisModule_ReplyWithSimpleString(ctx, "OK");
     }else {
-        RedisModule_ReplyWithError(ctx, "Index does not exist");
+        RedisModule_ReplyWithError(ctx, "Index not supported");
     }
     return REDISMODULE_OK;
 }
