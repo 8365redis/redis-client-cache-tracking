@@ -7,10 +7,26 @@
 #include "cct_query_tracking_data.h"
 
 const long unsigned int DEFAULT_CHUNK_SIZE = 2;
-std::set<std::string> subscribed_indexes;
-std::set<std::string> subscribed_indexes_to_process;
-std::set<std::string> subscribed_indexes_to_process_buffer;
-std::mutex subscribed_indexes_to_process_mutex;
+std::unordered_map<std::string, std::atomic_bool> index_in_setup;
+
+int Disable_Index_Subscription(RedisModuleCtx *ctx, RedisModuleString **argv, int argc){
+    RedisModule_AutoMemory(ctx);
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Disable_Index_Subscription is called");
+    if (argc < 2) {
+        return RedisModule_WrongArity(ctx);
+    }
+    std::string index_name = RedisModule_StringPtrLen(argv[1], NULL);
+
+    if(index_in_setup[index_name] == true ) {
+        RedisModule_ReplyWithError(ctx, "Index is being setup, try again later");
+        return REDISMODULE_OK;
+    }
+
+    Remove_Subscribed_Index(ctx, index_name);
+    RedisModule_Call(ctx, "DEL", "c", index_name.c_str());
+    RedisModule_ReplyWithSimpleString(ctx, "OK");
+    return REDISMODULE_OK;
+}
 
 int Setup_Index_Subscription(RedisModuleCtx *ctx, RedisModuleString **argv, int argc){
     RedisModule_AutoMemory(ctx);
@@ -31,80 +47,24 @@ int Setup_Index_Subscription(RedisModuleCtx *ctx, RedisModuleString **argv, int 
     if( RedisModule_KeyExists(ctx, index_name) ) {
         RedisModule_ReplyWithError(ctx, "Index already setup");
         return REDISMODULE_OK;
-    }   
+    }
 
-    subscribed_indexes_to_process_mutex.lock();
-    subscribed_indexes_to_process_buffer.insert(index_name_str);
-    subscribed_indexes_to_process_mutex.unlock();
+    RedisModuleCtx *thread_safe_ctx = RedisModule_GetDetachedThreadSafeContext(ctx);
+    Start_Index_Subscription_Handler(thread_safe_ctx, index_name_str, DEFAULT_CHUNK_SIZE);
 
     RedisModule_ReplyWithSimpleString(ctx, "OK");
     return REDISMODULE_OK;
 }
 
-int Subscribe_Index_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-    RedisModule_AutoMemory(ctx);
-    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Subscribe_Index_RedisCommand is called");
-    if (argc < 2) {
-        return RedisModule_WrongArity(ctx);
-    }
-
-    if(argv[1] == NULL){
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Subscribe_Index_RedisCommand failed to execute because index is NULL.");
-        return REDISMODULE_ERR;
-    }
-
-    ClientTracker& client_tracker = ClientTracker::getInstance();
-
-    RedisModuleString *client_name_from_argv = NULL;
-    FindAndRemoveClientName(argv, &argc, &client_name_from_argv);
-    std::string client_name_str;
-    if(client_name_from_argv != NULL) {
-        client_name_str = RedisModule_StringPtrLen(client_name_from_argv, NULL);
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG, "Subscribe_Index_RedisCommand CLIENTNAME is provided in argv: " + client_name_str);
-    } else {
-        client_name_str = client_tracker.getClientName(ctx);
-    }
-
-    if (client_tracker.isClientConnected(client_name_str) == false) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Subscribe_Index_RedisCommand failed : Client is not registered" );
-        return RedisModule_ReplyWithError(ctx, "Not registered client");
-    }
-
-    std::string index_name_str = RedisModule_StringPtrLen(argv[1], NULL);
-
-    if( subscribed_indexes.find(index_name_str) != subscribed_indexes.end() ) {
-        RedisModule_ReplyWithSimpleString(ctx, "OK");
-    }else {
-        RedisModule_ReplyWithError(ctx, "Index not supported");
-    }
-    return REDISMODULE_OK;
-}
-
-void Start_Index_Subscription_Handler(RedisModuleCtx *ctx) {
+void Start_Index_Subscription_Handler(RedisModuleCtx *ctx, std::string index_name, long unsigned int chunk_size) {
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Start_Index_Subscription_Handler is called");
-    std::thread t(Index_Subscription_Handler, ctx);
+    std::thread t(Process_Index_Subscription, ctx, index_name, chunk_size);
     t.detach();
 }
 
-void Index_Subscription_Handler(RedisModuleCtx *ctx) {
-    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Index_Subscription_Handler is called");
-
-    while(true) {
-        for (auto index_name : subscribed_indexes_to_process) {
-            Process_Index_Subscription(ctx, index_name, DEFAULT_CHUNK_SIZE);
-            subscribed_indexes.insert(index_name);
-        }
-        subscribed_indexes_to_process.clear();
-        subscribed_indexes_to_process_mutex.lock();
-        subscribed_indexes_to_process.insert(subscribed_indexes_to_process_buffer.begin(), subscribed_indexes_to_process_buffer.end());
-        subscribed_indexes_to_process_buffer.clear();
-        subscribed_indexes_to_process_mutex.unlock();
-    }
-}
-
-
 void Process_Index_Subscription(RedisModuleCtx *ctx, std::string index_name, long unsigned int chunk_size) {
     RedisModule_AutoMemory(ctx);
+    index_in_setup[index_name] = true;
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Process_Index_Subscription :" + index_name + " with chunk_size: " + std::to_string(chunk_size));
     unsigned long long cursor_id = 0;
     const std::string with_cursor = "WITHCURSOR";
@@ -185,10 +145,10 @@ void Process_Index_Subscription(RedisModuleCtx *ctx, std::string index_name, lon
                 }
             }
         }
-
     } while (cursor_id != 0);
 
     std::vector<std::string> keys_chunks;
+    bool subscribed_index_stream_added = false;
     for (size_t i = 0; i < keys.size(); i++) {
         keys_chunks.push_back(keys[i]);
         if (keys_chunks.size() == chunk_size || i == keys.size() - 1) {
@@ -221,14 +181,60 @@ void Process_Index_Subscription(RedisModuleCtx *ctx, std::string index_name, lon
                 const char *get_reply_elem_str = RedisModule_StringPtrLen(get_reply_elem, NULL);
                 LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Process_Index_Subscription key: " + std::string(keys_chunks[i]) + " value: " + get_reply_elem_str );
                 RedisModule_ThreadSafeContextLock(ctx);
-                Add_Event_To_Stream(ctx, index_name, "json.set", keys_chunks[i], get_reply_elem_str, index_name, false, true);
+                if ( REDISMODULE_OK == Add_Event_To_Stream(ctx, index_name, "json.set", keys_chunks[i], get_reply_elem_str, index_name, false, true) && !subscribed_index_stream_added) {
+                    Add_Subscribed_Index(ctx, index_name);
+                    subscribed_index_stream_added = true;
+                }
                 RedisModule_ThreadSafeContextUnlock(ctx);
             }
-
             keys_chunks.clear();
         }
     }
 
+    index_in_setup[index_name] = false;
 
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Process_Index_Subscription is finished");
+}
+
+
+int Subscribe_Index_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+    RedisModule_AutoMemory(ctx);
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Subscribe_Index_RedisCommand is called");
+    if (argc < 2) {
+        return RedisModule_WrongArity(ctx);
+    }
+
+    if(argv[1] == NULL){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Subscribe_Index_RedisCommand failed to execute because index is NULL.");
+        return REDISMODULE_ERR;
+    }
+
+    ClientTracker& client_tracker = ClientTracker::getInstance();
+
+    RedisModuleString *client_name_from_argv = NULL;
+    FindAndRemoveClientName(argv, &argc, &client_name_from_argv);
+    std::string client_name_str;
+    if(client_name_from_argv != NULL) {
+        client_name_str = RedisModule_StringPtrLen(client_name_from_argv, NULL);
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG, "Subscribe_Index_RedisCommand CLIENTNAME is provided in argv: " + client_name_str);
+    } else {
+        client_name_str = client_tracker.getClientName(ctx);
+    }
+
+    if (client_tracker.isClientConnected(client_name_str) == false) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Subscribe_Index_RedisCommand failed : Client is not registered" );
+        return RedisModule_ReplyWithError(ctx, "Not registered client");
+    }
+
+    std::string index_name_str = RedisModule_StringPtrLen(argv[1], NULL);
+
+    // Check if the index is already subscribed with SMISMEMBER 
+    RedisModuleCallReply *is_subscribed_reply = RedisModule_Call(ctx, "SMISMEMBER", "cc", CCT_MODULE_SUBSCRIBED_INDEX.c_str(), index_name_str.c_str());
+    if (RedisModule_CallReplyType(is_subscribed_reply) == REDISMODULE_REPLY_INTEGER && RedisModule_CallReplyInteger(is_subscribed_reply) == 1) {
+        RedisModule_ReplyWithSimpleString(ctx, "OK");
+    } else {
+        RedisModule_ReplyWithError(ctx, "Index not supported");
+    }
+
+    return REDISMODULE_OK;
 }

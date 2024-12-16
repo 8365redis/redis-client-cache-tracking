@@ -105,6 +105,12 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.SETUP_INDEX_SUBSCRIPTION command created successfully.");
     }
 
+    if (RedisModule_CreateCommand(ctx,"CCT2.DISABLE_INDEX_SUBSCRIPTION", Disable_Index_Subscription , "write", 0, 0, 0) == REDISMODULE_ERR) {
+        return REDISMODULE_ERR;
+    } else {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.DISABLE_INDEX_SUBSCRIPTION command created successfully.");
+    }
+
     // Subscribe to key space events
     if ( RedisModule_SubscribeToKeyspaceEvents(ctx, REDISMODULE_NOTIFY_GENERIC | REDISMODULE_NOTIFY_SET | REDISMODULE_NOTIFY_STRING |
             REDISMODULE_NOTIFY_EVICTED | REDISMODULE_NOTIFY_EXPIRED | REDISMODULE_NOTIFY_LOADED | REDISMODULE_NOTIFY_NEW | REDISMODULE_NOTIFY_MODULE ,
@@ -125,8 +131,6 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     client_tracker.startClientHandler(rdts_staticCtx);
 
     Start_Index_Change_Handler(rdts_staticCtx);
-
-    Start_Index_Subscription_Handler(rdts_staticCtx); 
   
     return REDISMODULE_OK;
 }

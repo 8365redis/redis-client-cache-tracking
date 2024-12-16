@@ -326,3 +326,19 @@ std::string Get_Key_Queries(RedisModuleCtx *ctx, const std::string key) {
     }
     return Concate_Queries(tracked_queries_for_key);
 }
+
+void Add_Subscribed_Index(RedisModuleCtx *ctx, const std::string index_name) {
+    RedisModuleString *index_name_str = RedisModule_CreateString(ctx, index_name.c_str(), index_name.length());
+    RedisModuleCallReply *sadd_reply = RedisModule_Call(ctx, "SADD", "cc", CCT_MODULE_SUBSCRIBED_INDEX.c_str(), index_name_str);
+    if (RedisModule_CallReplyType(sadd_reply) != REDISMODULE_REPLY_INTEGER) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Subscribed_Index failed while adding index: " +  index_name);
+    }
+}
+
+void Remove_Subscribed_Index(RedisModuleCtx *ctx, const std::string index_name) {
+    RedisModuleString *index_name_str = RedisModule_CreateString(ctx, index_name.c_str(), index_name.length());
+    RedisModuleCallReply *srem_reply = RedisModule_Call(ctx, "SREM", "cc", CCT_MODULE_SUBSCRIBED_INDEX.c_str(), index_name_str);
+    if (RedisModule_CallReplyType(srem_reply) != REDISMODULE_REPLY_INTEGER) {   
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Remove_Subscribed_Index failed while removing index: " +  index_name);
+    }
+}

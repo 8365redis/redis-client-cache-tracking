@@ -11,3 +11,5 @@ int Trim_Stream_By_ID(RedisModuleCtx *ctx, RedisModuleString *last_read_id, std:
 void Handle_Deleted_Key(RedisModuleCtx *ctx, const std::string deleted_key);
 void Renew_Queries(RedisModuleCtx *ctx, std::vector<std::string> queries, const std::string client_tracking_group, unsigned long long client_ttl);
 std::string Get_Key_Queries(RedisModuleCtx *ctx, const std::string key);
+void Add_Subscribed_Index(RedisModuleCtx *ctx, const std::string index_name);
+void Remove_Subscribed_Index(RedisModuleCtx *ctx, const std::string index_name);
