@@ -6,7 +6,6 @@
 
 std::unordered_map<std::string, std::set<std::string>> CCT_PREFIX_2_INDEX;
 std::set<std::string> TRACKED_INDEXES;
-std::unordered_map<std::string, std::set<std::string>> CCT_TRACKED_INDEX_2_CLIENTS;
 
 void OnRedisReady(RedisModuleCtx *ctx, RedisModuleEvent event, uint64_t subevent, void *data) {
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "OnRedisReady event : " + std::to_string(event.id) + " subevent : " + std::to_string(subevent) );
@@ -69,35 +68,30 @@ void Redis_Index_Manager::Get_Index_Prefixes(RedisModuleCtx *ctx, std::set<std::
         const int prefixes_index = 3; 
         RedisModuleCallReply *index_definition_reply = RedisModule_CallReplyArrayElement(info_reply, index_definition_index);
         if (RedisModule_CallReplyType(index_definition_reply) == REDISMODULE_REPLY_ARRAY && 
-                RedisModule_CallReplyLength(index_definition_reply) > prefixes_index ) {
-                RedisModuleCallReply *prefixes_reply = RedisModule_CallReplyArrayElement(index_definition_reply, prefixes_index);
-                if (RedisModule_CallReplyType(prefixes_reply) == REDISMODULE_REPLY_ARRAY) {
-                    const size_t prefixes_length = RedisModule_CallReplyLength(prefixes_reply);
-                        for (size_t i = 0; i < prefixes_length; i++) {
-                            RedisModuleCallReply *prefix_reply = RedisModule_CallReplyArrayElement(prefixes_reply, i);
-                            if (RedisModule_CallReplyType(prefix_reply) == REDISMODULE_REPLY_STRING){
-                                RedisModuleString *prefix_redis_str = RedisModule_CreateStringFromCallReply(prefix_reply);
-                                std::string prefix = RedisModule_StringPtrLen(prefix_redis_str, NULL);
-                                CCT_PREFIX_2_INDEX[prefix].insert(index);
-                                LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Index_Prefixes prefix : " + prefix + " is added for index : "  + index);
-                            }
-                        }
+            RedisModule_CallReplyLength(index_definition_reply) > prefixes_index ) {
+            RedisModuleCallReply *prefixes_reply = RedisModule_CallReplyArrayElement(index_definition_reply, prefixes_index);
+            if (RedisModule_CallReplyType(prefixes_reply) == REDISMODULE_REPLY_ARRAY) {
+                const size_t prefixes_length = RedisModule_CallReplyLength(prefixes_reply);
+                for (size_t i = 0; i < prefixes_length; i++) {
+                    RedisModuleCallReply *prefix_reply = RedisModule_CallReplyArrayElement(prefixes_reply, i);
+                    if (RedisModule_CallReplyType(prefix_reply) == REDISMODULE_REPLY_STRING){
+                        RedisModuleString *prefix_redis_str = RedisModule_CreateStringFromCallReply(prefix_reply);
+                        std::string prefix = RedisModule_StringPtrLen(prefix_redis_str, NULL);
+                        CCT_PREFIX_2_INDEX[prefix].insert(index);
+                        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Index_Prefixes prefix : " + prefix + " is added for index : "  + index);
+                    }
                 }
+            }
         }
               
     }
 }
 
-void Track_Index(std::string index, std::string client_tracking_group) {
-    if(CCT_TRACKED_INDEX_2_CLIENTS.find(index) == CCT_TRACKED_INDEX_2_CLIENTS.end()){
-        CCT_TRACKED_INDEX_2_CLIENTS[index] = std::set<std::string>{client_tracking_group};
-    } else {
-        CCT_TRACKED_INDEX_2_CLIENTS[index].insert(client_tracking_group);
-    }
+void Track_Index(std::string index) {
     TRACKED_INDEXES.insert(index);
 }
 
-void UnTrack_Index(std::string index, std::string client_name) { 
+void UnTrack_Index(std::string index) { 
     TRACKED_INDEXES.erase(index);
 }
 

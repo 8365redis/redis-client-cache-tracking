@@ -226,10 +226,14 @@ int Notify_Callback(RedisModuleCtx *ctx, int type, const char *event, RedisModul
         }
     }
 
-    // Add prefix
-    std::string key_with_prefix = CCT_MODULE_KEY_2_CLIENT + key_str;
+    // Check for index subscriptions
+    std::set<std::string> tracked_indexes = Get_Tracked_Indexes_From_Key(key_str);
+    for(const auto &index : tracked_indexes) {
+        Add_Tracked_Index_Event_To_Stream(ctx, index, event_str, key_str);
+    }
 
     // First check which clients are tracking updated key
+    std::string key_with_prefix = CCT_MODULE_KEY_2_CLIENT + key_str;
     std::vector<std::string> already_tracking_clients;
     RedisModuleCallReply *smembers_reply = RedisModule_Call(ctx, "SMEMBERS", "c", key_with_prefix.c_str());
     const size_t reply_length = RedisModule_CallReplyLength(smembers_reply);

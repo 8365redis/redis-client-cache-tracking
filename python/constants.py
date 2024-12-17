@@ -14,6 +14,7 @@ CCT_EOS =  "-END_OF_SNAPSHOT-"
 CCT_OLD = CCT_MODULE_PREFIX + "OLD:"
 I2C = CCT_MODULE_PREFIX + "I2C:"
 
+
 CCT_OPERATION = "operation" 
 CCT_KEY = "key" 
 CCT_VALUE = "value" 

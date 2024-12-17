@@ -1,13 +1,17 @@
 #include <mutex>
+#include <iomanip>
+#include <sstream>
 #include "cct_command_subscribe_index.h"
 #include "constants.h"
 #include "cct_client_tracker.h"
 #include "query_parser.h"
 #include "logger.h"
 #include "cct_query_tracking_data.h"
+#include "cct_index_tracker.h"
 
 const long unsigned int DEFAULT_CHUNK_SIZE = 2;
 std::unordered_map<std::string, std::atomic_bool> index_in_setup;
+std::unordered_map<std::string, std::vector<std::string>> index_to_stream_map;
 
 int Disable_Index_Subscription(RedisModuleCtx *ctx, RedisModuleString **argv, int argc){
     RedisModule_AutoMemory(ctx);
@@ -23,6 +27,7 @@ int Disable_Index_Subscription(RedisModuleCtx *ctx, RedisModuleString **argv, in
     }
 
     Remove_Subscribed_Index(ctx, index_name);
+    UnTrack_Index(index_name);
     RedisModule_Call(ctx, "DEL", "c", index_name.c_str());
     RedisModule_ReplyWithSimpleString(ctx, "OK");
     return REDISMODULE_OK;
@@ -40,7 +45,6 @@ int Setup_Index_Subscription(RedisModuleCtx *ctx, RedisModuleString **argv, int 
         return REDISMODULE_ERR;
     }
 
-    // Convert argv to vector of strings
     RedisModuleString *index_name = argv[1];
     std::string index_name_str = RedisModule_StringPtrLen(index_name, NULL);
 
@@ -64,8 +68,19 @@ void Start_Index_Subscription_Handler(RedisModuleCtx *ctx, std::string index_nam
 
 void Process_Index_Subscription(RedisModuleCtx *ctx, std::string index_name, long unsigned int chunk_size) {
     RedisModule_AutoMemory(ctx);
+    static int index_counter = 0;
+
+    std::time_t now = std::time(nullptr);
+    std::tm* localTime = std::localtime(&now);
+    std::ostringstream oss;
+    oss << std::put_time(localTime, "%Y_%m_%d_%H_%M_%S");
+    std::string dateTimeStr = oss.str();
+    std::string index_name_with_timestamp = index_name + "_" + dateTimeStr + "_" + std::to_string(index_counter);
+    index_counter++;
+
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Process_Index_Subscription :" + index_name + " with chunk_size: " + std::to_string(chunk_size) + " and index_name_with_timestamp: " + index_name_with_timestamp);
+
     index_in_setup[index_name] = true;
-    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Process_Index_Subscription :" + index_name + " with chunk_size: " + std::to_string(chunk_size));
     unsigned long long cursor_id = 0;
     const std::string with_cursor = "WITHCURSOR";
     const std::string count = "COUNT";
@@ -181,8 +196,13 @@ void Process_Index_Subscription(RedisModuleCtx *ctx, std::string index_name, lon
                 const char *get_reply_elem_str = RedisModule_StringPtrLen(get_reply_elem, NULL);
                 LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Process_Index_Subscription key: " + std::string(keys_chunks[i]) + " value: " + get_reply_elem_str );
                 RedisModule_ThreadSafeContextLock(ctx);
-                if ( REDISMODULE_OK == Add_Event_To_Stream(ctx, index_name, "json.set", keys_chunks[i], get_reply_elem_str, index_name, false, true) && !subscribed_index_stream_added) {
+                if ( REDISMODULE_OK == Add_Event_To_Stream(ctx, index_name_with_timestamp, "json.set", keys_chunks[i], get_reply_elem_str, index_name, false, true) && !subscribed_index_stream_added) {
                     Add_Subscribed_Index(ctx, index_name);
+                    Track_Index(index_name);
+                    if(index_to_stream_map.find(index_name) == index_to_stream_map.end()) {
+                        index_to_stream_map[index_name] = std::vector<std::string>();
+                    }
+                    index_to_stream_map[index_name].push_back(index_name_with_timestamp);
                     subscribed_index_stream_added = true;
                 }
                 RedisModule_ThreadSafeContextUnlock(ctx);
@@ -228,13 +248,21 @@ int Subscribe_Index_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, 
 
     std::string index_name_str = RedisModule_StringPtrLen(argv[1], NULL);
 
-    // Check if the index is already subscribed with SMISMEMBER 
-    RedisModuleCallReply *is_subscribed_reply = RedisModule_Call(ctx, "SMISMEMBER", "cc", CCT_MODULE_SUBSCRIBED_INDEX.c_str(), index_name_str.c_str());
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Subscribe_Index_RedisCommand is calling SISMEMBER " + CCT_MODULE_SUBSCRIBED_INDEX + " " + index_name_str);
+    RedisModuleCallReply *is_subscribed_reply = RedisModule_Call(ctx, "SISMEMBER", "cc", CCT_MODULE_SUBSCRIBED_INDEX.c_str(), index_name_str.c_str());
     if (RedisModule_CallReplyType(is_subscribed_reply) == REDISMODULE_REPLY_INTEGER && RedisModule_CallReplyInteger(is_subscribed_reply) == 1) {
-        RedisModule_ReplyWithSimpleString(ctx, "OK");
+        std::string latest_stream_name = Get_Index_Latest_Stream_Name(index_name_str);
+        RedisModule_ReplyWithSimpleString(ctx, latest_stream_name.c_str());
     } else {
         RedisModule_ReplyWithError(ctx, "Index not supported");
     }
 
     return REDISMODULE_OK;
+}
+
+std::string Get_Index_Latest_Stream_Name(std::string index_name){
+    if(index_to_stream_map.find(index_name) == index_to_stream_map.end()) {
+        return "";
+    }
+    return index_to_stream_map[index_name].back();
 }

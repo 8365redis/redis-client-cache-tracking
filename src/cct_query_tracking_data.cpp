@@ -9,6 +9,7 @@
 #include "json_handler.h"
 #include "cct_query_tracking_data.h"
 #include "cct_index_tracker.h"
+#include "cct_command_subscribe_index.h"
 
 void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::string client_tracking_group, const std::vector<std::string> &key_ids, const std::string index) {
     RedisModule_AutoMemory(ctx);
@@ -140,20 +141,20 @@ void Add_Tracking_Key_Old_Value(RedisModuleCtx *ctx, std::string key, std::strin
     }
 }
 
-int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std::string event, const std::string key, const std::string value, const std::string queries, bool send_old_value, bool index_subscription ) { 
+int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string stream_name, const std::string event, const std::string key, const std::string value, const std::string queries, bool send_old_value, bool index_subscription ) { 
     RedisModule_AutoMemory(ctx);
     ClientTracker& client_tracker = ClientTracker::getInstance();
     if (!index_subscription) {
-        if( client_tracker.isClientConnected(client) == false) {
-            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream skipping offline client : " + client);
+        if( client_tracker.isClientConnected(stream_name) == false) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream skipping offline client : " + stream_name);
             return REDISMODULE_OK;
         } else {
-            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream adding for client:  " + client);
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream adding for client:  " + stream_name);
         }
     } else {
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream adding for index subscription stream:  " + client);
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream adding for index subscription stream:  " + stream_name);
     }
-    RedisModuleString *client_name = RedisModule_CreateString(ctx, client.c_str(), client.length());
+    RedisModuleString *client_name = RedisModule_CreateString(ctx, stream_name.c_str(), stream_name.length());
     RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
     int alloc_count = 8;
     if (send_old_value) {
@@ -323,17 +324,44 @@ std::string Get_Key_Queries(RedisModuleCtx *ctx, const std::string key) {
 }
 
 void Add_Subscribed_Index(RedisModuleCtx *ctx, const std::string index_name) {
-    RedisModuleString *index_name_str = RedisModule_CreateString(ctx, index_name.c_str(), index_name.length());
-    RedisModuleCallReply *sadd_reply = RedisModule_Call(ctx, "SADD", "cc", CCT_MODULE_SUBSCRIBED_INDEX.c_str(), index_name_str);
+    RedisModule_AutoMemory(ctx);
+    RedisModuleCallReply *sadd_reply = RedisModule_Call(ctx, "SADD", "cc", CCT_MODULE_SUBSCRIBED_INDEX.c_str(), index_name.c_str());
     if (RedisModule_CallReplyType(sadd_reply) != REDISMODULE_REPLY_INTEGER) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Subscribed_Index failed while adding index: " +  index_name);
     }
 }
 
 void Remove_Subscribed_Index(RedisModuleCtx *ctx, const std::string index_name) {
-    RedisModuleString *index_name_str = RedisModule_CreateString(ctx, index_name.c_str(), index_name.length());
-    RedisModuleCallReply *srem_reply = RedisModule_Call(ctx, "SREM", "cc", CCT_MODULE_SUBSCRIBED_INDEX.c_str(), index_name_str);
+    RedisModule_AutoMemory(ctx);
+    RedisModuleCallReply *srem_reply = RedisModule_Call(ctx, "SREM", "cc", CCT_MODULE_SUBSCRIBED_INDEX.c_str(), index_name.c_str());
     if (RedisModule_CallReplyType(srem_reply) != REDISMODULE_REPLY_INTEGER) {   
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Remove_Subscribed_Index failed while removing index: " +  index_name);
     }
+}
+
+void Add_Tracked_Index_Event_To_Stream(RedisModuleCtx *ctx, const std::string index_name, const std::string event, const std::string key){
+    RedisModule_AutoMemory(ctx);
+
+    std::string stream_name_with_timestamp = Get_Index_Latest_Stream_Name(index_name);
+
+    if(strcasecmp(event.c_str(), "expired") == 0 || strcasecmp(event.c_str(), "del") == 0) {
+        if ( REDISMODULE_OK != Add_Event_To_Stream(ctx, stream_name_with_timestamp, event, key, "", index_name, false, true) ) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracked_Index_Event_To_Stream failed while adding event to stream: " +  index_name + " for event: " + event + " and key: " + key);
+        }
+        return;
+    }
+
+    RedisModuleCallReply *get_reply = RedisModule_Call(ctx, "JSON.GET", "c", key.c_str());
+    if (RedisModule_CallReplyType(get_reply) != REDISMODULE_REPLY_STRING) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracked_Index_Event_To_Stream failed while getting value for key: " +  key);
+        return;
+    }
+    std::string value = RedisModule_CallReplyStringPtr(get_reply, NULL);
+
+    if ( REDISMODULE_OK != Add_Event_To_Stream(ctx, stream_name_with_timestamp, "json.set", key, value, index_name, false, true) ) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracked_Index_Event_To_Stream failed while adding event to stream: " +  stream_name_with_timestamp + " for event: " + event + " and key: " + key);
+        return;
+    }
+
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Tracked_Index_Event_To_Stream added event to stream: " +  stream_name_with_timestamp + " for event: " + event + " and key: " + key);
 }
