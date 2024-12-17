@@ -10,14 +10,9 @@
 #include "cct_query_tracking_data.h"
 #include "cct_index_tracker.h"
 
-void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::string client_tracking_group, const std::vector<std::string> &key_ids, const std::string index, bool is_wildcard ) {
+void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::string client_tracking_group, const std::vector<std::string> &key_ids, const std::string index) {
     RedisModule_AutoMemory(ctx);
-    std::string query_term_attribute_normalized;
-    if(is_wildcard) {
-        query_term_attribute_normalized = WILDCARD_SEARCH;
-    } else {
-        query_term_attribute_normalized = Get_Query_Normalized(query);
-    }
+    std::string query_term_attribute_normalized = Get_Query_Normalized(query);
     std::string index_and_query = index + CCT_MODULE_KEY_SEPERATOR + query_term_attribute_normalized;
 
     // Save the Query:{Clients}

@@ -11,15 +11,13 @@ const std::string CCT_MODULE_QUERY_2_KEY =  CCT_MODULE_PREFIX + "Q2K:" ;
 const std::string CCT_MODULE_QUERY_CLIENT =  CCT_MODULE_PREFIX + "QC:" ;
 const std::string CCT_MODULE_CLIENT_2_QUERY = CCT_MODULE_PREFIX + "C2Q:" ;
 const std::string CCT_MODULE_KEY_OLD_VALUE = CCT_MODULE_PREFIX + "OLD:" ;
-const std::string CCT_MODULE_SUBSCRIBED_INDEX  = CCT_MODULE_PREFIX + "SI" ;
+const std::string CCT_MODULE_SUBSCRIBED_INDEX  = CCT_MODULE_PREFIX + "SIDX" ;
 const std::string CCT_MODULE_KEY_SEPERATOR  = ":" ;
 const std::string CCT_MODULE_KEY_LEVEL = "." ;
 const std::string CCT_MODULE_KEY_LEVEL_WITH_ESCAPE = "\\." ;
 const std::string CCT_MODULE_QUERY_DELIMETER = "-CCT_DEL-";
 const std::string CCT_MODULE_END_OF_SNAPSHOT = "-END_OF_SNAPSHOT-";
 const int CLIENT_OFFLINE = 0 ;
-
-const std::string WILDCARD_SEARCH  = "*";
 
 const std::string REDIS_JSON_SET_EVENT = "json.set";
 const std::string REDIS_DEL_EVENT = "del";

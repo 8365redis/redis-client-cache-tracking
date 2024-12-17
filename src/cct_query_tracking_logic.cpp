@@ -23,13 +23,6 @@ int Get_Tracking_Clients_From_Changed_JSON(RedisModuleCtx *ctx, std::string even
 
     std::vector<std::string> queries;
     std::string key_str = RedisModule_StringPtrLen(r_key, NULL);
-
-    // Add the wildcard query for the index if there is any
-    std::set<std::string> tracked_indexes = Get_Tracked_Indexes_From_Key(key_str);
-    if( !tracked_indexes.empty() ) {
-        queries.push_back(WILDCARD_SEARCH);
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON add the wildcard query for key: " + key_str );
-    }
     
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Get_Tracking_Clients_From_Changed_JSON :  key " + key_str + " for event: " + event);
 

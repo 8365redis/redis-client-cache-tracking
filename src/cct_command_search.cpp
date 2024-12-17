@@ -117,25 +117,14 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         return REDISMODULE_ERR;
     }
 
-    bool is_wildcard_search = false;
     RedisModuleString *index = argv[1];
     RedisModuleString *query = argv[2];
     std::string query_str = RedisModule_StringPtrLen(query, NULL);
-    if(query_str == WILDCARD_SEARCH) {
-        is_wildcard_search = true;
-    }
     std::string index_str = RedisModule_StringPtrLen(index, NULL);
     
-    if(is_wildcard_search) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "FT_Search_RedisCommand search is wildcard.");
-        Track_Index(index_str, client_tracking_group);
-        // Save the Query for Tracking
-        Add_Tracking_Query(ctx, query, client_tracking_group, key_ids, index_str, true);
-    } else {
-        // Save the Query for Tracking
-        Add_Tracking_Query(ctx, query, client_tracking_group, key_ids, index_str);
-    }
-     
+    // Save the Query for Tracking
+    Add_Tracking_Query(ctx, query, client_tracking_group, key_ids, index_str);
+
     // Add tracked keys
     for (const auto& it : key_ids) {      
         Add_Tracking_Key(ctx, it, client_tracking_group);
@@ -146,18 +135,12 @@ int FT_Search_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     members.erase(client_name_str); // delete self so dont send to itself
     for (auto& client : members) {
         for(auto& k_v : key_value_to_stream){
-            std::string query_to_stream;
-            if(is_wildcard_search){
-                query_to_stream = query_str;
-            } else {
-                query_to_stream = Normalized_to_Original(Get_Query_Normalized(query));
-            }
+            std::string query_to_stream = Normalized_to_Original(Get_Query_Normalized(query));
             std::string index_and_query = index_str + CCT_MODULE_KEY_SEPERATOR + query_to_stream;
             if( Add_Event_To_Stream(ctx, client, "query", k_v.first, k_v.second, index_and_query, cct_config.CCT_SEND_OLD_VALUE_CFG) != REDISMODULE_OK) {
                 LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "FT_Search_RedisCommand failed to adding to the stream : " + client );
             }
         }
-        
     }
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "FT_Search_RedisCommand is successfully finished");
     return REDISMODULE_OK;

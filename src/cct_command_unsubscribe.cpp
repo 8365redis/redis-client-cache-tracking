@@ -36,12 +36,8 @@ int Unsubscribe_Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     std::string query_str = RedisModule_StringPtrLen(query, NULL);
     std::string index_str = RedisModule_StringPtrLen(index, NULL);
 
-    std::string query_term_attribute_normalized;
-    if(query_str == WILDCARD_SEARCH) {
-        query_term_attribute_normalized = WILDCARD_SEARCH;
-    } else {
-        query_term_attribute_normalized = Get_Query_Normalized(query);
-    }
+    std::string query_term_attribute_normalized = Get_Query_Normalized(query);
+
     std::string index_and_query = index_str + CCT_MODULE_KEY_SEPERATOR + query_term_attribute_normalized;
 
     Clean_Up_Query(ctx , client_name_str, index_and_query, true);
