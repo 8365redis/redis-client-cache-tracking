@@ -99,16 +99,22 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.SUBSCRIBE_TO_INDEX command created successfully.");
     }
 
-    if (RedisModule_CreateCommand(ctx,"CCT2.SETUP_INDEX_SUBSCRIPTION", Setup_Index_Subscription , "write", 0, 0, 0) == REDISMODULE_ERR) {
+    if (RedisModule_CreateCommand(ctx,"CCT2.ENABLE_INDEX_SUBSCRIPTION", Enable_Index_Subscription , "write", 0, 0, 0) == REDISMODULE_ERR) {
         return REDISMODULE_ERR;
     } else {
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.SETUP_INDEX_SUBSCRIPTION command created successfully.");
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.ENABLE_INDEX_SUBSCRIPTION command created successfully.");
     }
 
     if (RedisModule_CreateCommand(ctx,"CCT2.DISABLE_INDEX_SUBSCRIPTION", Disable_Index_Subscription , "write", 0, 0, 0) == REDISMODULE_ERR) {
         return REDISMODULE_ERR;
     } else {
         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.DISABLE_INDEX_SUBSCRIPTION command created successfully.");
+    }
+
+    if (RedisModule_CreateCommand(ctx,"CCT2.REPOPULATE_INDEX_STREAM", Repopulate_Index_Stream , "write", 0, 0, 0) == REDISMODULE_ERR) {
+        return REDISMODULE_ERR;
+    } else {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "CCT2.REPOPULATE_INDEX_STREAM command created successfully.");
     }
 
     // Subscribe to key space events

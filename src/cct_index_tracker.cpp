@@ -2,6 +2,7 @@
 #include <thread>
 #include "cct_index_tracker.h"
 #include "logger.h"
+#include "constants.h"
 
 
 std::unordered_map<std::string, std::set<std::string>> CCT_PREFIX_2_INDEX;
@@ -10,10 +11,27 @@ std::set<std::string> TRACKED_INDEXES;
 void OnRedisReady(RedisModuleCtx *ctx, RedisModuleEvent event, uint64_t subevent, void *data) {
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "OnRedisReady event : " + std::to_string(event.id) + " subevent : " + std::to_string(subevent) );
     if (event.id == REDISMODULE_EVENT_LOADING && subevent == REDISMODULE_SUBEVENT_LOADING_ENDED) {
+        Load_Subscribed_Indexes(ctx);
         auto& index_manager = Redis_Index_Manager::Instance();
         std::set<std::string> indexes = index_manager.Get_All_Indexes(ctx);
         index_manager.Get_Index_Prefixes(ctx , indexes);
     }
+}
+
+void Load_Subscribed_Indexes(RedisModuleCtx *ctx) {
+    RedisModule_AutoMemory(ctx);
+    RedisModuleCallReply *sidx_smembers_reply    = RedisModule_Call(ctx, "SMEMBERS", "c", CCT_MODULE_SUBSCRIBED_INDEX.c_str());
+    const size_t reply_length = RedisModule_CallReplyLength(sidx_smembers_reply);
+    for (size_t i = 0; i < reply_length; i++) {
+        RedisModuleCallReply *index_reply = RedisModule_CallReplyArrayElement(sidx_smembers_reply, i);
+        if (RedisModule_CallReplyType(index_reply) == REDISMODULE_REPLY_STRING){ 
+            RedisModuleString *index = RedisModule_CreateStringFromCallReply(index_reply);
+            std::string index_str = RedisModule_StringPtrLen(index, NULL);
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Load_Subscribed_Indexes index is added : " + index_str );
+            Track_Index(ctx, index_str);
+        }
+    }
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Load_Subscribed_Indexes is finished" );
 }
 
 void Redis_Index_Manager::Set_Index_Change(bool change){
@@ -87,11 +105,13 @@ void Redis_Index_Manager::Get_Index_Prefixes(RedisModuleCtx *ctx, std::set<std::
     }
 }
 
-void Track_Index(std::string index) {
+void Track_Index(RedisModuleCtx *ctx, std::string index) {
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Track_Index is called for index: " + index);
     TRACKED_INDEXES.insert(index);
 }
 
-void UnTrack_Index(std::string index) { 
+void UnTrack_Index(RedisModuleCtx *ctx, std::string index) { 
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "UnTrack_Index is called for index: " + index);
     TRACKED_INDEXES.erase(index);
 }
 
@@ -140,7 +160,7 @@ std::set<std::string> Get_Indexes_From_Key(std::string key) {
 
 void Start_Index_Change_Handler(RedisModuleCtx *ctx) {
     std::thread index_checker_thread(Index_Change_Handler, ctx);
-    index_checker_thread.detach();    
+    index_checker_thread.detach();
 }
 
 void Index_Change_Handler(RedisModuleCtx *ctx) {

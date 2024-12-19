@@ -342,10 +342,12 @@ void Remove_Subscribed_Index(RedisModuleCtx *ctx, const std::string index_name) 
 void Add_Tracked_Index_Event_To_Stream(RedisModuleCtx *ctx, const std::string index_name, const std::string event, const std::string key){
     RedisModule_AutoMemory(ctx);
 
-    std::string stream_name_with_timestamp = Get_Index_Latest_Stream_Name(index_name);
+    std::string index_subcription_query = index_name + ":*";
+
+    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Tracked_Index_Event_To_Stream added event to stream: " +  index_name + " for event: " + event + " and key: " + key);
 
     if(strcasecmp(event.c_str(), "expired") == 0 || strcasecmp(event.c_str(), "del") == 0) {
-        if ( REDISMODULE_OK != Add_Event_To_Stream(ctx, stream_name_with_timestamp, event, key, "", index_name, false, true) ) {
+        if ( REDISMODULE_OK != Add_Event_To_Stream(ctx, index_name, event, key, "", index_subcription_query, false, true) ) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracked_Index_Event_To_Stream failed while adding event to stream: " +  index_name + " for event: " + event + " and key: " + key);
         }
         return;
@@ -358,10 +360,9 @@ void Add_Tracked_Index_Event_To_Stream(RedisModuleCtx *ctx, const std::string in
     }
     std::string value = RedisModule_CallReplyStringPtr(get_reply, NULL);
 
-    if ( REDISMODULE_OK != Add_Event_To_Stream(ctx, stream_name_with_timestamp, "json.set", key, value, index_name, false, true) ) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracked_Index_Event_To_Stream failed while adding event to stream: " +  stream_name_with_timestamp + " for event: " + event + " and key: " + key);
+    if ( REDISMODULE_OK != Add_Event_To_Stream(ctx, index_name, "json.set", key, value, index_subcription_query, false, true) ) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Tracked_Index_Event_To_Stream failed while adding event to stream: " +  index_name + " for event: " + event + " and key: " + key);
         return;
     }
 
-    LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Tracked_Index_Event_To_Stream added event to stream: " +  stream_name_with_timestamp + " for event: " + event + " and key: " + key);
 }
