@@ -11,7 +11,7 @@ def before_and_after_test():
     #print("Start")
     yield
     kill_redis()
-    #print("End")
+    time.sleep(0.1)
 
 def test_register_with_client_name():
     producer = connect_redis_with_start()

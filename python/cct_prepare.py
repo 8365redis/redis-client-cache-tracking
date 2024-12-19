@@ -25,6 +25,7 @@ TEST_INDEX_PREFIX = "users:"
 
 
 def flush_db(r):
+    time.sleep(0.1)
     r.flushall()
     time.sleep(0.1)
 

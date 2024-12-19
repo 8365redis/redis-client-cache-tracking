@@ -207,7 +207,7 @@ def test_subscribe_index_called_twice_while_index_is_not_supported():
 
 
 def test_repopulate_command_1():
-    r = connect_redis()
+    r = connect_redis_with_start()
     cct_prepare.flush_db(r) # clean all db first
     cct_prepare.create_index(r)
 
