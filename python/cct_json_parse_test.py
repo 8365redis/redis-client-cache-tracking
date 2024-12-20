@@ -39,6 +39,7 @@ def test_json_with_special_chars_value():
     # UPDATE DATA
     d = cct_prepare.generate_single_object(id , addr_id, query_value)
     producer.json().set(key, Path.root_path(), d)
+    time.sleep(0.1)
 
     # Check key is in stream 
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1:0} )
