@@ -10,7 +10,7 @@
 #include "cct_query_tracking_data.h"
 #include "cct_index_tracker.h"
 #include "cct_command_subscribe_index.h"
-
+#include "cct_command_register.h"
 void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::string client_tracking_group, const std::vector<std::string> &key_ids, const std::string index) {
     RedisModule_AutoMemory(ctx);
     std::string query_term_attribute_normalized = Get_Query_Normalized(query);
@@ -141,7 +141,7 @@ void Add_Tracking_Key_Old_Value(RedisModuleCtx *ctx, std::string key, std::strin
     }
 }
 
-int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string stream_name, const std::string event, const std::string key, const std::string value, const std::string queries, bool send_old_value, bool index_subscription ) { 
+int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string stream_name, const std::string event, const std::string key, const std::string value, const std::string queries, bool send_old_value, bool index_subscription, bool snapshot ) { 
     RedisModule_AutoMemory(ctx);
     ClientTracker& client_tracker = ClientTracker::getInstance();
     if (!index_subscription) {
@@ -156,6 +156,13 @@ int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string stream_name, cons
     }
     RedisModuleString *client_name = RedisModule_CreateString(ctx, stream_name.c_str(), stream_name.length());
     RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
+
+    
+    if(!snapshot && Is_Snapshot_InProgress(stream_name)) {
+        Add_Snapshot_Event(stream_name, event, key, value, queries, send_old_value);
+        return REDISMODULE_OK;
+    }
+
     int alloc_count = 8;
     if (send_old_value) {
         alloc_count = 10;

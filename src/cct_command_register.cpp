@@ -13,9 +13,61 @@
 #include "cct_command_register.h"
 
 
-void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string client_name_str) {
+typedef struct {
+    std::string event;
+    std::string key;
+    std::string value;
+    std::string queries;
+    bool send_old_value;
+} Snapshot_Event;
+
+std::unordered_map<std::string, std::vector<Snapshot_Event>> snapshot_events_buffered;
+std::unordered_map<std::string, std::atomic_bool> snapshot_clients_in_progress;
+std::vector<std::string> snapshot_clients_to_handle;
+
+bool Is_Snapshot_InProgress(std::string client_name_str) {
+    return snapshot_clients_in_progress[client_name_str];
+}
+
+void Set_Snapshot_InProgress(std::string client_name_str, bool value) {
+    snapshot_clients_in_progress[client_name_str] = value;
+}
+
+void Add_Snapshot_Event(std::string client_name_str, const std::string event, const std::string key, const std::string value, const std::string queries, bool send_old_value) {
+    snapshot_events_buffered[client_name_str].push_back({event, key, value, queries, send_old_value});
+}
+
+void Process_Snapshot_Events(RedisModuleCtx *ctx, std::string client_name_str) {
     RedisModule_AutoMemory(ctx);
-    
+    for(const auto &event : snapshot_events_buffered[client_name_str]) {
+        Add_Event_To_Stream(ctx, client_name_str, event.event, event.key, event.value, event.queries, event.send_old_value, false, true);
+    }
+    snapshot_events_buffered[client_name_str].clear();
+}
+
+void Start_Snapshot_Handler(RedisModuleCtx *ctx) {
+    std::thread snapshot_thread(Snapshot_Handler, ctx);
+    snapshot_thread.detach();
+}
+
+void Snapshot_Handler(RedisModuleCtx *ctx) {
+    while(true) {
+        if(!snapshot_clients_to_handle.empty()) {
+            std::string client_name_str = snapshot_clients_to_handle.front();
+            snapshot_clients_to_handle.erase(snapshot_clients_to_handle.begin());
+            Set_Snapshot_InProgress(client_name_str, true);
+            Send_Snapshot(ctx, client_name_str);
+            Set_Snapshot_InProgress(client_name_str, false);
+            Process_Snapshot_Events(ctx, client_name_str);
+        }
+    }
+}
+
+
+void Send_Snapshot(RedisModuleCtx *ctx, std::string client_name_str) {
+    RedisModule_AutoMemory(ctx);
+    RedisModuleString *client_name = RedisModule_CreateString(ctx, client_name_str.c_str(), client_name_str.length());
+    RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
     ClientTracker& client_tracker = ClientTracker::getInstance();
     std::string client_tracking_group = client_tracker.getClientClientTrackingGroup(client_name_str);
     if (client_tracking_group.empty()){
@@ -83,7 +135,7 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
             event = REDIS_DEL_EVENT;
             client_queries_internal_str = "";
         }
-        if (Add_Event_To_Stream(ctx, client_name_str, event, key, client_keys_2_values[key], client_queries_internal_str, cct_config.CCT_SEND_OLD_VALUE_CFG) != REDISMODULE_OK) {
+        if (Add_Event_To_Stream(ctx, client_name_str, event, key, client_keys_2_values[key], client_queries_internal_str, cct_config.CCT_SEND_OLD_VALUE_CFG, false, true) != REDISMODULE_OK) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Snaphot failed to adding to the stream." );
             return ;
         }
@@ -92,7 +144,7 @@ void Send_Snapshot(RedisModuleCtx *ctx, RedisModuleKey *stream_key, std::string 
     // Write empty queries to client stream  
     for (auto k : empty_queries) {
         std::string original_query = Normalized_to_Original_With_Index(k);
-        if (Add_Event_To_Stream(ctx, client_name_str, "json.set", "", "", original_query) != REDISMODULE_OK) {
+        if (Add_Event_To_Stream(ctx, client_name_str, "json.set", "", "", original_query, false, false, true) != REDISMODULE_OK) {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Snaphot failed to adding to the stream for empty queries." );
             return ;
         }
@@ -138,11 +190,28 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         } 
     }
 
-
+    unsigned long long client_query_ttl = 0;
     std::string client_tracking_group_str = "";
-    if (argc > 2) {
+    if (argc == 3) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand 3 arguments given." );
+        RedisModuleString *client_tracking_group_or_ttl = argv[2];
+        if(RedisModule_StringToULongLong(client_tracking_group_or_ttl, &client_query_ttl) != REDISMODULE_ERR) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand 2 argument given second is TTL value." );
+        } else {
+            LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand 2 argument given second is not TTL value." );
+            client_tracking_group_str = RedisModule_StringPtrLen(client_tracking_group_or_ttl, NULL);
+        }
+    }
+
+    if (argc == 4) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand 4 arguments given." );
         RedisModuleString *client_tracking_group = argv[2];
         client_tracking_group_str = RedisModule_StringPtrLen(client_tracking_group, NULL);
+        RedisModuleString *client_query_ttl_str = argv[3];
+        if(RedisModule_StringToULongLong(client_query_ttl_str, &client_query_ttl) == REDISMODULE_ERR ) {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set client query TTL. Invalid TTL value." );
+            return RedisModule_ReplyWithError(ctx, "Setting query TTL has failed");
+        }
     }
 
     if(client_tracking_group_str.empty()){
@@ -156,15 +225,6 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     
     ClientTracker& client_tracker = ClientTracker::getInstance();
     client_tracker.addToClientTrackingGroup(ctx, client_tracking_group_str, client_name_str);
-
-    unsigned long long client_query_ttl = 0;
-    if (argc == 4) {
-        RedisModuleString *client_query_ttl_str = argv[3];
-        if(RedisModule_StringToULongLong(client_query_ttl_str, &client_query_ttl) == REDISMODULE_ERR ) {
-            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Register_RedisCommand failed to set client query TTL. Invalid TTL value." );
-            return RedisModule_ReplyWithError(ctx, "Setting query TTL has failed");
-        }
-    }
 
     LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Register_RedisCommand client query TTL : " + std::to_string(client_query_ttl) );
 
@@ -208,9 +268,8 @@ int Register_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
     RedisModule_StreamTrimByLength(stream_key, 0, 0);  // Clear the stream
 
     // Send SNAPSHOT to client
-    Send_Snapshot(ctx, stream_key, client_name_str);
+    snapshot_clients_to_handle.push_back(client_name_str);
     
-
     RedisModule_ReplyWithSimpleString(ctx, "OK");
     return REDISMODULE_OK;
 }

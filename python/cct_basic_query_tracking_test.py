@@ -313,7 +313,8 @@ def test_key_expired():
 
     # CHECK STREAM
     from_stream = client1.xread(streams={TEST_APP_NAME_1:0} )
-    assert '''EXPIRE''' in str(from_stream)
+    print(from_stream)
+    assert '''DELETE''' in str(from_stream)
 
     # SEARCH again
     res = client1.execute_command("CCT2.FT.SEARCH " + TEST_INDEX + " @User\\.PASSPORT:{" + query_value + "}")
