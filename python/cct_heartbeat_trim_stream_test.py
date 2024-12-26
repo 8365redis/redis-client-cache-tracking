@@ -305,6 +305,8 @@ def test_heartbeat_trims_stream_after_snapshot():
     producer.json().set(key_3, Path.root_path(), d)
     d = cct_prepare.generate_single_object(1002 , 2006 ,passport_value)
     producer.json().set(key_3, Path.root_path(), d)
+    
+    time.sleep(0.1)
 
     # Check stream 
     from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )

@@ -93,6 +93,8 @@ def test_1_client_2_query_with_disconnect():
     # RE-REGISTER
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    
+    time.sleep(0.1)
 
     # Check stream content
     from_stream = client1.xread(count=2, streams={cct_prepare.TEST_APP_NAME_1: 0})

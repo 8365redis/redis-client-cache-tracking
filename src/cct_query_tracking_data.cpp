@@ -9,6 +9,7 @@
 #include "json_handler.h"
 #include "cct_query_tracking_data.h"
 #include "cct_index_tracker.h"
+#include "cct_command_register.h"
 
 void Add_Tracking_Query(RedisModuleCtx *ctx, RedisModuleString *query, std::string client_tracking_group, const std::vector<std::string> &key_ids, const std::string index, bool is_wildcard ) {
     RedisModule_AutoMemory(ctx);
@@ -145,17 +146,24 @@ void Add_Tracking_Key_Old_Value(RedisModuleCtx *ctx, std::string key, std::strin
     }
 }
 
-int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string client, const std::string event, const std::string key, const std::string value, const std::string queries, bool send_old_value ) { 
+int Add_Event_To_Stream(RedisModuleCtx *ctx, const std::string stream_name, const std::string event, const std::string key, const std::string value, const std::string queries, bool send_old_value, bool index_subscription, bool snapshot ) { 
     RedisModule_AutoMemory(ctx);
     ClientTracker& client_tracker = ClientTracker::getInstance();
-    if( client_tracker.isClientConnected(client) == false) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream skipping offline client : " + client);
+    if( client_tracker.isClientConnected(stream_name) == false) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream skipping offline client : " + stream_name);
         return REDISMODULE_OK;
-    } else {
-         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream adding for client:  " + client);
-    }
-    RedisModuleString *client_name = RedisModule_CreateString(ctx, client.c_str(), client.length());
+    } else {    
+         LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Add_Event_To_Stream adding for client:  " + stream_name);
+    }   
+    RedisModuleString *client_name = RedisModule_CreateString(ctx, stream_name.c_str(), stream_name.length());
     RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, client_name, REDISMODULE_WRITE);
+
+    
+    if(!snapshot && Is_Snapshot_InProgress(stream_name)) {
+        Add_Snapshot_Event(stream_name, event, key, value, queries, send_old_value);
+        return REDISMODULE_OK;
+    }
+
     int alloc_count = 8;
     if (send_old_value) {
         alloc_count = 10;
