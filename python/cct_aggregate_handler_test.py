@@ -329,14 +329,15 @@ def test_basic_ft_aggregate_handler_multi_request_multi_client():
     response = client3.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 1")
     assert str(response) == '''[5, ['User.ID', '1000']]'''
 
-    time.sleep(0.6)
+    time.sleep(0.3)
     client1.execute_command("CCT2.HEARTBEAT")
     client2.execute_command("CCT2.HEARTBEAT")
     client3.execute_command("CCT2.HEARTBEAT")
-    time.sleep(0.5)
+    time.sleep(0.3)
     client1.execute_command("CCT2.HEARTBEAT")
     client2.execute_command("CCT2.HEARTBEAT")
     client3.execute_command("CCT2.HEARTBEAT")
+    time.sleep(0.3)
 
     # REQUEST
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 4")
@@ -371,14 +372,15 @@ def test_basic_ft_aggregate_handler_multi_request_multi_client():
     key = cct_prepare.TEST_INDEX_PREFIX + str(0)
     r.json().set(key, Path.root_path(), d)
 
-    time.sleep(0.6)
+    time.sleep(0.4)
     client1.execute_command("CCT2.HEARTBEAT")
     client2.execute_command("CCT2.HEARTBEAT")
     client3.execute_command("CCT2.HEARTBEAT")
-    time.sleep(0.5)
+    time.sleep(0.4)
     client1.execute_command("CCT2.HEARTBEAT")
     client2.execute_command("CCT2.HEARTBEAT")
     client3.execute_command("CCT2.HEARTBEAT")
+    time.sleep(0.4)
 
     # REQUEST
     response = client1.execute_command("CCT2.FT.AGGREGATE " + cct_prepare.TEST_INDEX_NAME + " * SORTBY 1 @User.ID LIMIT 0 4")

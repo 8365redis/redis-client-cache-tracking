@@ -165,12 +165,16 @@ def test_not_tracking_not_effected():
     client2 = connect_redis()
     client2.execute_command("CCT2.REGISTER " + test_app_name_2 + " " + test_grp_name_2 )
 
+    time.sleep(0.2)
+
     query_value = "bbb"
     client1.execute_command("CCT2.FT.SEARCH "+ cct_prepare.TEST_INDEX_NAME +" @User\\.PASSPORT:{" + query_value + "}")
 
     # UPDATE DATA
     d = cct_prepare.generate_single_object(1000 , 2000, query_value)
     producer.json().set(key, Path.root_path(), d)
+
+    time.sleep(0.2)
 
     # Check key is in stream for client 1
     from_stream = client1.xread( streams={test_app_name_1:0} )

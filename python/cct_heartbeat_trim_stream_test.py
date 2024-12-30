@@ -321,6 +321,8 @@ def test_heartbeat_trims_stream_after_snapshot():
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + TEST_APP_NAME_1)
 
+    time.sleep(0.2)
+
     # Check stream 
     from_stream = client1.xread( streams={TEST_APP_NAME_1:0} )
     read_ids = []

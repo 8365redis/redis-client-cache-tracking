@@ -108,7 +108,7 @@ def test_heartbeat_with_client_name_2():
     assert cct_prepare.OK in str(res)
     assert producer.exists(TEST_APP_NAME_2) == True
 
-    time.sleep(1.6)
+    time.sleep(1.1)
 
     res = client1.execute_command("CCT2.HEARTBEAT")
     assert cct_prepare.OK in str(res)        
@@ -116,7 +116,7 @@ def test_heartbeat_with_client_name_2():
     res = client1.execute_command("CCT2.HEARTBEAT CLIENTNAME " + TEST_APP_NAME_2)
     assert cct_prepare.OK in str(res)
 
-    time.sleep(1.6)
+    time.sleep(1.1)
 
     res = client1.execute_command("CCT2.HEARTBEAT")
     assert cct_prepare.OK in str(res)    
@@ -127,12 +127,12 @@ def test_heartbeat_with_client_name_2():
     assert producer.exists(TEST_APP_NAME_1) == True
     assert producer.exists(TEST_APP_NAME_2) == True
 
-    time.sleep(1.6)
+    time.sleep(1.1)
 
     res = client1.execute_command("CCT2.HEARTBEAT CLIENTNAME " + TEST_APP_NAME_2)
     assert cct_prepare.OK in str(res)
 
-    time.sleep(1.6)
+    time.sleep(2.2)
 
     assert producer.exists(TEST_APP_NAME_1) == False
     assert producer.exists(TEST_APP_NAME_2) == True

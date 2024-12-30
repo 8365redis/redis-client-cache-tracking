@@ -19,6 +19,7 @@ def test_query_expired():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
     cct_prepare.create_index(producer)
+    time.sleep(1.0)
 
     # ADD INITIAL DATA
     passport_value = "aaa"

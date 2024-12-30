@@ -123,12 +123,14 @@ def test_1_client_1_query_without_disconnect():
     client1.execute_command("CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
 
     # Check stream is empty
+    time.sleep(0.1)
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1: 0})
     assert CCT_EOS in from_stream[0][1][0][1]
 
     # RE-REGISTER
     client1 = connect_redis()
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    time.sleep(0.1)
 
     # Check stream content
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1: 0})
@@ -496,6 +498,7 @@ def test_1_client_multiple_query_multiple_key_multiple_update_mixed_match_query_
 
     # RE-REGISTER
     client1.execute_command("CCT2.REGISTER " + cct_prepare.TEST_APP_NAME_1)
+    time.sleep(0.1)
     # Check stream content
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1: 0})
     #print(json.dumps(from_stream))
@@ -757,7 +760,7 @@ def test_1_client_1_query_first_key_later_query_expire():
     client1.execute_command("CCT2.FT.SEARCH " + cct_prepare.TEST_INDEX_NAME + " @User\\.PASSPORT:{" + query_value + "}")
 
     # Check stream is empty
-    time.sleep(0.1)
+    time.sleep(0.2)
     from_stream = client1.xread(streams={cct_prepare.TEST_APP_NAME_1: 0})
     assert CCT_EOS in from_stream[0][1][0][1]
 
