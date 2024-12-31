@@ -64,3 +64,10 @@ dkms.conf
 
 # Redis dump file
 dump.rdb
+.idea/customTargets.xml
+.idea/editor.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/redis-client-cache-tracking.iml
+.idea/vcs.xml
+.idea/.gitignore
