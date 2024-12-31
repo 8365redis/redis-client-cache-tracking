@@ -3,7 +3,7 @@ import time
 from redis.commands.json.path import Path
 from manage_redis import kill_redis, connect_redis_with_start, connect_redis
 import cct_prepare
-from constants import CCT_QUERIES, CCT_EOS
+from constants import CCT_QUERIES, CCT_EOS, SKIP_TEST_CAUSING_REDIS_CRASH
 
 
 @pytest.fixture(autouse=True)
@@ -13,6 +13,8 @@ def before_and_after_test():
     kill_redis()
     time.sleep(0.1)
 
+@pytest.mark.skipif(SKIP_TEST_CAUSING_REDIS_CRASH ,
+                    reason="Only run manually")
 def test_register_with_client_name():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
@@ -60,6 +62,8 @@ def test_register_with_client_name():
     assert producer.exists(TEST_APP_NAME_7) == True
 
 
+@pytest.mark.skipif(SKIP_TEST_CAUSING_REDIS_CRASH ,
+                    reason="Only run manually")
 def test_heartbeat_with_client_name():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
@@ -92,6 +96,9 @@ def test_heartbeat_with_client_name():
     res = client1.execute_command("CCT2.HEARTBEAT CLIENTNAME " + TEST_APP_NAME_3)
     assert cct_prepare.OK in str(res)
 
+
+@pytest.mark.skipif(SKIP_TEST_CAUSING_REDIS_CRASH ,
+                    reason="Only run manually")
 def test_heartbeat_with_client_name_2():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
@@ -142,6 +149,8 @@ def test_heartbeat_with_client_name_2():
     assert producer.exists(TEST_APP_NAME_2) == False
 
 
+@pytest.mark.skipif(SKIP_TEST_CAUSING_REDIS_CRASH ,
+                    reason="Only run manually")
 def test_search_with_client_name():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
@@ -194,6 +203,8 @@ def test_search_with_client_name():
     assert '''test_search_with_client_name_index_prefix:1''' in str(from_stream)
 
 
+@pytest.mark.skipif(SKIP_TEST_CAUSING_REDIS_CRASH ,
+                    reason="Only run manually")
 def test_search_with_client_name_2():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
