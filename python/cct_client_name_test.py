@@ -205,9 +205,6 @@ def test_search_with_client_name():
 
 @pytest.mark.skipif(SKIP_TEST_CAUSING_REDIS_CRASH ,
                     reason="Only run manually")
-
-@pytest.mark.skipif(SKIP_TEST_CAUSING_REDIS_CRASH ,
-                    reason="Only run manually")
 def test_search_with_client_name_2():
     producer = connect_redis_with_start()
     cct_prepare.flush_db(producer) # clean all db first
