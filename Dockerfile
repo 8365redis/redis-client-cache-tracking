@@ -23,7 +23,7 @@ COPY . .
 RUN make DEBUG=1
 
 # Stage 2: Create the runtime image
-FROM redis/redis-stack:latest
+FROM redis/redis-stack:7.4.0-v0
 
 # Install gdb in the runtime image
 RUN apt-get update && apt-get install -y  \
