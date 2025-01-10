@@ -5,6 +5,7 @@ import cct_prepare
 from cct_test_utils import get_redis_snapshot 
 from manage_redis import connect_redis, connect_redis_with_start, kill_redis
 import time
+from constants import CCT_QUERIES
 
 CCT_SUBSCRIBED_INDEX = "CCT2:SIDX"
 
@@ -54,7 +55,10 @@ def test_basic_subscribe_index_test_1():
     assert cct_prepare.TEST_INDEX_NAME in str(stream_name)
 
     # READ all stream data
-    from_stream1 = client1.xread( streams={stream_name:0} )
+    from_stream1 = client1.xread(count=10, streams={stream_name:0} )
+    assert len(from_stream1[0][1]) == 4
+    assert from_stream1[0][1][3][1]['-END_OF_SNAPSHOT-'] == '-END_OF_SNAPSHOT-'
+    assert from_stream1[0][1][0][1][CCT_QUERIES] == cct_prepare.TEST_INDEX_NAME + ':*'
     print(from_stream1)
 
     client1.xtrim(stream_name , 0)
