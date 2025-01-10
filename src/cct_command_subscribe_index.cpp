@@ -264,7 +264,7 @@ void Process_Index_Subscription(RedisModuleCtx *ctx, std::string index_name, lon
                 const char *get_reply_elem_str = RedisModule_StringPtrLen(get_reply_elem, NULL);
                 LOG(ctx, REDISMODULE_LOGLEVEL_DEBUG , "Process_Index_Subscription key: " + std::string(keys_chunks[i]) + " value: " + get_reply_elem_str );
                 RedisModule_ThreadSafeContextLock(ctx);
-                if ( REDISMODULE_OK == Add_Event_To_Stream(ctx, index_name, "json.set", keys_chunks[i], get_reply_elem_str, index_name, false, true) && !subscribed_index_stream_added) {
+                if ( REDISMODULE_OK == Add_Event_To_Stream(ctx, index_name, "json.set", keys_chunks[i], get_reply_elem_str, index_name + ":*", false, true) && !subscribed_index_stream_added) {
                     Add_Subscribed_Index(ctx, index_name);
                     Track_Index(ctx, index_name);
                     subscribed_index_stream_added = true;
@@ -273,6 +273,18 @@ void Process_Index_Subscription(RedisModuleCtx *ctx, std::string index_name, lon
             }
             keys_chunks.clear();
         }
+    }
+    //Finalize stream writing with end of snapshot
+    RedisModuleString *index_name_ref = RedisModule_CreateString(ctx, index_name.c_str(), index_name.length());
+    RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, index_name_ref, REDISMODULE_WRITE);
+    RedisModuleString **xadd_params_for_eos = (RedisModuleString **) RedisModule_Alloc(sizeof(RedisModuleString *) * 2);
+    xadd_params_for_eos[0] = RedisModule_CreateString(ctx, CCT_MODULE_END_OF_SNAPSHOT.c_str(), CCT_MODULE_END_OF_SNAPSHOT.length());
+    xadd_params_for_eos[1] = RedisModule_CreateString(ctx, CCT_MODULE_END_OF_SNAPSHOT.c_str(), CCT_MODULE_END_OF_SNAPSHOT.length());
+    int stream_add_resp_eos = RedisModule_StreamAdd(stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params_for_eos, 1);
+    RedisModule_Free(xadd_params_for_eos);
+    if (stream_add_resp_eos != REDISMODULE_OK) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Send_Snapshot failed to write end of snapshot to index stream." );
+        return ;
     }
 
     Set_Index_In_Setup(ctx, index_name, false);
